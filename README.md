@@ -228,6 +228,7 @@ Example:
 ```
 tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AngryTeenagersGhostnet1 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q") (Pair {} {})) (Pair (Pair 0x697066733a2f2f516d576b726b5a6a35363264754d47567777615574506f376948317a50744c594b423275394d3745665559424448 0x697066733a2f2f516d576b726b5a6a35363264754d47567777615574506f376948317a50744c594b423275394d3745665559424448) (Pair {} (Pair {Elt "" 0x697066733a2f2f516d59626469684c587743716b79667a6877626b654139545a78703363663778764e334673564d64616b48386237} {})))) (Pair (Pair (Pair 0 {}) (Pair {} (Pair False 0x636572616d69633a2f2f516d576b726b5a6a35363264754d47567777615574506f376948317a50744c594b423275394d3745665559414141))) (Pair (Pair 0x7b22646563696d616c73223a20322c2022736861726573223a207b2022747a3151716f624d6543595931576a656150556370686879713251354333426654453271223a2031307d7d "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q") (Pair 5236 (Pair {} 0x697066733a2f2f516d555a315679727866374c4c6364725462593566313335634d3264424e6b75445a6e676e39714b3278654e7237)))))' --burn-cap 4
 ```
+The FA2 contract administrator needs to be set accordingly by calling the entrypoint set_artwork_administrator and set_sale_contract_administrator.
 
 ### Deploy the sale contract (./sale/angry_teenagers_sale.py)
 
@@ -283,3 +284,6 @@ tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract An
 ```
 
 Register the FA2 contract by calling the register_angry_teenager_fa2 entrypoint of the main DAO component contract.
+
+#### Verify metadata
+Contract and token metadata can be checked using https://tzcomet.io

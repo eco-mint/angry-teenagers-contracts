@@ -242,7 +242,6 @@ class AngryTeenagers(sp.Contract):
             sp.verify(self.data.token_metadata.contains(sp.fst(artwork_metadata)), Error.ErrorMessage.token_undefined())
             info = sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)])
             sp.verify(info.contains("revealed"), Error.ErrorMessage.token_undefined())
-            sp.verify(info["revealed"] == sp.utils.bytes_of_string("false"), Error.ErrorMessage.token_revealed())
 
             my_map = sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), "revealed", sp.some(sp.utils.bytes_of_string("true")))
             my_map = sp.update_map(my_map, "artifactUri", sp.some((sp.snd(artwork_metadata)).artifactUri))
@@ -250,6 +249,10 @@ class AngryTeenagers(sp.Contract):
             my_map = sp.update_map(my_map, "externalUri", sp.some((sp.snd(artwork_metadata)).externalUri))
             my_map = sp.update_map(my_map, "thumbnailUri", sp.some((sp.snd(artwork_metadata)).thumbnailUri))
             my_map = sp.update_map(my_map, "attributes", sp.some((sp.snd(artwork_metadata)).attributesJSonString))
+            formats_bytes_prefix = sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"')
+            formats_bytes_suffix = sp.utils.bytes_of_string('"}]')
+            formats = sp.local('formats', formats_bytes_prefix + (sp.snd(artwork_metadata)).artifactUri + formats_bytes_suffix)
+            my_map = sp.update_map(my_map, "formats", sp.some(formats.value))
 
             self.data.token_metadata[sp.fst(artwork_metadata)] = sp.pair(sp.fst(artwork_metadata), my_map)
 
@@ -714,7 +717,6 @@ def unit_fa2_test_mint(is_default = True):
         scenario.verify(c1.does_token_exist(1) == True)
         scenario.verify(c1.does_token_exist(2) == True)
         TestHelper.compare_list(scenario, c1.all_tokens(), sp.list(l={0, 1, 2}, t=sp.TNat))
-        scenario.show(c1.get_user_tokens(nat.address))
         scenario.verify(c1.does_token_exist(3) == False)
         c1.mint(chris.address).run(valid=True, sender=bob)
         scenario.verify(c1.count_tokens() == 4)
@@ -766,7 +768,7 @@ def unit_fa2_test_mint(is_default = True):
         scenario.verify((sp.snd(c1.data.token_metadata[3]))["revealed"] == sp.utils.bytes_of_string("false"))
         scenario.verify((sp.snd(c1.data.token_metadata[4]))["revealed"] == sp.utils.bytes_of_string("false"))
         scenario.verify((sp.snd(c1.data.token_metadata[5]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[6]))["revealed"] == sp.utils.bytes_of_string("true"))
+        scenario.verify(~c1.data.token_metadata.contains(6))
 
 def unit_fa2_test_mint_max(is_default=True):
     @sp.add_test(name="unit_fa2_test_mint_max", is_default=is_default)
@@ -1029,10 +1031,9 @@ def unit_fa2_test_update_artwork_data(is_default=True):
 
         scenario.p("3. Check that minted NFTs are not revealed yet")
         scenario.verify((sp.snd(c1.data.token_metadata[0]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["revealed"] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))["revealed"] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))["revealed"] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))["revealed"] == sp.utils.bytes_of_string("false"))
 
         scenario.p("4. Check that only the main or artwork admin can reveal token metadata")
         c1.update_artwork_data(list1).run(valid=False, sender=alice)
@@ -1053,7 +1054,6 @@ def unit_fa2_test_update_artwork_data(is_default=True):
         scenario.verify((sp.snd(c1.data.token_metadata[1]))["revealed"] == sp.utils.bytes_of_string("true"))
         scenario.verify((sp.snd(c1.data.token_metadata[2]))["revealed"] == sp.utils.bytes_of_string("true"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))["revealed"] == sp.utils.bytes_of_string("true"))
-        scenario.verify((sp.snd(c1.data.token_metadata[4]))["revealed"] == sp.utils.bytes_of_string("true"))
 
         scenario.verify((sp.snd(c1.data.token_metadata[1]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
         scenario.verify((sp.snd(c1.data.token_metadata[1]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
@@ -1081,25 +1081,24 @@ def unit_fa2_test_update_artwork_data(is_default=True):
         scenario.verify((sp.snd(c1.data.token_metadata[1]))["revealed"] == sp.utils.bytes_of_string("true"))
         scenario.verify((sp.snd(c1.data.token_metadata[2]))["revealed"] == sp.utils.bytes_of_string("true"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))["revealed"] == sp.utils.bytes_of_string("true"))
-        scenario.verify((sp.snd(c1.data.token_metadata[4]))["revealed"] == sp.utils.bytes_of_string("true"))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB10"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB20"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["thumbnailUri"]  == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB30"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB40"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic0\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))["thumbnailUri"]  == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB43"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
 
         scenario.verify((sp.snd(c1.data.token_metadata[3]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"))

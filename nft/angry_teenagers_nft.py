@@ -382,9 +382,9 @@ class AngryTeenagers(sp.Contract):
             ).layout(("owner", "token_id")))
         sp.verify(self.data.ledger.contains(req.token_id), message=Error.ErrorMessage.token_undefined())
         sp.if self.data.ledger[req.token_id] == req.owner:
-            sp.result(1)
+            sp.result(sp.nat(1))
         sp.else:
-            sp.result(0)
+            sp.result(sp.nat(0))
 
 
     @sp.offchain_view(pure=True)

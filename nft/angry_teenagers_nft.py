@@ -528,7 +528,7 @@ sp.add_compilation_target("AngryTeenagers",
                           AngryTeenagers(
                               administrator=sp.address("tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"),
                               royalties_bytes=sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q": 10}}'),
-                              metadata=sp.utils.metadata_of_url("ipfs://QmYbdihLXwCqkyfzhwbkeA9TZxp3cf7xvN3FsVMdakH8b7"),
+                              metadata=sp.utils.metadata_of_url("ipfs://QmVnSn1QwdqGYADfX1CFkys4oxxz7PP3njBQ8Xr945rgsf"),
                               # TODO: This is not a valid generic image
                               generic_image_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
                               generic_image_ipfs_thumbnail=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),

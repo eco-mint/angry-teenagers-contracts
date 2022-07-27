@@ -661,6 +661,8 @@ def unit_fa2_test_initial_storage(is_default = True):
 
         scenario.verify(c1.data.royalties == sp.utils.bytes_of_string('{"decimals": 2, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5" + '": 10}}'))
 
+        scenario.verify(~c1.data.token_metadata.contains(0))
+
 ########################################################################################################################
 # unit_fa2_test_mint
 ########################################################################################################################
@@ -1352,12 +1354,128 @@ def unit_fa2_test_update_operators(is_default=True):
         c1.transfer(sp.list({source1})).run(valid=True, sender=alice)
 
 ########################################################################################################################
-# unit_fa2_test_token_metadata
+# unit_fa2_test_token_metadata_storage
 ########################################################################################################################
-def unit_fa2_test_token_metadata(is_default=True):
-    @sp.add_test(name="unit_fa2_test_token_metadata", is_default=is_default)
+def unit_fa2_test_token_metadata_storage(is_default=True):
+    @sp.add_test(name="unit_fa2_test_token_metadata_storage", is_default=is_default)
     def test():
-        scenario = TestHelper.create_scenario("unit_fa2_test_token_metadata")
+        scenario = TestHelper.create_scenario("unit_fa2_test_token_metadata_storage")
+        admin, alice, bob, john = TestHelper.create_account(scenario)
+        c1 = TestHelper.create_contracts(scenario, admin, john)
+
+        scenario.h2("Test the token_metadata storage.")
+
+        scenario.p("1. Set sale contract admin to be bob and artwork admin to be john")
+        c1.set_sale_contract_administrator(bob.address).run(valid=True, sender=admin)
+        c1.set_artwork_administrator(john.address).run(valid=True, sender=admin)
+
+        scenario.p("2. Successfully mint NFTs")
+        c1.mint(alice.address).run(valid=True, sender=admin)
+        c1.mint(alice.address).run(valid=True, sender=admin)
+        c1.mint(alice.address).run(valid=True, sender=admin)
+        c1.mint(alice.address).run(valid=True, sender=admin)
+
+        scenario.p("3. Check token_metadata storage contains expected values for various NFTs")
+        scenario.verify(c1.data.token_metadata.contains(0))
+        id = sp.fst(c1.data.token_metadata[0])
+        info = sp.snd(c1.data.token_metadata[0])
+        scenario.verify(id == 0)
+
+        scenario.verify_equal(info['artifactUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info['displayUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info['thumbnailUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info['royalties'], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(info['externalUri'], sp.bytes('0x2222'))
+        scenario.verify_equal(info['revealed'], sp.utils.bytes_of_string('false'))
+        scenario.verify_equal(info['what3wordsFile'], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(info['what3wordsId'], sp.utils.bytes_of_string("0"))
+        scenario.verify_equal(info['name'], sp.utils.bytes_of_string('"Angry Teenager #0"'))
+        scenario.verify_equal(info['formats'], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"}]'))
+        scenario.verify_equal(info['symbol'], sp.utils.bytes_of_string('ANGRY'))
+        scenario.verify_equal(info['attributes'], sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'))
+        scenario.verify_equal(info['decimals'], sp.utils.bytes_of_string('0'))
+        scenario.verify_equal(info['language'], sp.utils.bytes_of_string('en-US'))
+        scenario.verify_equal(info['description'], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
+        scenario.verify_equal(info['rights'], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
+        scenario.verify_equal(info['isTransferable'], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info['isBooleanAmount'], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info['shouldPreferSymbol'], sp.utils.bytes_of_string("false"))
+        scenario.verify_equal(info['creators'], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
+        scenario.verify_equal(info['projectName'], sp.utils.bytes_of_string('Project-1'))
+
+        for j in range(0, 50):
+            c1.mint(alice.address).run(valid=True, sender=admin)
+
+        scenario.verify(c1.data.token_metadata.contains(49))
+        id = sp.fst(c1.data.token_metadata[49])
+        info = sp.snd(c1.data.token_metadata[49])
+        scenario.verify(id == 49)
+
+        scenario.verify_equal(info['artifactUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info['displayUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info['thumbnailUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info['externalUri'], sp.bytes('0x2222'))
+        scenario.verify_equal(info['royalties'], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(info['revealed'], sp.utils.bytes_of_string('false'))
+        scenario.verify_equal(info['name'], sp.utils.bytes_of_string('"Angry Teenager #49"'))
+        scenario.verify_equal(info['what3wordsFile'], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(info['what3wordsId'], sp.utils.bytes_of_string("49"))
+        scenario.verify_equal(info['formats'], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"}]'))
+        scenario.verify_equal(info['symbol'], sp.utils.bytes_of_string('ANGRY'))
+        scenario.verify_equal(info['attributes'], sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'))
+        scenario.verify_equal(info['decimals'], sp.utils.bytes_of_string('0'))
+        scenario.verify_equal(info['language'], sp.utils.bytes_of_string('en-US'))
+        scenario.verify_equal(info['description'], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
+        scenario.verify_equal(info['rights'], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
+        scenario.verify_equal(info['isTransferable'], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info['isBooleanAmount'], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info['shouldPreferSymbol'], sp.utils.bytes_of_string("false"))
+        scenario.verify_equal(info['creators'], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
+        scenario.verify_equal(info['projectName'], sp.utils.bytes_of_string('Project-1'))
+
+        record1 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
+                            displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
+                            thumbnailUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"),
+                            externalUri=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"),
+                            attributesJSonString=sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
+        list1 = sp.list({sp.pair(49, record1)})
+        c1.update_artwork_data(list1).run(valid=True, sender=admin)
+
+        scenario.verify(c1.data.token_metadata.contains(49))
+        id = sp.fst(c1.data.token_metadata[49])
+        info = sp.snd(c1.data.token_metadata[49])
+        scenario.verify(id == 49)
+        scenario.verify_equal(info['artifactUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
+        scenario.verify_equal(info['displayUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
+        scenario.verify_equal(info['thumbnailUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
+        scenario.verify_equal(info['externalUri'], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
+        scenario.verify_equal(info['royalties'], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(info['revealed'], sp.utils.bytes_of_string('true'))
+        scenario.verify_equal(info['name'], sp.utils.bytes_of_string('"Angry Teenager #49"'))
+        scenario.verify_equal(info['what3wordsFile'], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(info['what3wordsId'], sp.utils.bytes_of_string("49"))
+        scenario.verify_equal(info['formats'], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"}]'))
+        scenario.verify_equal(info['symbol'], sp.utils.bytes_of_string('ANGRY'))
+        scenario.verify_equal(info['attributes'], sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
+        scenario.verify_equal(info['decimals'], sp.utils.bytes_of_string('0'))
+        scenario.verify_equal(info['language'], sp.utils.bytes_of_string('en-US'))
+        scenario.verify_equal(info['description'], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
+        scenario.verify_equal(info['rights'], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
+        scenario.verify_equal(info['isTransferable'], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info['isBooleanAmount'], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info['shouldPreferSymbol'], sp.utils.bytes_of_string("false"))
+        scenario.verify_equal(info['creators'], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
+        scenario.verify_equal(info['projectOraclesUri'], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"))
+        scenario.verify_equal(info['projectName'], sp.utils.bytes_of_string('Project-1'))
+
+
+########################################################################################################################
+# unit_fa2_test_token_metadata_offchain
+########################################################################################################################
+def unit_fa2_test_token_metadata_offchain(is_default=True):
+    @sp.add_test(name="unit_fa2_test_token_metadata_offchain", is_default=is_default)
+    def test():
+        scenario = TestHelper.create_scenario("unit_fa2_test_token_metadata_offchain")
         admin, alice, bob, john = TestHelper.create_account(scenario)
         c1 = TestHelper.create_contracts(scenario, admin, john)
 
@@ -1779,6 +1897,7 @@ unit_fa2_test_mutez_transfer()
 unit_fa2_test_set_royalties()
 unit_fa2_test_transfer()
 unit_fa2_test_update_operators()
-unit_fa2_test_token_metadata()
+unit_fa2_test_token_metadata_storage()
+unit_fa2_test_token_metadata_offchain()
 unit_fa2_test_get_project_oracles_stream()
 unit_fa2_test_get_voting_power()

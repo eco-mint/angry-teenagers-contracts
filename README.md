@@ -253,13 +253,13 @@ Contract shall be first compiled.
 
 Example (majority contract with dynamic quorum for main DAO component):
 ```
-tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_Maj_GhostNet_CR001_1 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" 2000) (Pair (Pair 1 (Pair 180 (Pair 80 (Pair 25 (Pair False (Pair 1 5800)))))) {Elt "" 0x697066733a2f2f516d4e74706832446a7256634b394b58724e52735053774d507042705a6a593754693663654e6372626f7234356e})) (Pair (Pair {} None) (Pair None (Pair 0 0))))' --burn-cap 4
+tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_Maj_GhostNet_CR001_2 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" 2000) (Pair (Pair 1 (Pair 180 (Pair 80 (Pair 25 (Pair False (Pair 1 5800)))))) {Elt "" 0x697066733a2f2f516d4e74706832446a7256634b394b58724e52735053774d507042705a6a593754693663654e6372626f7234356e})) (Pair (Pair {} None) (Pair None (Pair 0 0))))' --burn-cap 4
 ```
 Set the poll_leader (the main DAO component) by calling the set_poll_leader entrypoint of the contract with the dynamic quorum.
 
 Example (majority contract with fixed quorum for opt out voting strategy):
 ```
-tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_OtpOutMaj_GhostNet_CR001_1 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" 2000) (Pair (Pair 1 (Pair 180 (Pair 80 (Pair 25 (Pair True (Pair 1 5800)))))) {Elt "" 0x697066733a2f2f516d4e74706832446a7256634b394b58724e52735053774d507042705a6a593754693663654e6372626f7234356e})) (Pair (Pair {} None) (Pair None (Pair 0 0))))' --burn-cap 4
+tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_OtpOutMaj_GhostNet_CR001_2 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" 2000) (Pair (Pair 1 (Pair 180 (Pair 80 (Pair 25 (Pair True (Pair 1 5800)))))) {Elt "" 0x697066733a2f2f516d4e74706832446a7256634b394b58724e52735053774d507042705a6a593754693663654e6372626f7234356e})) (Pair (Pair {} None) (Pair None (Pair 0 0))))' --burn-cap 4
 ```
 Set the poll_leader (the opt out contract) by calling the set_poll_leader entrypoint of the contract with the fixed quorum.
 
@@ -269,7 +269,7 @@ Contract shall be first compiled.
 
 Example:
 ```
-tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_OptOut_GhostNet_CR001_1 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" (Pair 1 (Pair 180 10))) (Pair {Elt "" 0x697066733a2f2f516d586857365847614a6e38426d6e6d3262636a656b36506b6b383465534d5a7431476b4a704a35314856515875} {})) (Pair (Pair None None) (Pair None (Pair 0 0))))' --burn-cap 4
+tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_OptOut_GhostNet_CR001_2 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" (Pair 1 (Pair 180 10))) (Pair {Elt "" 0x697066733a2f2f516d586857365847614a6e38426d6e6d3262636a656b36506b6b383465534d5a7431476b4a704a35314856515875} {})) (Pair (Pair None None) (Pair None (Pair 0 0))))' --burn-cap 4
 ```
 Set the poll_leader (the main DAO component) by calling the set_poll_leader entrypoint of this contract.
 
@@ -280,7 +280,7 @@ component into the contract storage. Then compile.
 
 Example:
 ```
-tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_GhostNet_CR001_1 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" None) (Pair {Elt "" 0x697066733a2f2f516d627a36673748514755467170475645665956693539676d5a6e3845547a6657597162685a4468666b396d6361} 0)) (Pair (Pair None {}) (Pair {Elt 0 (Pair "KT1Vk3GjhwHP732NcVBRT6yNmoAxy2Jyh81G" "MajorityVote"); Elt 1 (Pair "KT1CBeoEjK9gHmifS7W71HoNddoLD9hv1HxE" "OptOutVote")} 0)))' --burn-cap 4
+tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_GhostNet_CR001_2 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" None) (Pair {Elt "" 0x697066733a2f2f516d627a36673748514755467170475645665956693539676d5a6e3845547a6657597162685a4468666b396d6361} 0)) (Pair (Pair None {}) (Pair {Elt 0 (Pair "KT1DBK9hSKnLeG9W6UDfJBC8bDPDXLovJWjY" "MajorityVote"); Elt 1 (Pair "KT1Ccajj5Sw2PeKTSDhnCGpNUp1nsMhe3iHw" "OptOutVote")} 0)))' --burn-cap 4
 ```
 
 Register the FA2 contract by calling the register_angry_teenager_fa2 entrypoint of the main DAO component contract.

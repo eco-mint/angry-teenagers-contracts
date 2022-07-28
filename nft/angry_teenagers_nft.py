@@ -242,6 +242,7 @@ class AngryTeenagers(sp.Contract):
             sp.verify(self.data.token_metadata.contains(sp.fst(artwork_metadata)), Error.ErrorMessage.token_undefined())
             info = sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)])
             sp.verify(info.contains("revealed"), Error.ErrorMessage.token_undefined())
+            sp.verify(info["revealed"] == sp.utils.bytes_of_string("false"), Error.ErrorMessage.token_revealed())
 
             my_map = sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), "revealed", sp.some(sp.utils.bytes_of_string("true")))
             my_map = sp.update_map(my_map, "artifactUri", sp.some((sp.snd(artwork_metadata)).artifactUri))

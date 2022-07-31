@@ -2,6 +2,11 @@ import smartpy as sp
 
 Error = sp.io.import_script_from_url("file:angry_teenagers_errors.py")
 
+########################################################################################################################
+########################################################################################################################
+# Types definition
+########################################################################################################################
+##################################################################################################################
 TOKEN_ID = sp.TNat
 SQUARE_SET_NFT_ID = sp.TNat
 BALANCE_OF_REQUEST_TYPE = sp.TRecord(owner=sp.TAddress, token_id=TOKEN_ID).layout(("owner", "token_id"))
@@ -16,6 +21,40 @@ UPDATE_ARTWORK_METADATA_FUNCTION_TYPE = sp.TList(sp.TPair(TOKEN_ID, ARTWORKS_CON
 
 BALANCE_RECORD_TYPE = sp.TMap(sp.TNat, sp.TNat)
 
+########################################################################################################################
+########################################################################################################################
+# Constants
+########################################################################################################################
+##################################################################################################################
+NAME_METADATA = "name"
+SYMBOL_METADATA = "symbol"
+DECIMALS_METADATA = "decimals"
+LANGUAGE_METADATA = "language"
+DESCRIPTION_METADATA = "description"
+DATE_METADATA = "date"
+ARTIFACTURI_METADATA = "artifactUri"
+DISPLAYURI_METADATA = "displayUri"
+EXTERNALURI_METADATA = "externalUri"
+THUMBNAILURI_METADATA = "thumbnailUri"
+ATTRIBUTES_METADATA = "attributes"
+RIGHTS_METADATA = "rights"
+ISTRANSFERABLE_METADATA = "isTransferable"
+ISBOOLEANAMOUNT_METADATA = "isBooleanAmount"
+SHOULDPREFERSYMBOL_METADATA = "shouldPreferSymbol"
+CREATORS_METADATA = "creators"
+PROJECTNAME_METADATA = "projectName"
+FORMATS_METADATA = "formats"
+WHAT3WORDSFILE_METADATA = "what3wordsFile"
+WHAT3WORDID_METADATA = "what3wordsId"
+REVEALED_METADATA = "revealed"
+ROYALTIES_METADATA = "royalties"
+PROJECTORACLEURI_METADATA = "projectOraclesUri"
+
+########################################################################################################################
+########################################################################################################################
+# Classes
+########################################################################################################################
+##################################################################################################################
 ## The link between operators and the addresses they operate is kept
 ## in a *lazy set* of `(owner × operator × token-id)` values.
 ##
@@ -241,28 +280,46 @@ class AngryTeenagers(sp.Contract):
             sp.verify(self.data.ledger.contains(sp.fst(artwork_metadata)), message=Error.ErrorMessage.token_undefined())
             sp.verify(self.data.token_metadata.contains(sp.fst(artwork_metadata)), Error.ErrorMessage.token_undefined())
             info = sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)])
-            sp.verify(info.contains("revealed"), Error.ErrorMessage.token_undefined())
-            sp.verify(info["revealed"] == sp.utils.bytes_of_string("false"), Error.ErrorMessage.token_revealed())
+            sp.verify(info.contains(REVEALED_METADATA), Error.ErrorMessage.token_undefined())
+            sp.verify(info[REVEALED_METADATA] == sp.utils.bytes_of_string("false"), Error.ErrorMessage.token_revealed())
 
-            my_map = sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), "revealed", sp.some(sp.utils.bytes_of_string("true")))
-            my_map = sp.update_map(my_map, "artifactUri", sp.some((sp.snd(artwork_metadata)).artifactUri))
-            my_map = sp.update_map(my_map, "displayUri", sp.some((sp.snd(artwork_metadata)).displayUri))
-            my_map = sp.update_map(my_map, "externalUri", sp.some((sp.snd(artwork_metadata)).externalUri))
-            my_map = sp.update_map(my_map, "thumbnailUri", sp.some((sp.snd(artwork_metadata)).thumbnailUri))
-            my_map = sp.update_map(my_map, "attributes", sp.some((sp.snd(artwork_metadata)).attributesJSonString))
+            my_map = sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), REVEALED_METADATA, sp.some(sp.utils.bytes_of_string("true")))
+            my_map = sp.update_map(my_map, ARTIFACTURI_METADATA, sp.some((sp.snd(artwork_metadata)).artifactUri))
+            my_map = sp.update_map(my_map, DISPLAYURI_METADATA, sp.some((sp.snd(artwork_metadata)).displayUri))
+            my_map = sp.update_map(my_map, EXTERNALURI_METADATA, sp.some((sp.snd(artwork_metadata)).externalUri))
+            my_map = sp.update_map(my_map, THUMBNAILURI_METADATA, sp.some((sp.snd(artwork_metadata)).thumbnailUri))
+            my_map = sp.update_map(my_map, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributesJSonString))
             formats_bytes_prefix = sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"')
             formats_bytes_suffix = sp.utils.bytes_of_string('"}]')
-            formats = sp.local('formats', formats_bytes_prefix + (sp.snd(artwork_metadata)).artifactUri + formats_bytes_suffix)
-            my_map = sp.update_map(my_map, "formats", sp.some(formats.value))
+            formats = sp.local(FORMATS_METADATA, formats_bytes_prefix + (sp.snd(artwork_metadata)).artifactUri + formats_bytes_suffix)
+            my_map = sp.update_map(my_map, FORMATS_METADATA, sp.some(formats.value))
 
             self.data.token_metadata[sp.fst(artwork_metadata)] = sp.pair(sp.fst(artwork_metadata), my_map)
 
 
     @sp.entry_point
     def set_royalties(self, params):
-        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
+        # Verify type
         sp.set_type(params, sp.TBytes)
+
+        # Asserts
+        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
+
+        # Set the royalties field for NFTs not minted yet
         self.data.royalties = params
+
+        # Change already minted NFTs
+        i = sp.local("i", sp.nat(0))
+        sp.while i.value < self.data.minted_tokens:
+            sp.verify(self.data.ledger.contains(i.value), message=Error.ErrorMessage.token_undefined())
+            sp.verify(self.data.token_metadata.contains(i.value), message=Error.ErrorMessage.token_undefined())
+            info = sp.snd(self.data.token_metadata[i.value])
+            sp.verify(info.contains(ROYALTIES_METADATA), Error.ErrorMessage.token_undefined())
+
+            my_map = sp.update_map(sp.snd(self.data.token_metadata[i.value]), ROYALTIES_METADATA, sp.some(params))
+            self.data.token_metadata[i.value] = sp.pair(i.value, my_map)
+
+            i.value = i.value + 1
 
     @sp.entry_point
     def mint(self, params):
@@ -360,7 +417,7 @@ class AngryTeenagers(sp.Contract):
         i = sp.local("i", sp.nat(0))
         sp.while i.value < self.data.minted_tokens:
             sp.verify(self.data.token_metadata.contains(i.value), message=Error.ErrorMessage.token_undefined())
-            sp.if (sp.snd(self.data.token_metadata[i.value]))["revealed"] == sp.utils.bytes_of_string("false"):
+            sp.if (sp.snd(self.data.token_metadata[i.value]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"):
                 token_list.value.push(i.value)
             i.value = i.value + 1
         sp.result(token_list.value)
@@ -493,29 +550,29 @@ class AngryTeenagers(sp.Contract):
         formats = sp.local('formats', formats_bytes_prefix + self.data.generic_image_ipfs + formats_bytes_suffix)
 
         meta_map = sp.map(l={
-            "name": name,
-            "symbol": sp.utils.bytes_of_string("ANGRY"),
-            "decimals": sp.utils.bytes_of_string("0"),
-            "language": sp.utils.bytes_of_string("en-US"),
-            "description": sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'),
-            "date": sp.pack(sp.now),
-            "artifactUri": self.data.generic_image_ipfs,
-            "displayUri": self.data.generic_image_ipfs,
-            "externalUri": sp.bytes('0x2222'),
-            "thumbnailUri": self.data.generic_image_ipfs_thumbnail,
-            "attributes": sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'),
-            "rights": sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'),
-            "isTransferable": sp.utils.bytes_of_string("true"),
-            "isBooleanAmount": sp.utils.bytes_of_string("true"),
-            "shouldPreferSymbol": sp.utils.bytes_of_string("false"),
-            "creators": sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'),
-            "projectName": sp.utils.bytes_of_string("Project-1"),
-            "formats": formats.value,
-            "what3wordsFile": self.data.what3words_file_ipfs,
-            "what3wordsId": token_id_string.value,
-            "revealed": sp.utils.bytes_of_string("false"),
-            "royalties": self.data.royalties,
-            "projectOraclesUri": self.data.project_oracles_stream
+            NAME_METADATA: name,
+            SYMBOL_METADATA: sp.utils.bytes_of_string("ANGRY"),
+            DECIMALS_METADATA: sp.utils.bytes_of_string("0"),
+            LANGUAGE_METADATA: sp.utils.bytes_of_string("en-US"),
+            DESCRIPTION_METADATA: sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'),
+            DATE_METADATA: sp.pack(sp.now),
+            ARTIFACTURI_METADATA: self.data.generic_image_ipfs,
+            DISPLAYURI_METADATA: self.data.generic_image_ipfs,
+            EXTERNALURI_METADATA: sp.bytes('0x2222'),
+            THUMBNAILURI_METADATA: self.data.generic_image_ipfs_thumbnail,
+            ATTRIBUTES_METADATA: sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'),
+            RIGHTS_METADATA: sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'),
+            ISTRANSFERABLE_METADATA: sp.utils.bytes_of_string("true"),
+            ISBOOLEANAMOUNT_METADATA: sp.utils.bytes_of_string("true"),
+            SHOULDPREFERSYMBOL_METADATA: sp.utils.bytes_of_string("false"),
+            CREATORS_METADATA: sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'),
+            PROJECTNAME_METADATA: sp.utils.bytes_of_string("Project-1"),
+            FORMATS_METADATA: formats.value,
+            WHAT3WORDSFILE_METADATA: self.data.what3words_file_ipfs,
+            WHAT3WORDID_METADATA: token_id_string.value,
+            REVEALED_METADATA: sp.utils.bytes_of_string("false"),
+            ROYALTIES_METADATA: self.data.royalties,
+            PROJECTORACLEURI_METADATA: self.data.project_oracles_stream
         })
 
         self.data.token_metadata[token_id] = sp.pair(token_id, meta_map)
@@ -765,12 +822,12 @@ def unit_fa2_test_mint(is_default = True):
         scenario.verify(c1.data.ledger[5] == john.address)
 
         scenario.p("10. Check minted NFTs are not revealed yet")
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[4]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[5]))["revealed"] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[4]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[5]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"))
         scenario.verify(~c1.data.token_metadata.contains(6))
 
 def unit_fa2_test_mint_max(is_default=True):
@@ -805,14 +862,52 @@ def unit_fa2_test_set_royalties(is_default=True):
         c1.set_artwork_administrator(john.address).run(valid=True, sender=admin)
 
         scenario.p("2. Check only main admin can call set_royalties")
-        new_royalties = sp.utils.bytes_of_string('{"decimals": 4, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf6" + '": 20}}')
-        c1.set_royalties(new_royalties).run(valid=False, sender=bob)
-        c1.set_royalties(new_royalties).run(valid=False, sender=john)
-        c1.set_royalties(new_royalties).run(valid=False, sender=alice)
-        c1.set_royalties(new_royalties).run(valid=True, sender=admin)
+        first_new_royalties = sp.utils.bytes_of_string('{"decimals": 4, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf6" + '": 20}}')
+        c1.set_royalties(first_new_royalties).run(valid=False, sender=bob)
+        c1.set_royalties(first_new_royalties).run(valid=False, sender=john)
+        c1.set_royalties(first_new_royalties).run(valid=False, sender=alice)
+        c1.set_royalties(first_new_royalties).run(valid=True, sender=admin)
 
         scenario.p("3. Verify royalties are changed accordingly in the contract starage after a successful call of set_royalties")
-        scenario.verify_equal(c1.data.royalties, new_royalties)
+        scenario.verify_equal(c1.data.royalties, first_new_royalties)
+
+        scenario.p("4. Mint NFTs")
+        c1.mint(alice.address).run(valid=True, sender=admin)
+        c1.mint(alice.address).run(valid=True, sender=admin)
+        c1.mint(john.address).run(valid=True, sender=admin)
+        c1.mint(bob.address).run(valid=True, sender=admin)
+
+        scenario.p("5. Check royalties field")
+        scenario.verify(c1.data.token_metadata.contains(0))
+        info_0 = sp.snd(c1.data.token_metadata[0])
+        scenario.verify(c1.data.token_metadata.contains(1))
+        info_1 = sp.snd(c1.data.token_metadata[1])
+        scenario.verify(c1.data.token_metadata.contains(2))
+        info_2 = sp.snd(c1.data.token_metadata[2])
+        scenario.verify(c1.data.token_metadata.contains(3))
+        info_3 = sp.snd(c1.data.token_metadata[3])
+        scenario.verify(info_0[ROYALTIES_METADATA] == first_new_royalties)
+        scenario.verify(info_1[ROYALTIES_METADATA] == first_new_royalties)
+        scenario.verify(info_2[ROYALTIES_METADATA] == first_new_royalties)
+        scenario.verify(info_3[ROYALTIES_METADATA] == first_new_royalties)
+
+        scenario.p("6. Change again the royalties")
+        second_new_royalties = sp.utils.bytes_of_string('{"decimals": 4, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf7" + '": 30}}')
+        c1.set_royalties(second_new_royalties).run(valid=True, sender=admin)
+
+        scenario.p("7. Mint another NFTs")
+        c1.mint(alice.address).run(valid=True, sender=admin)
+
+        scenario.p("8. Verify all NFTs contain the right royalties field")
+        scenario.verify(c1.data.token_metadata.contains(4))
+        info_4 = sp.snd(c1.data.token_metadata[4])
+        scenario.verify_equal(c1.data.royalties, second_new_royalties)
+        scenario.verify(info_0[ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_1[ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_2[ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_3[ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_4[ROYALTIES_METADATA] == second_new_royalties)
+
 
 ########################################################################################################################
 # unit_fa2_test_set_administrator
@@ -1033,10 +1128,10 @@ def unit_fa2_test_update_artwork_data(is_default=True):
         TestHelper.mint_4_tokens(scenario, c1, bob, admin, nat, john, ben, gabe)
 
         scenario.p("3. Check that minted NFTs are not revealed yet")
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["revealed"] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"))
 
         scenario.p("4. Check that only the main or artwork admin can reveal token metadata")
         c1.update_artwork_data(list1).run(valid=False, sender=alice)
@@ -1053,94 +1148,94 @@ def unit_fa2_test_update_artwork_data(is_default=True):
         c1.update_artwork_data(list1).run(valid=True, sender=gaston)
         c1.update_artwork_data(list2).run(valid=True, sender=admin)
 
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["revealed"] == sp.utils.bytes_of_string("false"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["revealed"] == sp.utils.bytes_of_string("true"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["revealed"] == sp.utils.bytes_of_string("true"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["revealed"] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[REVEALED_METADATA] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[REVEALED_METADATA] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[REVEALED_METADATA] == sp.utils.bytes_of_string("true"))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB43"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB43"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
 
         scenario.p("8. Reveal NFT 0")
         list4 = sp.list({sp.pair(0, record2)})
         c1.update_artwork_data(list4).run(valid=True, sender=gaston)
 
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["revealed"] == sp.utils.bytes_of_string("true"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["revealed"] == sp.utils.bytes_of_string("true"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["revealed"] == sp.utils.bytes_of_string("true"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["revealed"] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[REVEALED_METADATA] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[REVEALED_METADATA] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[REVEALED_METADATA] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[REVEALED_METADATA] == sp.utils.bytes_of_string("true"))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["thumbnailUri"]  == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[THUMBNAILURI_METADATA]  == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB43"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB43"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
 
         scenario.p("9. Check the function update_artwork_data cannot be called multiple times on the same NFT")
         list3 = sp.list({sp.pair(0, record2), sp.pair(2, record3), sp.pair(1, record2)})
         c1.update_artwork_data(list3).run(valid=False, sender=gaston)
 
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["revealed"] == sp.utils.bytes_of_string("true"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["revealed"] == sp.utils.bytes_of_string("true"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["revealed"] == sp.utils.bytes_of_string("true"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["revealed"] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[REVEALED_METADATA] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[REVEALED_METADATA] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[REVEALED_METADATA] == sp.utils.bytes_of_string("true"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[REVEALED_METADATA] == sp.utils.bytes_of_string("true"))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["thumbnailUri"]  == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[THUMBNAILURI_METADATA]  == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
+        scenario.verify((sp.snd(c1.data.token_metadata[0]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
+        scenario.verify((sp.snd(c1.data.token_metadata[1]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
+        scenario.verify((sp.snd(c1.data.token_metadata[2]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["artifactUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["displayUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["thumbnailUri"] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["externalUri"] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB43"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))["attributes"] == sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB43"))
+        scenario.verify((sp.snd(c1.data.token_metadata[3]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
 
         list5 = sp.list({sp.pair(4, record2)})
         c1.update_artwork_data(list5).run(valid=False, sender=gaston)
@@ -1415,27 +1510,27 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         info = sp.snd(c1.data.token_metadata[0])
         scenario.verify(id == 0)
 
-        scenario.verify_equal(info['artifactUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info['displayUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info['thumbnailUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info['royalties'], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
-        scenario.verify_equal(info['externalUri'], sp.bytes('0x2222'))
-        scenario.verify_equal(info['revealed'], sp.utils.bytes_of_string('false'))
-        scenario.verify_equal(info['what3wordsFile'], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
-        scenario.verify_equal(info['what3wordsId'], sp.utils.bytes_of_string("0"))
-        scenario.verify_equal(info['name'], sp.utils.bytes_of_string('"Angry Teenager #0"'))
-        scenario.verify_equal(info['formats'], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"}]'))
-        scenario.verify_equal(info['symbol'], sp.utils.bytes_of_string('ANGRY'))
-        scenario.verify_equal(info['attributes'], sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'))
-        scenario.verify_equal(info['decimals'], sp.utils.bytes_of_string('0'))
-        scenario.verify_equal(info['language'], sp.utils.bytes_of_string('en-US'))
-        scenario.verify_equal(info['description'], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
-        scenario.verify_equal(info['rights'], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
-        scenario.verify_equal(info['isTransferable'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(info['isBooleanAmount'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(info['shouldPreferSymbol'], sp.utils.bytes_of_string("false"))
-        scenario.verify_equal(info['creators'], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
-        scenario.verify_equal(info['projectName'], sp.utils.bytes_of_string('Project-1'))
+        scenario.verify_equal(info[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(info[EXTERNALURI_METADATA], sp.bytes('0x2222'))
+        scenario.verify_equal(info[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
+        scenario.verify_equal(info[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(info[WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
+        scenario.verify_equal(info[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #0"'))
+        scenario.verify_equal(info[FORMATS_METADATA], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"}]'))
+        scenario.verify_equal(info[SYMBOL_METADATA], sp.utils.bytes_of_string('ANGRY'))
+        scenario.verify_equal(info[ATTRIBUTES_METADATA], sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'))
+        scenario.verify_equal(info[DECIMALS_METADATA], sp.utils.bytes_of_string('0'))
+        scenario.verify_equal(info[LANGUAGE_METADATA], sp.utils.bytes_of_string('en-US'))
+        scenario.verify_equal(info[DESCRIPTION_METADATA], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
+        scenario.verify_equal(info[RIGHTS_METADATA], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
+        scenario.verify_equal(info[ISTRANSFERABLE_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info[ISBOOLEANAMOUNT_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info[SHOULDPREFERSYMBOL_METADATA], sp.utils.bytes_of_string("false"))
+        scenario.verify_equal(info[CREATORS_METADATA], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
+        scenario.verify_equal(info[PROJECTNAME_METADATA], sp.utils.bytes_of_string('Project-1'))
 
         for j in range(0, 50):
             c1.mint(alice.address).run(valid=True, sender=admin)
@@ -1445,27 +1540,27 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         info = sp.snd(c1.data.token_metadata[49])
         scenario.verify(id == 49)
 
-        scenario.verify_equal(info['artifactUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info['displayUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info['thumbnailUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info['externalUri'], sp.bytes('0x2222'))
-        scenario.verify_equal(info['royalties'], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
-        scenario.verify_equal(info['revealed'], sp.utils.bytes_of_string('false'))
-        scenario.verify_equal(info['name'], sp.utils.bytes_of_string('"Angry Teenager #49"'))
-        scenario.verify_equal(info['what3wordsFile'], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
-        scenario.verify_equal(info['what3wordsId'], sp.utils.bytes_of_string("49"))
-        scenario.verify_equal(info['formats'], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"}]'))
-        scenario.verify_equal(info['symbol'], sp.utils.bytes_of_string('ANGRY'))
-        scenario.verify_equal(info['attributes'], sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'))
-        scenario.verify_equal(info['decimals'], sp.utils.bytes_of_string('0'))
-        scenario.verify_equal(info['language'], sp.utils.bytes_of_string('en-US'))
-        scenario.verify_equal(info['description'], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
-        scenario.verify_equal(info['rights'], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
-        scenario.verify_equal(info['isTransferable'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(info['isBooleanAmount'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(info['shouldPreferSymbol'], sp.utils.bytes_of_string("false"))
-        scenario.verify_equal(info['creators'], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
-        scenario.verify_equal(info['projectName'], sp.utils.bytes_of_string('Project-1'))
+        scenario.verify_equal(info[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info[EXTERNALURI_METADATA], sp.bytes('0x2222'))
+        scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(info[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
+        scenario.verify_equal(info[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
+        scenario.verify_equal(info[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(info[WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
+        scenario.verify_equal(info[FORMATS_METADATA], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"}]'))
+        scenario.verify_equal(info[SYMBOL_METADATA], sp.utils.bytes_of_string('ANGRY'))
+        scenario.verify_equal(info[ATTRIBUTES_METADATA], sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'))
+        scenario.verify_equal(info[DECIMALS_METADATA], sp.utils.bytes_of_string('0'))
+        scenario.verify_equal(info[LANGUAGE_METADATA], sp.utils.bytes_of_string('en-US'))
+        scenario.verify_equal(info[DESCRIPTION_METADATA], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
+        scenario.verify_equal(info[RIGHTS_METADATA], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
+        scenario.verify_equal(info[ISTRANSFERABLE_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info[ISBOOLEANAMOUNT_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info[SHOULDPREFERSYMBOL_METADATA], sp.utils.bytes_of_string("false"))
+        scenario.verify_equal(info[CREATORS_METADATA], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
+        scenario.verify_equal(info[PROJECTNAME_METADATA], sp.utils.bytes_of_string('Project-1'))
 
         record1 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
                             displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
@@ -1479,28 +1574,28 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         id = sp.fst(c1.data.token_metadata[49])
         info = sp.snd(c1.data.token_metadata[49])
         scenario.verify(id == 49)
-        scenario.verify_equal(info['artifactUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
-        scenario.verify_equal(info['displayUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
-        scenario.verify_equal(info['thumbnailUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify_equal(info['externalUri'], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
-        scenario.verify_equal(info['royalties'], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
-        scenario.verify_equal(info['revealed'], sp.utils.bytes_of_string('true'))
-        scenario.verify_equal(info['name'], sp.utils.bytes_of_string('"Angry Teenager #49"'))
-        scenario.verify_equal(info['what3wordsFile'], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
-        scenario.verify_equal(info['what3wordsId'], sp.utils.bytes_of_string("49"))
-        scenario.verify_equal(info['formats'], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"}]'))
-        scenario.verify_equal(info['symbol'], sp.utils.bytes_of_string('ANGRY'))
-        scenario.verify_equal(info['attributes'], sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
-        scenario.verify_equal(info['decimals'], sp.utils.bytes_of_string('0'))
-        scenario.verify_equal(info['language'], sp.utils.bytes_of_string('en-US'))
-        scenario.verify_equal(info['description'], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
-        scenario.verify_equal(info['rights'], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
-        scenario.verify_equal(info['isTransferable'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(info['isBooleanAmount'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(info['shouldPreferSymbol'], sp.utils.bytes_of_string("false"))
-        scenario.verify_equal(info['creators'], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
-        scenario.verify_equal(info['projectOraclesUri'], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"))
-        scenario.verify_equal(info['projectName'], sp.utils.bytes_of_string('Project-1'))
+        scenario.verify_equal(info[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
+        scenario.verify_equal(info[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
+        scenario.verify_equal(info[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
+        scenario.verify_equal(info[EXTERNALURI_METADATA], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
+        scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(info[REVEALED_METADATA], sp.utils.bytes_of_string('true'))
+        scenario.verify_equal(info[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
+        scenario.verify_equal(info[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(info[WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
+        scenario.verify_equal(info[FORMATS_METADATA], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"}]'))
+        scenario.verify_equal(info[SYMBOL_METADATA], sp.utils.bytes_of_string('ANGRY'))
+        scenario.verify_equal(info[ATTRIBUTES_METADATA], sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
+        scenario.verify_equal(info[DECIMALS_METADATA], sp.utils.bytes_of_string('0'))
+        scenario.verify_equal(info[LANGUAGE_METADATA], sp.utils.bytes_of_string('en-US'))
+        scenario.verify_equal(info[DESCRIPTION_METADATA], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
+        scenario.verify_equal(info[RIGHTS_METADATA], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
+        scenario.verify_equal(info[ISTRANSFERABLE_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info[ISBOOLEANAMOUNT_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(info[SHOULDPREFERSYMBOL_METADATA], sp.utils.bytes_of_string("false"))
+        scenario.verify_equal(info[CREATORS_METADATA], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
+        scenario.verify_equal(info[PROJECTORACLEURI_METADATA], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"))
+        scenario.verify_equal(info[PROJECTNAME_METADATA], sp.utils.bytes_of_string('Project-1'))
 
 
 ########################################################################################################################
@@ -1531,27 +1626,27 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify(sp.fst(metadata_pair) == 0)
         metadata = sp.snd(metadata_pair)
 
-        scenario.verify_equal(metadata['artifactUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata['displayUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata['thumbnailUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata['royalties'], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
-        scenario.verify_equal(metadata['externalUri'], sp.bytes('0x2222'))
-        scenario.verify_equal(metadata['revealed'], sp.utils.bytes_of_string('false'))
-        scenario.verify_equal(metadata['what3wordsFile'], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
-        scenario.verify_equal(metadata['what3wordsId'], sp.utils.bytes_of_string("0"))
-        scenario.verify_equal(metadata['name'], sp.utils.bytes_of_string('"Angry Teenager #0"'))
-        scenario.verify_equal(metadata['formats'], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"}]'))
-        scenario.verify_equal(metadata['symbol'], sp.utils.bytes_of_string('ANGRY'))
-        scenario.verify_equal(metadata['attributes'], sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'))
-        scenario.verify_equal(metadata['decimals'], sp.utils.bytes_of_string('0'))
-        scenario.verify_equal(metadata['language'], sp.utils.bytes_of_string('en-US'))
-        scenario.verify_equal(metadata['description'], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
-        scenario.verify_equal(metadata['rights'], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
-        scenario.verify_equal(metadata['isTransferable'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(metadata['isBooleanAmount'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(metadata['shouldPreferSymbol'], sp.utils.bytes_of_string("false"))
-        scenario.verify_equal(metadata['creators'], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
-        scenario.verify_equal(metadata['projectName'], sp.utils.bytes_of_string('Project-1'))
+        scenario.verify_equal(metadata[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(metadata[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(metadata[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(metadata[EXTERNALURI_METADATA], sp.bytes('0x2222'))
+        scenario.verify_equal(metadata[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
+        scenario.verify_equal(metadata[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(metadata[WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
+        scenario.verify_equal(metadata[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #0"'))
+        scenario.verify_equal(metadata[FORMATS_METADATA], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"}]'))
+        scenario.verify_equal(metadata[SYMBOL_METADATA], sp.utils.bytes_of_string('ANGRY'))
+        scenario.verify_equal(metadata[ATTRIBUTES_METADATA], sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'))
+        scenario.verify_equal(metadata[DECIMALS_METADATA], sp.utils.bytes_of_string('0'))
+        scenario.verify_equal(metadata[LANGUAGE_METADATA], sp.utils.bytes_of_string('en-US'))
+        scenario.verify_equal(metadata[DESCRIPTION_METADATA], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
+        scenario.verify_equal(metadata[RIGHTS_METADATA], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
+        scenario.verify_equal(metadata[ISTRANSFERABLE_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(metadata[ISBOOLEANAMOUNT_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(metadata[SHOULDPREFERSYMBOL_METADATA], sp.utils.bytes_of_string("false"))
+        scenario.verify_equal(metadata[CREATORS_METADATA], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
+        scenario.verify_equal(metadata[PROJECTNAME_METADATA], sp.utils.bytes_of_string('Project-1'))
 
         for j in range(0, 50):
             c1.mint(alice.address).run(valid=True, sender=admin)
@@ -1559,27 +1654,27 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         metadata_pair = c1.token_metadata(49)
         scenario.verify(sp.fst(metadata_pair) == 49)
         metadata = sp.snd(metadata_pair)
-        scenario.verify_equal(metadata['artifactUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata['displayUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata['thumbnailUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata['externalUri'], sp.bytes('0x2222'))
-        scenario.verify_equal(metadata['royalties'], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
-        scenario.verify_equal(metadata['revealed'], sp.utils.bytes_of_string('false'))
-        scenario.verify_equal(metadata['name'], sp.utils.bytes_of_string('"Angry Teenager #49"'))
-        scenario.verify_equal(metadata['what3wordsFile'], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
-        scenario.verify_equal(metadata['what3wordsId'], sp.utils.bytes_of_string("49"))
-        scenario.verify_equal(metadata['formats'], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"}]'))
-        scenario.verify_equal(metadata['symbol'], sp.utils.bytes_of_string('ANGRY'))
-        scenario.verify_equal(metadata['attributes'], sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'))
-        scenario.verify_equal(metadata['decimals'], sp.utils.bytes_of_string('0'))
-        scenario.verify_equal(metadata['language'], sp.utils.bytes_of_string('en-US'))
-        scenario.verify_equal(metadata['description'], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
-        scenario.verify_equal(metadata['rights'], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
-        scenario.verify_equal(metadata['isTransferable'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(metadata['isBooleanAmount'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(metadata['shouldPreferSymbol'], sp.utils.bytes_of_string("false"))
-        scenario.verify_equal(metadata['creators'], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
-        scenario.verify_equal(metadata['projectName'], sp.utils.bytes_of_string('Project-1'))
+        scenario.verify_equal(metadata[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(metadata[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(metadata[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(metadata[EXTERNALURI_METADATA], sp.bytes('0x2222'))
+        scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(metadata[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
+        scenario.verify_equal(metadata[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
+        scenario.verify_equal(metadata[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(metadata[WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
+        scenario.verify_equal(metadata[FORMATS_METADATA], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"}]'))
+        scenario.verify_equal(metadata[SYMBOL_METADATA], sp.utils.bytes_of_string('ANGRY'))
+        scenario.verify_equal(metadata[ATTRIBUTES_METADATA], sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'))
+        scenario.verify_equal(metadata[DECIMALS_METADATA], sp.utils.bytes_of_string('0'))
+        scenario.verify_equal(metadata[LANGUAGE_METADATA], sp.utils.bytes_of_string('en-US'))
+        scenario.verify_equal(metadata[DESCRIPTION_METADATA], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
+        scenario.verify_equal(metadata[RIGHTS_METADATA], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
+        scenario.verify_equal(metadata[ISTRANSFERABLE_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(metadata[ISBOOLEANAMOUNT_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(metadata[SHOULDPREFERSYMBOL_METADATA], sp.utils.bytes_of_string("false"))
+        scenario.verify_equal(metadata[CREATORS_METADATA], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
+        scenario.verify_equal(metadata[PROJECTNAME_METADATA], sp.utils.bytes_of_string('Project-1'))
 
         record1 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
                             displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
@@ -1592,28 +1687,28 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         metadata_pair = c1.token_metadata(49)
         scenario.verify(sp.fst(metadata_pair) == 49)
         metadata = sp.snd(metadata_pair)
-        scenario.verify_equal(metadata['artifactUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
-        scenario.verify_equal(metadata['displayUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
-        scenario.verify_equal(metadata['thumbnailUri'], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify_equal(metadata['externalUri'], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
-        scenario.verify_equal(metadata['royalties'], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
-        scenario.verify_equal(metadata['revealed'], sp.utils.bytes_of_string('true'))
-        scenario.verify_equal(metadata['name'], sp.utils.bytes_of_string('"Angry Teenager #49"'))
-        scenario.verify_equal(metadata['what3wordsFile'], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
-        scenario.verify_equal(metadata['what3wordsId'], sp.utils.bytes_of_string("49"))
-        scenario.verify_equal(metadata['formats'], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"}]'))
-        scenario.verify_equal(metadata['symbol'], sp.utils.bytes_of_string('ANGRY'))
-        scenario.verify_equal(metadata['attributes'], sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
-        scenario.verify_equal(metadata['decimals'], sp.utils.bytes_of_string('0'))
-        scenario.verify_equal(metadata['language'], sp.utils.bytes_of_string('en-US'))
-        scenario.verify_equal(metadata['description'], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
-        scenario.verify_equal(metadata['rights'], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
-        scenario.verify_equal(metadata['isTransferable'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(metadata['isBooleanAmount'], sp.utils.bytes_of_string("true"))
-        scenario.verify_equal(metadata['shouldPreferSymbol'], sp.utils.bytes_of_string("false"))
-        scenario.verify_equal(metadata['creators'], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
-        scenario.verify_equal(metadata['projectOraclesUri'], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"))
-        scenario.verify_equal(metadata['projectName'], sp.utils.bytes_of_string('Project-1'))
+        scenario.verify_equal(metadata[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
+        scenario.verify_equal(metadata[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
+        scenario.verify_equal(metadata[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
+        scenario.verify_equal(metadata[EXTERNALURI_METADATA], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
+        scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(metadata[REVEALED_METADATA], sp.utils.bytes_of_string('true'))
+        scenario.verify_equal(metadata[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
+        scenario.verify_equal(metadata[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(metadata[WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
+        scenario.verify_equal(metadata[FORMATS_METADATA], sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"}]'))
+        scenario.verify_equal(metadata[SYMBOL_METADATA], sp.utils.bytes_of_string('ANGRY'))
+        scenario.verify_equal(metadata[ATTRIBUTES_METADATA], sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
+        scenario.verify_equal(metadata[DECIMALS_METADATA], sp.utils.bytes_of_string('0'))
+        scenario.verify_equal(metadata[LANGUAGE_METADATA], sp.utils.bytes_of_string('en-US'))
+        scenario.verify_equal(metadata[DESCRIPTION_METADATA], sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'))
+        scenario.verify_equal(metadata[RIGHTS_METADATA], sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'))
+        scenario.verify_equal(metadata[ISTRANSFERABLE_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(metadata[ISBOOLEANAMOUNT_METADATA], sp.utils.bytes_of_string("true"))
+        scenario.verify_equal(metadata[SHOULDPREFERSYMBOL_METADATA], sp.utils.bytes_of_string("false"))
+        scenario.verify_equal(metadata[CREATORS_METADATA], sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'))
+        scenario.verify_equal(metadata[PROJECTORACLEURI_METADATA], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"))
+        scenario.verify_equal(metadata[PROJECTNAME_METADATA], sp.utils.bytes_of_string('Project-1'))
 
 ########################################################################################################################
 # unit_fa2_test_get_project_oracles_stream

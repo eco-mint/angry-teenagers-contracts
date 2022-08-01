@@ -16,7 +16,7 @@ TRANSFER_TX_TYPE = sp.TRecord(to_=sp.TAddress, token_id=TOKEN_ID, amount=sp.TNat
 TRANSFER_TYPE = sp.TRecord(from_=sp.TAddress, txs=sp.TList(TRANSFER_TX_TYPE)).layout(("from_", "txs"))
 TRANSFER_FUNCTION_TYPE = sp.TList(TRANSFER_TYPE)
 OPERATOR_TYPE = sp.TRecord(owner=sp.TAddress, operator=sp.TAddress, token_id=TOKEN_ID).layout(("owner", ("operator", "token_id")))
-ARTWORKS_CONTAINER_FUNCTION_TYPE = sp.TRecord(artifactUri=sp.TBytes, displayUri=sp.TBytes, thumbnailUri=sp.TBytes, externalUri=sp.TBytes, attributesJSonString=sp.TBytes)
+ARTWORKS_CONTAINER_FUNCTION_TYPE = sp.TRecord(artifactUri=sp.TBytes, displayUri=sp.TBytes, thumbnailUri=sp.TBytes, attributesJSonString=sp.TBytes)
 UPDATE_ARTWORK_METADATA_FUNCTION_TYPE = sp.TList(sp.TPair(TOKEN_ID, ARTWORKS_CONTAINER_FUNCTION_TYPE))
 
 BALANCE_RECORD_TYPE = sp.TMap(sp.TNat, sp.TNat)
@@ -34,7 +34,6 @@ DESCRIPTION_METADATA = "description"
 DATE_METADATA = "date"
 ARTIFACTURI_METADATA = "artifactUri"
 DISPLAYURI_METADATA = "displayUri"
-EXTERNALURI_METADATA = "externalUri"
 THUMBNAILURI_METADATA = "thumbnailUri"
 ATTRIBUTES_METADATA = "attributes"
 RIGHTS_METADATA = "rights"
@@ -286,7 +285,6 @@ class AngryTeenagers(sp.Contract):
             my_map = sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), REVEALED_METADATA, sp.some(sp.utils.bytes_of_string("true")))
             my_map = sp.update_map(my_map, ARTIFACTURI_METADATA, sp.some((sp.snd(artwork_metadata)).artifactUri))
             my_map = sp.update_map(my_map, DISPLAYURI_METADATA, sp.some((sp.snd(artwork_metadata)).displayUri))
-            my_map = sp.update_map(my_map, EXTERNALURI_METADATA, sp.some((sp.snd(artwork_metadata)).externalUri))
             my_map = sp.update_map(my_map, THUMBNAILURI_METADATA, sp.some((sp.snd(artwork_metadata)).thumbnailUri))
             my_map = sp.update_map(my_map, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributesJSonString))
             formats_bytes_prefix = sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"')
@@ -558,7 +556,6 @@ class AngryTeenagers(sp.Contract):
             DATE_METADATA: sp.pack(sp.now),
             ARTIFACTURI_METADATA: self.data.generic_image_ipfs,
             DISPLAYURI_METADATA: self.data.generic_image_ipfs,
-            EXTERNALURI_METADATA: sp.bytes('0x2222'),
             THUMBNAILURI_METADATA: self.data.generic_image_ipfs_thumbnail,
             ATTRIBUTES_METADATA: sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'),
             RIGHTS_METADATA: sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'),
@@ -1106,17 +1103,14 @@ def unit_fa2_test_update_artwork_data(is_default=True):
         record1 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
                             displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
                             thumbnailUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"),
-                            externalUri=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"),
                             attributesJSonString=sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
         record2 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"),
                             displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"),
                             thumbnailUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"),
-                            externalUri=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"),
                             attributesJSonString=sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
         record3 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"),
                             displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"),
                             thumbnailUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"),
-                            externalUri=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB43"),
                             attributesJSonString=sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
         list1 = sp.list({sp.pair(1, record1), sp.pair(2, record2)})
         list2 = sp.list({sp.pair(3, record3)})
@@ -1156,19 +1150,16 @@ def unit_fa2_test_update_artwork_data(is_default=True):
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
 
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB43"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
 
         scenario.p("8. Reveal NFT 0")
@@ -1183,25 +1174,21 @@ def unit_fa2_test_update_artwork_data(is_default=True):
         scenario.verify((sp.snd(c1.data.token_metadata[0]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
         scenario.verify((sp.snd(c1.data.token_metadata[0]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
         scenario.verify((sp.snd(c1.data.token_metadata[0]))[THUMBNAILURI_METADATA]  == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
         scenario.verify((sp.snd(c1.data.token_metadata[0]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
 
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB43"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
 
         scenario.p("9. Check the function update_artwork_data cannot be called multiple times on the same NFT")
@@ -1216,25 +1203,21 @@ def unit_fa2_test_update_artwork_data(is_default=True):
         scenario.verify((sp.snd(c1.data.token_metadata[0]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
         scenario.verify((sp.snd(c1.data.token_metadata[0]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
         scenario.verify((sp.snd(c1.data.token_metadata[0]))[THUMBNAILURI_METADATA]  == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
-        scenario.verify((sp.snd(c1.data.token_metadata[0]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
         scenario.verify((sp.snd(c1.data.token_metadata[0]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify((sp.snd(c1.data.token_metadata[1]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
         scenario.verify((sp.snd(c1.data.token_metadata[1]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
 
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"))
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"))
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"))
-        scenario.verify((sp.snd(c1.data.token_metadata[2]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB42"))
         scenario.verify((sp.snd(c1.data.token_metadata[2]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
 
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[ARTIFACTURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[DISPLAYURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[THUMBNAILURI_METADATA] == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"))
-        scenario.verify((sp.snd(c1.data.token_metadata[3]))[EXTERNALURI_METADATA] == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB43"))
         scenario.verify((sp.snd(c1.data.token_metadata[3]))[ATTRIBUTES_METADATA] == sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
 
         list5 = sp.list({sp.pair(4, record2)})
@@ -1514,7 +1497,6 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(info[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
-        scenario.verify_equal(info[EXTERNALURI_METADATA], sp.bytes('0x2222'))
         scenario.verify_equal(info[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(info[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(info[WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
@@ -1543,7 +1525,6 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(info[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(info[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info[EXTERNALURI_METADATA], sp.bytes('0x2222'))
         scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(info[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(info[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
@@ -1565,7 +1546,6 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         record1 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
                             displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
                             thumbnailUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"),
-                            externalUri=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"),
                             attributesJSonString=sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
         list1 = sp.list({sp.pair(49, record1)})
         c1.update_artwork_data(list1).run(valid=True, sender=admin)
@@ -1577,7 +1557,6 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
         scenario.verify_equal(info[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
         scenario.verify_equal(info[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify_equal(info[EXTERNALURI_METADATA], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
         scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(info[REVEALED_METADATA], sp.utils.bytes_of_string('true'))
         scenario.verify_equal(info[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
@@ -1630,7 +1609,6 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(metadata[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
-        scenario.verify_equal(metadata[EXTERNALURI_METADATA], sp.bytes('0x2222'))
         scenario.verify_equal(metadata[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(metadata[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(metadata[WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
@@ -1657,7 +1635,6 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(metadata[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(metadata[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata[EXTERNALURI_METADATA], sp.bytes('0x2222'))
         scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(metadata[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(metadata[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
@@ -1679,7 +1656,6 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         record1 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
                             displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
                             thumbnailUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"),
-                            externalUri=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"),
                             attributesJSonString=sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
         list1 = sp.list({sp.pair(49, record1)})
         c1.update_artwork_data(list1).run(valid=True, sender=admin)
@@ -1690,7 +1666,6 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
         scenario.verify_equal(metadata[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
         scenario.verify_equal(metadata[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify_equal(metadata[EXTERNALURI_METADATA], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB41"))
         scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(metadata[REVEALED_METADATA], sp.utils.bytes_of_string('true'))
         scenario.verify_equal(metadata[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))

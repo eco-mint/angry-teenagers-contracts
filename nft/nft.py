@@ -131,9 +131,9 @@ class AngryTeenagers(sp.Contract):
         ]
 
         metadata_base = {
-             "version": "1.0"
+             "version": "1.0.0"
              , "description": (
-                     "Angry Teenagers... on the Tezos blockchain."
+                     "Angry Teenagers: NFTs that fund an exponential cycle of reforestation."
         )
              , "interfaces": ["TZIP-012", "TZIP-016", "TZIP-021"]
              , "authors": [

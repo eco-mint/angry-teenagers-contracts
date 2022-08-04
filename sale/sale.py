@@ -85,9 +85,9 @@ class AngryTeenagersSale(sp.Contract):
         ]
 
         metadata_base = {
-            "version": "1.0"
+            "version": "1.0.0"
             , "description": (
-                "Angry Teenagers Crowdsale"
+                "Angry Teenagers Crowdsale contract"
             )
             , "interfaces": ["TZIP-016", "TZIP-021"]
             , "authors": [

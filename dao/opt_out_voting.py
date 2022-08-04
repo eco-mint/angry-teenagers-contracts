@@ -151,9 +151,9 @@ class DaoOptOutVoting(sp.Contract):
       ]
 
       metadata_base = {
-          "version": "1.0"
+          "version": "1.0.0"
           , "description": (
-              "Angry Teenagers DAO (opt out vote 1)."
+              "Angry Teenagers Opt out strategy."
           )
           , "interfaces": ["TZIP-016"]
           , "authors": [

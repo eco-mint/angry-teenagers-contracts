@@ -143,9 +143,9 @@ class DaoMajorityVoting(sp.Contract):
       ]
 
       metadata_base = {
-          "version": "1.0"
+          "version": "1.0.0"
           , "description": (
-              "Angry Teenagers DAO (majority vote 1)."
+              "Angry Teenagers Majority voting strategy."
           )
           , "interfaces": ["TZIP-016"]
           , "authors": [

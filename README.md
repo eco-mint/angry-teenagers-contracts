@@ -4,9 +4,9 @@ This folder contains all the contracts code for the Angry Teenagers NFTs (https:
 Code is developed, compiled and unit tested for the Tezos blockchain using SmartPy v0.11.1 (https://smartpy.io/)
 
 The Angry Teenagers project contains:
-- A FA2 contract to hold the NFT collection (./nft/angry_teenagers_nft.py see https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md)
-- A sale contract to sell the NFTs (./sale/angry_teenagers_sale.py)
-- A DAO with a main component (./dao/angry_teenagers_dao.py) and two voting strategies (./dao/angry_teenagers_majority.py and ./dao/angry_teenagers_opt_out.py)
+- A FA2 contract to hold the NFT collection (./nft/nft.py see https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md)
+- A sale contract to sell the NFTs (./sale/sale.py)
+- A DAO with a main component (./dao/dao.py) and two voting strategies (./dao/majority.py and ./dao/opt_out.py)
 
 Each of these files are unit/functional tested using SmartPY. 
 Tests are located in the test folder.
@@ -22,11 +22,11 @@ To build the metadata, ech contract shall be compiled:
 
 In the root folder of the repository:
 ```
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/angry_teenagers_nft.py ../nft_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/angry_teenagers_sale.py ../sale_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/angry_teenagers_dao.py ../dao_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/angry_teenagers_majority.py ../majority_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/angry_teenagers_opt_out.py ../opt_out_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/nft.py ../nft_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/sale.py ../sale_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/dao.py ../dao_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/majority.py ../majority_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/opt_out.py ../opt_out_compilation
 ```
 Contract metadata are then located in the compilation folder.
 For instance for the NFT contract: ../nft_compilation/step_000_cont_0_metadata.metadata_base.json
@@ -47,11 +47,11 @@ Current version of the contracts metadata are stored in the metadata folder.
 
 In the root folder of the repository:
 ```
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/angry_teenagers_nft_main.py ../nft_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/angry_teenagers_sale_main.py ../sale_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/angry_teenagers_dao_main.py ../dao_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/angry_teenagers_majority_main.py ../majority_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/angry_teenagers_opt_out_main.py ../opt_out_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/nft_main.py ../nft_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/sale_main.py ../sale_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/dao_main.py ../dao_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/majority_main.py ../majority_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/opt_out_main.py ../opt_out_compilation
 ```
 Compilation produces two main files per contract (each of them with 3 different format depending on how you deployed:
 json format, tez format or py format):
@@ -64,11 +64,11 @@ Both these files are needed to deploy the contract on the blockchain network.
 Each contracts contains its own testing.
 To run the test please do:
 ```
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/angry_teenagers_nft_test.py ../nft_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/angry_teenagers_sale_test.py ../sale_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/angry_teenagers_dao_test.py ../dao_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/angry_teenagers_majority_test.py ../majority_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/angry_teenagers_opt_out_test.py ../opt_out_test
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/nft_test.py ../nft_test
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/sale_test.py ../sale_test
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/dao_test.py ../dao_test
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/majority_test.py ../majority_test
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/opt_out_test.py ../opt_out_test
 ```
 Optionally, you can use the "--purge" option to clean the folder before running the tests and/or the 
 "--htlm" to generate htlm logs.
@@ -79,7 +79,7 @@ storage
 
 ### NFT
 
-See ./config/angry_teenagers_nft_config.py
+See ./config/nft_config.py
 
 Fields that can updated after deployment are:
 - ROYALTIES_BYTES
@@ -96,7 +96,7 @@ be changed anymore:
 
 ### Sale
 
-See ./config/angry_teenagers_sale_config.py 
+See ./config/sale_config.py 
 
 Fields that can updated after deployment are:
 - TRANSFER_ADDRESSES
@@ -108,7 +108,7 @@ be changed anymore:
 
 ### DAO
 
-See ./config/angry_teenagers_dao_config.py
+See ./config/dao_config.py
 
 Fields that can updated after deployment are:
 - CONTRACT_METADATA_IPFS_LINK
@@ -121,7 +121,7 @@ be changed anymore:
 ### Majority voting
 Two configs are defined. One for the main DAO component (dynamic quorum) and one for the opt out contract (fixed quorum):
 
-See ./config/angry_teenagers_majority_voting_config.py
+See ./config/majority_voting_config.py
 
 Fields that can updated after deployment are:
 - CONTRACT_METADATA_IPFS_LINK
@@ -133,7 +133,7 @@ be changed anymore:
 
 ### Opt out voting
 
-See ./config/angry_teenagers_opt_out_voting_config.py 
+See ./config/opt_out_voting_config.py 
 
 Fields that can updated after deployment are:
 - CONTRACT_METADATA_IPFS_LINK
@@ -160,7 +160,7 @@ Where:
 - **MAX_XTZ_TO_SPEND** is the max amount of XTZ to spend during this deployment
 
 
-### Deploy the FA2 contract (./nft/angry_teenagers_nft.py)
+### Deploy the FA2 contract (./nft/nft.py)
 
 Contract shall be first compiled.
 
@@ -170,7 +170,7 @@ tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT
 ```
 The FA2 contract administrator needs to be set accordingly by calling the entrypoint set_artwork_administrator and set_sale_contract_administrator.
 
-### Deploy the sale contract (./sale/angry_teenagers_sale.py)
+### Deploy the sale contract (./sale/sale.py)
 
 Contract shall be first compiled.
 
@@ -185,7 +185,7 @@ If needed, link the FA2 contract to the sale contract by calling the entrypoint 
 
 Voting strategies shall be deployed first as there address need to be copied inside the initial storage of the main DAO contract.
 
-#### Deploy the majority vote (./dao/angry_teenagers_majority_voting.py)
+#### Deploy the majority vote (./dao/majority_voting.py)
 
 Two contracts shall be deployed. One for the main DAO component and one for the opt out strategy.
 
@@ -203,7 +203,7 @@ tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT
 ```
 Set the poll_leader (the opt out contract) by calling the set_poll_leader entrypoint of the contract with the fixed quorum.
 
-#### Deploy the opt out vote (./dao/angry_teenagers_opt_out_voting.py)
+#### Deploy the opt out vote (./dao/opt_out_voting.py)
 
 Contract shall be first compiled.
 
@@ -213,7 +213,7 @@ tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT
 ```
 Set the poll_leader (the main DAO component) by calling the set_poll_leader entrypoint of this contract.
 
-#### Deploy the main DAO contract (./dao/angry_teenagers_dao.py)
+#### Deploy the main DAO contract (./dao/dao.py)
 
 Copy the two deployed contract addresses of the majority voting strategy and opt out voting strategy for the main DAO
 component into the contract storage. Then compile.

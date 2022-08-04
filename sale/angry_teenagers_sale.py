@@ -613,17 +613,6 @@ class AngryTeenagersSale(sp.Contract):
             (quotient, remainder) = sp.match_pair(sp.ediv(sp.mul(amount, percent), 100).open_some())
             sp.send(address, quotient)
 
-
-########################################################################################################################
-########################################################################################################################
-# Compilation target
-########################################################################################################################
-##################################################################################################################
-sp.add_compilation_target("AngryTeenagers Crowdsale contract",
-                          AngryTeenagersSale(admin=sp.address("tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"),
-                                         transfer_addresses=sp.list([sp.pair(sp.address("tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"), sp.nat(85)),
-                                                                   sp.pair(sp.address("tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"), sp.nat(15))]),
-                                         metadata=sp.utils.metadata_of_url("ipfs://QmV43FNJEJMGEzpAoMxmbpSbQBv3WKt4u4T6nd85it9R7j")))
 ########################################################################################################################
 ########################################################################################################################
 # Testing

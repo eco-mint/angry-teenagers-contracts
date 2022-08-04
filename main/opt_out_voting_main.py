@@ -1,7 +1,7 @@
 import smartpy as sp
 
-DAO = sp.io.import_script_from_url("file:./dao/angry_teenagers_opt_out_voting.py")
-Config = sp.io.import_script_from_url("file:./config/angry_teenagers_opt_out_voting_config.py")
+DAO = sp.io.import_script_from_url("file:./dao/opt_out_voting.py")
+Config = sp.io.import_script_from_url("file:./config/opt_out_voting_config.py")
 
 ########################################################################################################################
 ########################################################################################################################

@@ -1,7 +1,7 @@
 import smartpy as sp
 
-DAO = sp.io.import_script_from_url("file:./dao/angry_teenagers_dao.py")
-Config = sp.io.import_script_from_url("file:./config/angry_teenagers_dao_config.py")
+DAO = sp.io.import_script_from_url("file:./dao/dao.py")
+Config = sp.io.import_script_from_url("file:./config/dao_config.py")
 
 ########################################################################################################################
 ########################################################################################################################

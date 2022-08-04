@@ -1,10 +1,10 @@
 import smartpy as sp
 
-Error = sp.io.import_script_from_url("file:angry_teenagers_errors.py")
-Proposal = sp.io.import_script_from_url("file:dao/helper/angry_teenagers_dao_proposal.py")
-VoteValue = sp.io.import_script_from_url("file:dao/helper/angry_teenagers_dao_vote_value.py")
-PollOutcome = sp.io.import_script_from_url("file:dao/helper/angry_teenagers_dao_poll_outcome.py")
-PollType = sp.io.import_script_from_url("file:dao/helper/angry_teenagers_dao_poll_type.py")
+Error = sp.io.import_script_from_url("file:./helper/errors.py")
+Proposal = sp.io.import_script_from_url("file:dao/helper/dao_proposal.py")
+VoteValue = sp.io.import_script_from_url("file:dao/helper/dao_vote_value.py")
+PollOutcome = sp.io.import_script_from_url("file:dao/helper/dao_poll_outcome.py")
+PollType = sp.io.import_script_from_url("file:dao/helper/dao_poll_type.py")
 
 ################################################################
 ################################################################

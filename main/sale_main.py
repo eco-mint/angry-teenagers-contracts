@@ -1,7 +1,7 @@
 import smartpy as sp
 
-Sale = sp.io.import_script_from_url("file:./sale/angry_teenagers_sale.py")
-Config = sp.io.import_script_from_url("file:./config/angry_teenagers_sale_config.py")
+Sale = sp.io.import_script_from_url("file:./sale/sale.py")
+Config = sp.io.import_script_from_url("file:./config/sale_config.py")
 
 
 ########################################################################################################################

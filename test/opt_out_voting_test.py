@@ -1,6 +1,6 @@
 import smartpy as sp
 
-DAO = sp.io.import_script_from_url("file:./dao/angry_teenagers_opt_out_voting.py")
+DAO = sp.io.import_script_from_url("file:./dao/opt_out_voting.py")
 
 
 ########################################################################################################################

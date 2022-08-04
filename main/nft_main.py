@@ -1,7 +1,7 @@
 import smartpy as sp
 
-NFT = sp.io.import_script_from_url("file:./nft/angry_teenagers_nft.py")
-Config = sp.io.import_script_from_url("file:./config/angry_teenagers_nft_config.py")
+NFT = sp.io.import_script_from_url("file:./nft/nft.py")
+Config = sp.io.import_script_from_url("file:./config/nft_config.py")
 
 ########################################################################################################################
 ########################################################################################################################

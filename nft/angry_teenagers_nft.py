@@ -552,7 +552,7 @@ class AngryTeenagers(sp.Contract):
             SYMBOL_METADATA: sp.utils.bytes_of_string("ANGRY"),
             DECIMALS_METADATA: sp.utils.bytes_of_string("0"),
             LANGUAGE_METADATA: sp.utils.bytes_of_string("en-US"),
-            DESCRIPTION_METADATA: sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'),
+            DESCRIPTION_METADATA: sp.utils.bytes_of_string('"Angry Teenagers: NFTs that fund an exponential cycle of reforestation."'),
             DATE_METADATA: sp.pack(sp.now),
             ARTIFACTURI_METADATA: self.data.generic_image_ipfs,
             DISPLAYURI_METADATA: self.data.generic_image_ipfs,
@@ -562,8 +562,8 @@ class AngryTeenagers(sp.Contract):
             ISTRANSFERABLE_METADATA: sp.utils.bytes_of_string("true"),
             ISBOOLEANAMOUNT_METADATA: sp.utils.bytes_of_string("true"),
             SHOULDPREFERSYMBOL_METADATA: sp.utils.bytes_of_string("false"),
-            CREATORS_METADATA: sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'),
-            PROJECTNAME_METADATA: sp.utils.bytes_of_string("Project-1"),
+            CREATORS_METADATA: sp.utils.bytes_of_string('["The Angry Teenagers. https://www.angryteenagers.xyz"]'),
+            PROJECTNAME_METADATA: sp.utils.bytes_of_string("Nsomyam Ye Reforestation"),
             FORMATS_METADATA: formats.value,
             WHAT3WORDSFILE_METADATA: self.data.what3words_file_ipfs,
             WHAT3WORDID_METADATA: token_id_string.value,
@@ -582,7 +582,7 @@ class AngryTeenagers(sp.Contract):
 sp.add_compilation_target("AngryTeenagers",
                           AngryTeenagers(
                               administrator=sp.address("tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"),
-                              royalties_bytes=sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q": 10}}'),
+                              royalties_bytes=sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q": 10}}'),
                               metadata=sp.utils.metadata_of_url("ipfs://QmVnSn1QwdqGYADfX1CFkys4oxxz7PP3njBQ8Xr945rgsf"),
                               # TODO: This is not a valid generic image
                               generic_image_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
@@ -611,7 +611,7 @@ class TestHelper():
 
     def create_contracts(scenario, admin, john):
         c1  = AngryTeenagers(administrator=admin.address,
-                           royalties_bytes=sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'),
+                           royalties_bytes=sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'),
                            metadata=sp.utils.metadata_of_url("https://example.com"),
                            generic_image_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
                            generic_image_ipfs_thumbnail=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
@@ -714,7 +714,7 @@ def unit_fa2_test_initial_storage(is_default = True):
 
         scenario.verify(c1.data.project_oracles_stream == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"))
 
-        scenario.verify(c1.data.royalties == sp.utils.bytes_of_string('{"decimals": 2, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5" + '": 10}}'))
+        scenario.verify(c1.data.royalties == sp.utils.bytes_of_string('{"decimals": 3, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5" + '": 10}}'))
 
         scenario.verify(~c1.data.token_metadata.contains(0))
 
@@ -859,7 +859,7 @@ def unit_fa2_test_set_royalties(is_default=True):
         c1.set_artwork_administrator(john.address).run(valid=True, sender=admin)
 
         scenario.p("2. Check only main admin can call set_royalties")
-        first_new_royalties = sp.utils.bytes_of_string('{"decimals": 4, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf6" + '": 20}}')
+        first_new_royalties = sp.utils.bytes_of_string('{"decimals": 3, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf6" + '": 20}}')
         c1.set_royalties(first_new_royalties).run(valid=False, sender=bob)
         c1.set_royalties(first_new_royalties).run(valid=False, sender=john)
         c1.set_royalties(first_new_royalties).run(valid=False, sender=alice)
@@ -889,7 +889,7 @@ def unit_fa2_test_set_royalties(is_default=True):
         scenario.verify(info_3[ROYALTIES_METADATA] == first_new_royalties)
 
         scenario.p("6. Change again the royalties")
-        second_new_royalties = sp.utils.bytes_of_string('{"decimals": 4, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf7" + '": 30}}')
+        second_new_royalties = sp.utils.bytes_of_string('{"decimals": 3, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf7" + '": 30}}')
         c1.set_royalties(second_new_royalties).run(valid=True, sender=admin)
 
         scenario.p("7. Mint another NFTs")
@@ -1496,7 +1496,7 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(info[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(info[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(info[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(info[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(info[WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
@@ -1525,7 +1525,7 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(info[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(info[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(info[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(info[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
         scenario.verify_equal(info[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
@@ -1557,7 +1557,7 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
         scenario.verify_equal(info[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
         scenario.verify_equal(info[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(info[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(info[REVEALED_METADATA], sp.utils.bytes_of_string('true'))
         scenario.verify_equal(info[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
         scenario.verify_equal(info[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
@@ -1608,7 +1608,7 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(metadata[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(metadata[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(metadata[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(metadata[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(metadata[WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
@@ -1635,7 +1635,7 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(metadata[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
         scenario.verify_equal(metadata[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(metadata[REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(metadata[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
         scenario.verify_equal(metadata[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
@@ -1666,7 +1666,7 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"))
         scenario.verify_equal(metadata[DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"))
         scenario.verify_equal(metadata[THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
-        scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
+        scenario.verify_equal(metadata[ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(metadata[REVEALED_METADATA], sp.utils.bytes_of_string('true'))
         scenario.verify_equal(metadata[NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
         scenario.verify_equal(metadata[WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))

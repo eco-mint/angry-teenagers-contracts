@@ -408,41 +408,6 @@ class DaoMajorityVoting(sp.Contract):
 
 ########################################################################################################################
 ########################################################################################################################
-# Compilation target
-########################################################################################################################
-########################################################################################################################
-sp.add_compilation_target("AngryTeenagersMajorityVoting",
-                          # TODO: Real address shall be used
-                          DaoMajorityVoting(
-                              admin=sp.address("tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"),
-                              current_dynamic_quorum_value=sp.nat(2000),
-                              governance_parameters= sp.record(vote_delay_blocks = sp.nat(1),
-                                                               vote_length_blocks = sp.nat(180),
-                                                               percentage_for_supermajority = sp.nat(80),
-                                                               fixed_quorum_percentage = sp.nat(25),
-                                                               fixed_quorum = sp.bool(False),
-                                                               quorum_cap = sp.record(lower=sp.nat(1), upper=sp.nat(5800))),
-                              # TODO: Inject the right metadata
-                              metadata = sp.utils.metadata_of_url("ipfs://QmNtph2DjrVcK9KXrNRsPSwMPpBpZjY7Ti6ceNcrbor45n")
-                          ))
-
-sp.add_compilation_target("AngryTeenagersOptOutMajorityVoting",
-                          # TODO: Real address shall be used
-                          DaoMajorityVoting(
-                              admin=sp.address("tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"),
-                              current_dynamic_quorum_value=sp.nat(2000),
-                              governance_parameters= sp.record(vote_delay_blocks = sp.nat(1),
-                                                               vote_length_blocks = sp.nat(180),
-                                                               percentage_for_supermajority = sp.nat(80),
-                                                               fixed_quorum_percentage = sp.nat(25),
-                                                               fixed_quorum = sp.bool(True),
-                                                               quorum_cap = sp.record(lower=sp.nat(1), upper=sp.nat(5800))),
-                              # TODO: Inject the right metadata
-                              metadata = sp.utils.metadata_of_url("ipfs://QmNtph2DjrVcK9KXrNRsPSwMPpBpZjY7Ti6ceNcrbor45n")
-                          ))
-
-########################################################################################################################
-########################################################################################################################
 # Testing
 ########################################################################################################################
 ##################################################################################################################

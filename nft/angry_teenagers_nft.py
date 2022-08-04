@@ -576,24 +576,6 @@ class AngryTeenagers(sp.Contract):
 
 ########################################################################################################################
 ########################################################################################################################
-# Compilation target
-########################################################################################################################
-########################################################################################################################
-sp.add_compilation_target("AngryTeenagers",
-                          AngryTeenagers(
-                              administrator=sp.address("tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"),
-                              royalties_bytes=sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q": 10}}'),
-                              metadata=sp.utils.metadata_of_url("ipfs://QmVnSn1QwdqGYADfX1CFkys4oxxz7PP3njBQ8Xr945rgsf"),
-                              # TODO: This is not a valid generic image
-                              generic_image_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
-                              generic_image_ipfs_thumbnail=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
-                              # TODO: A valid project oracles is needed as it cannot be changed later on
-                              project_oracles_stream=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"),
-                              what3words_file_ipfs=sp.utils.bytes_of_string("ipfs://QmUZ1Vyrxf7LLcdrTbY5f135cM2dBNkuDZngn9qK2xeNr7"),
-                              total_supply=5236))
-
-########################################################################################################################
-########################################################################################################################
 # Testing
 ########################################################################################################################
 ##################################################################################################################

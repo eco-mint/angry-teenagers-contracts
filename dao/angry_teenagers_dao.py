@@ -381,21 +381,6 @@ class AngryTeenagersDao(sp.Contract):
 
 ########################################################################################################################
 ########################################################################################################################
-# Compilation target
-########################################################################################################################
-########################################################################################################################
-sp.add_compilation_target("AngryTeenagers DAO",
-                          # TODO: Real addresses shall be used
-                            AngryTeenagersDao(
-                                admin=sp.address("tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"),
-                                # TODO: Inject the right metadata
-                                # TODO: The opt out contract is not added. the majority one is not valid
-                                metadata=sp.utils.metadata_of_url("ipfs://Qmbz6g7HQGUFqpGVEfYVi59gmZn8ETzfWYqbhZDhfk9mca"),
-                                poll_manager=sp.map(l = { VOTE_TYPE_MAJORITY : sp.record(name=sp.string("MajorityVote"), address=sp.address("KT1Vk3GjhwHP732NcVBRT6yNmoAxy2Jyh81G")),
-                                                          VOTE_TYPE_OPT_OUT: sp.record(name=sp.string("OptOutVote"), address=sp.address("KT1CBeoEjK9gHmifS7W71HoNddoLD9hv1HxE"))}, tkey=sp.TNat, tvalue=sp.TRecord(name=sp.TString, address=sp.TAddress))))
-
-########################################################################################################################
-########################################################################################################################
 # Testing
 ########################################################################################################################
 ##################################################################################################################

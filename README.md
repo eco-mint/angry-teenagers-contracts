@@ -4,11 +4,12 @@ This folder contains all the contracts code for the Angry Teenagers NFTs (https:
 Code is developed, compiled and unit tested for the Tezos blockchain using SmartPy v0.11.1 (https://smartpy.io/)
 
 The Angry Teenagers project contains:
-- A FA2 contract to hold the NFT collection (./nft/angry_teenagers_nft.py see https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md)
-- A sale contract to sell the NFTs (./sale/angry_teenagers_sale.py)
-- A DAO with a main component (./dao/angry_teenagers_dao.py) and two voting strategies (./dao/angry_teenagers_majority.py and ./dao/angry_teenagers_opt_out.py)
+- A FA2 contract to hold the NFT collection (./nft/nft.py see https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md)
+- A sale contract to sell the NFTs (./sale/sale.py)
+- A DAO with a main component (./dao/dao.py) and two voting strategies (./dao/majority.py and ./dao/opt_out.py)
 
-Each of these files are unit/functional tested using SmartPY. Tests are always located at the end of the contract definition.
+Each of these files are unit/functional tested using SmartPY. 
+Tests are located in the test folder.
 
 ## HOWTO Generate the contract metadata
 
@@ -21,11 +22,11 @@ To build the metadata, ech contract shall be compiled:
 
 In the root folder of the repository:
 ```
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/angry_teenagers_nft.py ../nft_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/angry_teenagers_sale.py ../sale_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/angry_teenagers_dao.py ../dao_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/angry_teenagers_majority.py ../majority_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/angry_teenagers_opt_out.py ../opt_out_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/nft.py ../nft_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/sale.py ../sale_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/dao.py ../dao_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/majority.py ../majority_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/opt_out.py ../opt_out_compilation
 ```
 Contract metadata are then located in the compilation folder.
 For instance for the NFT contract: ../nft_compilation/step_000_cont_0_metadata.metadata_base.json
@@ -40,15 +41,17 @@ The bytes array shall be then included in the contract:
 
 Note that metadata can be changed without changing the contract. This could be useful to improve the frontend.
 
+Current version of the contracts metadata are stored in the metadata folder.
+
 ## HOWTO compile
 
 In the root folder of the repository:
 ```
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/angry_teenagers_nft.py ../nft_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/angry_teenagers_sale.py ../sale_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/angry_teenagers_dao.py ../dao_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/angry_teenagers_majority.py ../majority_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/angry_teenagers_opt_out.py ../opt_out_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/nft_main.py ../nft_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/sale_main.py ../sale_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/dao_main.py ../dao_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/majority_main.py ../majority_compilation
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/opt_out_main.py ../opt_out_compilation
 ```
 Compilation produces two main files per contract (each of them with 3 different format depending on how you deployed:
 json format, tez format or py format):
@@ -61,11 +64,11 @@ Both these files are needed to deploy the contract on the blockchain network.
 Each contracts contains its own testing.
 To run the test please do:
 ```
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./nft/angry_teenagers_nft.py ../nft_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./nft/angry_teenagers_sale.py ../sale_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./dao/angry_teenagers_dao.py ../dao_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./dao/angry_teenagers_majority.py ../majority_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./dao/angry_teenagers_opt_out.py ../opt_out_test
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/nft_test.py ../nft_test
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/sale_test.py ../sale_test
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/dao_test.py ../dao_test
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/majority_test.py ../majority_test
+% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/opt_out_test.py ../opt_out_test
 ```
 Optionally, you can use the "--purge" option to clean the folder before running the tests and/or the 
 "--htlm" to generate htlm logs.
@@ -74,134 +77,71 @@ Optionally, you can use the "--purge" option to clean the folder before running 
 When you compile the contracts you can make some choices using the compilation target to configure your initial
 storage
 
-### ./nft/angry_teenagers_nft.py
-The compilation target is:
-```
-sp.add_compilation_target("AngryTeenagers",
-                          AngryTeenagers(
-                              administrator=sp.address("tz1QRoH2rdD8HPvWXDhe9ZhToTHGUx6Mggph"),
-                              royalties_bytes=sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1QRoH2rdD8HPvWXDhe9ZhToTHGUx6Mggph": 10}}'),
-                              metadata=sp.utils.metadata_of_url("ipfs://QmaSL3oE3RWCkR2mM3vK8TdRCFMmkPAfvoeQTbinsC9bLN"),
-                              # TODO: This is not a valid generic image
-                              generic_image_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
-                              generic_image_ipfs_thumbnail=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
-                              # A valid project oracles is needed as it cannot be changed later on
-                              project_oracles_stream=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"),
-                              what3words_file_ipfs=sp.utils.bytes_of_string("ipfs://QmUZ1Vyrxf7LLcdrTbY5f135cM2dBNkuDZngn9qK2xeNr7"),
-                              total_supply=5236))
-```
+### NFT
+
+See ./config/nft_config.py
+
 Fields that can updated after deployment are:
-- royalties_bytes
-- metadata
+- ROYALTIES_BYTES
+- CONTRACT_METADATA_IPFS_LINK
 
 A particular care shall be taken to set to correct values to the following fields before deployment as they cannot
 be changed anymore:
-- administrator (administrator can be changed but only if the first administrator is valid)
-- generic_image_ipfs
-- generic_image_ipfs_thumbnail
-- project_oracles_stream
-- what3words_file_ipfs
+- ADMINISTRATOR_ADDRESS (administrator can be changed but only if the first administrator is valid)
+- GENERIC_ARTWORK_IPFS_LINK
+- GENERIC_THUMBNAIL_ARTWORK_IPFS_LINK
+- PROJECT_ORACLES_STREAM_LINK
+- WHAT3WORDS_FILE_IPFS_LINK
+- TOTAL_SUPPLY
 
-### ./sale/angry_teenagers_sale.py
-The compilation target is:
-```
-sp.add_compilation_target("AngryTeenagers Crowdsale contract",
-                          AngryTeenagersSale(admin=sp.address("tz1QRoH2rdD8HPvWXDhe9ZhToTHGUx6Mggph"),
-                                         transfer_addresses=sp.list([sp.pair(sp.address("tz1QRoH2rdD8HPvWXDhe9ZhToTHGUx6Mggph"), sp.nat(85)),
-                                                                   sp.pair(sp.address("tz1QRoH2rdD8HPvWXDhe9ZhToTHGUx6Mggph"), sp.nat(15))]),
-                                         metadata=sp.utils.metadata_of_url("ipfs://QmS5kmyssuBdQaLMQt9fySvvAh1pcpjJEDQ38iMwZpxTyF")))
-```
+### Sale
+
+See ./config/sale_config.py 
+
 Fields that can updated after deployment are:
-- transfer_addresses
+- TRANSFER_ADDRESSES
+- CONTRACT_METADATA_IPFS_LINK
 
 A particular care shall be taken to set to correct values to the following fields before deployment as they cannot
 be changed anymore:
-- administrator (administrator can be changed but only if the first administrator is valid)
+- ADMINISTRATOR_ADDRESS (administrator can be changed but only if the first administrator is valid)
 
-### ./dao/angry_teenagers_dao.py
-The compilation target is:
-```
-sp.add_compilation_target("AngryTeenagers DAO",
-                          # TODO: Real addresses shall be used
-                            AngryTeenagersDao(
-                                admin=sp.address("tz1QRoH2rdD8HPvWXDhe9ZhToTHGUx6Mggph"),
-                                # TODO: Inject the right metadata
-                                # TODO: The opt out contract is not added. the majority one is not valid
-                                metadata=sp.utils.metadata_of_url("ipfs://QmUM7qhTYSAjd1uy8bhRD1G6K5VWug18CV4hAtXTVRJhMP"),
-                                poll_manager=sp.map(l = { VOTE_TYPE_MAJORITY : sp.record(name=sp.string("MajorityVote"), address=sp.address("tz1QRoH2rdD8HPvWXDhe9ZhToTHGUx6Mggph"))}, tkey=sp.TNat, tvalue=sp.TRecord(name=sp.TString, address=sp.TAddress))))
-```
+### DAO
+
+See ./config/dao_config.py
+
 Fields that can updated after deployment are:
-- metadata
-- poll_manager: Voting strategies already injected cannot be changed but new can be added by the DAO
+- CONTRACT_METADATA_IPFS_LINK
+- POLL_MANAGER_INIT_VALUE: Voting strategies already injected cannot be changed but new can be added by the DAO
 
 A particular care shall be taken to set to correct values to the following fields before deployment as they cannot
 be changed anymore:
-- administrator (administrator can be changed but only if the first administrator is valid)
+- ADMINISTRATOR_ADDRESS (administrator can be changed but only if the first administrator is valid)
 
-### ./dao/angry_teenagers_majority_voting.py
-Two compilation targets are defined.
-One for the main DAO component (dynamic quorum) and one for the opt out contract (fixed quorum):
-```
-sp.add_compilation_target("AngryTeenagersMajorityVoting",
-                          # TODO: Real address shall be used
-                          DaoMajorityVoting(
-                              admin=sp.address("tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"),
-                              current_dynamic_quorum_value=sp.nat(2000),
-                              governance_parameters= sp.record(vote_delay_blocks = sp.nat(1),
-                                                               vote_length_blocks = sp.nat(180),
-                                                               percentage_for_supermajority = sp.nat(80),
-                                                               fixed_quorum_percentage = sp.nat(25),
-                                                               fixed_quorum = sp.bool(False),
-                                                               quorum_cap = sp.record(lower=sp.nat(1), upper=sp.nat(5800))),
-                              # TODO: Inject the right metadata
-                              metadata = sp.utils.metadata_of_url("ipfs://QmNtph2DjrVcK9KXrNRsPSwMPpBpZjY7Ti6ceNcrbor45n")
-                          ))
-```
-```
-sp.add_compilation_target("AngryTeenagersOptOutMajorityVoting",
-                          # TODO: Real address shall be used
-                          DaoMajorityVoting(
-                              admin=sp.address("tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"),
-                              current_dynamic_quorum_value=sp.nat(2000),
-                              governance_parameters= sp.record(vote_delay_blocks = sp.nat(1),
-                                                               vote_length_blocks = sp.nat(180),
-                                                               percentage_for_supermajority = sp.nat(80),
-                                                               fixed_quorum_percentage = sp.nat(25),
-                                                               fixed_quorum = sp.bool(True),
-                                                               quorum_cap = sp.record(lower=sp.nat(1), upper=sp.nat(5800))),
-                              # TODO: Inject the right metadata
-                              metadata = sp.utils.metadata_of_url("ipfs://QmNtph2DjrVcK9KXrNRsPSwMPpBpZjY7Ti6ceNcrbor45n")
-                          ))
-```
+### Majority voting
+Two configs are defined. One for the main DAO component (dynamic quorum) and one for the opt out contract (fixed quorum):
+
+See ./config/majority_voting_config.py
+
 Fields that can updated after deployment are:
-- metadata
-- governance_parameters but only by the DAO iself
+- CONTRACT_METADATA_IPFS_LINK
 
 A particular care shall be taken to set to correct values to the following fields before deployment as they cannot
 be changed anymore:
-- administrator (administrator can be changed but only if the first administrator is valid)
+- ADMINISTRATOR_ADDRESS (administrator can be changed but only if the first administrator is valid)
+- GOVERNANCE_PARAMETERS
 
-### ./dao/angry_teenagers_opt_out_voting.py
-The compilation target is:
-```
-sp.add_compilation_target("AngryTeenagersOptOutVoting",
-                          # TODO: Real address shall be used
-                          DaoOptOutVoting(
-                              admin=sp.address("tz1QRoH2rdD8HPvWXDhe9ZhToTHGUx6Mggph"),
-                              governance_parameters= sp.record(vote_delay_blocks = sp.nat(1),
-                                                               vote_length_blocks = sp.nat(180),
-                                                               percentage_for_objection = sp.nat(10)),
-                              # TODO: Inject the right metadata
-                              metadata = sp.utils.metadata_of_url("ipfs://QmUM7qhTYSAjd1uy8bhRD1G6K5VWug18CV4hAtXTVRJhMP")
-                          ))
-```
+### Opt out voting
+
+See ./config/opt_out_voting_config.py 
+
 Fields that can updated after deployment are:
-- metadata
-- governance_parameters but only by the DAO iself
+- CONTRACT_METADATA_IPFS_LINK
 
 A particular care shall be taken to set to correct values to the following fields before deployment as they cannot
 be changed anymore:
-- administrator (administrator can be changed but only if the first administrator is valid)
+- ADMINISTRATOR_ADDRESS (administrator can be changed but only if the first administrator is valid)
+- GOVERNANCE_PARAMETERS
 
 ## HOWTO to deploy contracts on the Tezos blockchain
 
@@ -220,7 +160,7 @@ Where:
 - **MAX_XTZ_TO_SPEND** is the max amount of XTZ to spend during this deployment
 
 
-### Deploy the FA2 contract (./nft/angry_teenagers_nft.py)
+### Deploy the FA2 contract (./nft/nft.py)
 
 Contract shall be first compiled.
 
@@ -230,7 +170,7 @@ tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT
 ```
 The FA2 contract administrator needs to be set accordingly by calling the entrypoint set_artwork_administrator and set_sale_contract_administrator.
 
-### Deploy the sale contract (./sale/angry_teenagers_sale.py)
+### Deploy the sale contract (./sale/sale.py)
 
 Contract shall be first compiled.
 
@@ -245,7 +185,7 @@ If needed, link the FA2 contract to the sale contract by calling the entrypoint 
 
 Voting strategies shall be deployed first as there address need to be copied inside the initial storage of the main DAO contract.
 
-#### Deploy the majority vote (./dao/angry_teenagers_majority_voting.py)
+#### Deploy the majority vote (./dao/majority_voting.py)
 
 Two contracts shall be deployed. One for the main DAO component and one for the opt out strategy.
 
@@ -263,7 +203,7 @@ tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT
 ```
 Set the poll_leader (the opt out contract) by calling the set_poll_leader entrypoint of the contract with the fixed quorum.
 
-#### Deploy the opt out vote (./dao/angry_teenagers_opt_out_voting.py)
+#### Deploy the opt out vote (./dao/opt_out_voting.py)
 
 Contract shall be first compiled.
 
@@ -273,7 +213,7 @@ tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT
 ```
 Set the poll_leader (the main DAO component) by calling the set_poll_leader entrypoint of this contract.
 
-#### Deploy the main DAO contract (./dao/angry_teenagers_dao.py)
+#### Deploy the main DAO contract (./dao/dao.py)
 
 Copy the two deployed contract addresses of the majority voting strategy and opt out voting strategy for the main DAO
 component into the contract storage. Then compile.

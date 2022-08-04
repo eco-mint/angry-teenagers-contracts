@@ -1,6 +1,6 @@
 import smartpy as sp
 
-PollType = sp.io.import_script_from_url("file:dao/helper/angry_teenagers_dao_poll_type.py")
+PollType = sp.io.import_script_from_url("file:dao/helper/dao_poll_type.py")
 
 # A historical result of a vote.
 # Params:

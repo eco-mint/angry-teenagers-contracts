@@ -1,6 +1,6 @@
 import smartpy as sp
 
-Proposal = sp.io.import_script_from_url("file:dao/helper/angry_teenagers_dao_proposal.py")
+Proposal = sp.io.import_script_from_url("file:dao/helper/dao_proposal.py")
 
 # POLL_TYPE
 # The proposal information

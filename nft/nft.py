@@ -49,6 +49,19 @@ REVEALED_METADATA = "revealed"
 ROYALTIES_METADATA = "royalties"
 PROJECTORACLEURI_METADATA = "projectOraclesUri"
 
+SYMBOL = "ANGRY"
+DECIMALS = "0"
+LANGUAGE = "en-US"
+DESCRIPTION = '"Angry Teenagers: NFTs that fund an exponential cycle of reforestation."'
+ATTRIBUTES_GENERIC = '[{\"name\"}, {\"generic\"}]'
+RIGHTS = '"© 2022 EcoMint. All rights reserved."'
+ISTRANSFERABLE = "true"
+ISBOOLEANAMOUNT = "true"
+SHOULDPREFERSYMBOL = "false"
+CREATORS = '["The Angry Teenagers. https://www.angryteenagers.xyz"]'
+PROJECTNAME = "Nsomyam Ye Reforestation"
+REVEALED = "false"
+
 ########################################################################################################################
 ########################################################################################################################
 # Classes
@@ -549,25 +562,25 @@ class AngryTeenagers(sp.Contract):
 
         meta_map = sp.map(l={
             NAME_METADATA: name,
-            SYMBOL_METADATA: sp.utils.bytes_of_string("ANGRY"),
-            DECIMALS_METADATA: sp.utils.bytes_of_string("0"),
-            LANGUAGE_METADATA: sp.utils.bytes_of_string("en-US"),
-            DESCRIPTION_METADATA: sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'),
+            SYMBOL_METADATA: sp.utils.bytes_of_string(SYMBOL),
+            DECIMALS_METADATA: sp.utils.bytes_of_string(DECIMALS),
+            LANGUAGE_METADATA: sp.utils.bytes_of_string(LANGUAGE),
+            DESCRIPTION_METADATA: sp.utils.bytes_of_string(DESCRIPTION),
             DATE_METADATA: sp.pack(sp.now),
             ARTIFACTURI_METADATA: self.data.generic_image_ipfs,
             DISPLAYURI_METADATA: self.data.generic_image_ipfs,
             THUMBNAILURI_METADATA: self.data.generic_image_ipfs_thumbnail,
-            ATTRIBUTES_METADATA: sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'),
-            RIGHTS_METADATA: sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'),
-            ISTRANSFERABLE_METADATA: sp.utils.bytes_of_string("true"),
-            ISBOOLEANAMOUNT_METADATA: sp.utils.bytes_of_string("true"),
-            SHOULDPREFERSYMBOL_METADATA: sp.utils.bytes_of_string("false"),
-            CREATORS_METADATA: sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'),
-            PROJECTNAME_METADATA: sp.utils.bytes_of_string("Project-1"),
+            ATTRIBUTES_METADATA: sp.utils.bytes_of_string(ATTRIBUTES_GENERIC),
+            RIGHTS_METADATA: sp.utils.bytes_of_string(RIGHTS),
+            ISTRANSFERABLE_METADATA: sp.utils.bytes_of_string(ISTRANSFERABLE),
+            ISBOOLEANAMOUNT_METADATA: sp.utils.bytes_of_string(ISBOOLEANAMOUNT),
+            SHOULDPREFERSYMBOL_METADATA: sp.utils.bytes_of_string(SHOULDPREFERSYMBOL),
+            CREATORS_METADATA: sp.utils.bytes_of_string(CREATORS),
+            PROJECTNAME_METADATA: sp.utils.bytes_of_string(PROJECTNAME),
             FORMATS_METADATA: formats.value,
             WHAT3WORDSFILE_METADATA: self.data.what3words_file_ipfs,
             WHAT3WORDID_METADATA: token_id_string.value,
-            REVEALED_METADATA: sp.utils.bytes_of_string("false"),
+            REVEALED_METADATA: sp.utils.bytes_of_string(REVEALED),
             ROYALTIES_METADATA: self.data.royalties,
             PROJECTORACLEURI_METADATA: self.data.project_oracles_stream
         })

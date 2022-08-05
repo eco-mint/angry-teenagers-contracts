@@ -2,7 +2,7 @@ import smartpy as sp
 
 CONTRACT_NAME = "AngryTeenagers"
 ADMINISTRATOR_ADDRESS = "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"
-ROYALTIES_BYTES ='{"decimals": 2, "shares": { "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q": 10}}'
+ROYALTIES_BYTES ='{"decimals": 3, "shares": { "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q": 10}}'
 CONTRACT_METADATA_IPFS_LINK ="ipfs://QmVnSn1QwdqGYADfX1CFkys4oxxz7PP3njBQ8Xr945rgsf"
 
 # TODO: This is not a valid generic image and displayUri is missing

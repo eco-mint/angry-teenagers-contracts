@@ -7,6 +7,7 @@ CONTRACT_METADATA_IPFS_LINK ="ipfs://QmVnSn1QwdqGYADfX1CFkys4oxxz7PP3njBQ8Xr945r
 
 # TODO: This is not a valid generic image and displayUri is missing
 GENERIC_ARTWORK_IPFS_LINK = "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"
+GENERIC_DISPLAY_ARTWORK_IPFS_LINK = "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"
 GENERIC_THUMBNAIL_ARTWORK_IPFS_LINK = "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"
 
 # TODO: A valid project oracles is needed as it cannot be changed later on

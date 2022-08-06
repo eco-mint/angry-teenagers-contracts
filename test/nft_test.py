@@ -48,8 +48,9 @@ class TestHelper():
         c1  = NFT.AngryTeenagers(administrator=admin.address,
                         royalties_bytes=sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'),
                         metadata=sp.utils.metadata_of_url("https://example.com"),
-                        generic_image_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
-                        generic_image_ipfs_thumbnail=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
+                        generic_image_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"),
+                        generic_image_ipfs_display=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2"),
+                        generic_image_ipfs_thumbnail=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"),
                         project_oracles_stream=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"),
                         what3words_file_ipfs=sp.utils.bytes_of_string(
                             "ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"),
@@ -174,8 +175,9 @@ def unit_fa2_test_initial_storage(is_default = True):
         scenario.verify(c1.data.total_supply == 128)
         scenario.verify(c1.data.minted_tokens == sp.nat(0))
         scenario.verify(c1.data.paused == sp.bool(False))
-        scenario.verify(c1.data.generic_image_ipfs == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify(c1.data.generic_image_ipfs_thumbnail == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify(c1.data.generic_image_ipfs == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify(c1.data.generic_image_ipfs_display == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2"))
+        scenario.verify(c1.data.generic_image_ipfs_thumbnail == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify(c1.data.metadata[""] == sp.utils.bytes_of_string("https://example.com"))
 
         scenario.verify(c1.data.project_oracles_stream == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"))
@@ -959,15 +961,15 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         info = sp.snd(c1.data.token_metadata[0])
         scenario.verify(id == 0)
 
-        scenario.verify_equal(info[NFT.ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info[NFT.DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info[NFT.ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(info[NFT.DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2"))
+        scenario.verify_equal(info[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify_equal(info[NFT.ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(info[NFT.REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(info[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(info[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
         scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #0"'))
-        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify_equal(info[NFT.SYMBOL_METADATA], c1.symbol)
         scenario.verify_equal(info[NFT.ATTRIBUTES_METADATA], c1.attributes_generic)
         scenario.verify_equal(info[NFT.DECIMALS_METADATA], sp.utils.bytes_of_string(NFT.DECIMALS))
@@ -988,15 +990,15 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         info = sp.snd(c1.data.token_metadata[49])
         scenario.verify(id == 49)
 
-        scenario.verify_equal(info[NFT.ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info[NFT.DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(info[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info[NFT.ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(info[NFT.DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2"))
+        scenario.verify_equal(info[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify_equal(info[NFT.ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(info[NFT.REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
         scenario.verify_equal(info[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(info[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
-        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify_equal(info[NFT.SYMBOL_METADATA], c1.symbol)
         scenario.verify_equal(info[NFT.ATTRIBUTES_METADATA], c1.attributes_generic)
         scenario.verify_equal(info[NFT.DECIMALS_METADATA], sp.utils.bytes_of_string(NFT.DECIMALS))
@@ -1071,15 +1073,15 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify(sp.fst(metadata_pair) == 0)
         metadata = sp.snd(metadata_pair)
 
-        scenario.verify_equal(metadata[NFT.ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata[NFT.DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(metadata[NFT.ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(metadata[NFT.DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2"))
+        scenario.verify_equal(metadata[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify_equal(metadata[NFT.ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(metadata[NFT.REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(metadata[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(metadata[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
         scenario.verify_equal(metadata[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #0"'))
-        scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify_equal(metadata[NFT.SYMBOL_METADATA], c1.symbol)
         scenario.verify_equal(metadata[NFT.ATTRIBUTES_METADATA], c1.attributes_generic)
         scenario.verify_equal(metadata[NFT.DECIMALS_METADATA], sp.utils.bytes_of_string(NFT.DECIMALS))
@@ -1098,15 +1100,15 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         metadata_pair = c1.token_metadata(49)
         scenario.verify(sp.fst(metadata_pair) == 49)
         metadata = sp.snd(metadata_pair)
-        scenario.verify_equal(metadata[NFT.ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata[NFT.DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
-        scenario.verify_equal(metadata[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(metadata[NFT.ARTIFACTURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
+        scenario.verify_equal(metadata[NFT.DISPLAYURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2"))
+        scenario.verify_equal(metadata[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify_equal(metadata[NFT.ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(metadata[NFT.REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(metadata[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
         scenario.verify_equal(metadata[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(metadata[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
-        scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"))
+        scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify_equal(metadata[NFT.SYMBOL_METADATA], c1.symbol)
         scenario.verify_equal(metadata[NFT.ATTRIBUTES_METADATA], c1.attributes_generic)
         scenario.verify_equal(metadata[NFT.DECIMALS_METADATA], sp.utils.bytes_of_string(NFT.DECIMALS))

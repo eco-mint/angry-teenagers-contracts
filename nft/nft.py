@@ -103,6 +103,7 @@ class AngryTeenagers(sp.Contract):
                  royalties_bytes,
                  metadata,
                  generic_image_ipfs,
+                 generic_image_ipfs_display,
                  generic_image_ipfs_thumbnail,
                  project_oracles_stream,
                  what3words_file_ipfs,
@@ -186,6 +187,7 @@ class AngryTeenagers(sp.Contract):
             extra_token_metadata = sp.big_map(l={}, tkey=TOKEN_ID, tvalue=sp.TRecord(token_id =TOKEN_ID, token_info = sp.TMap(sp.TString, sp.TBytes))),
 
             generic_image_ipfs = generic_image_ipfs,
+            generic_image_ipfs_display = generic_image_ipfs_display,
             generic_image_ipfs_thumbnail = generic_image_ipfs_thumbnail,
 
             project_oracles_stream = project_oracles_stream,
@@ -619,7 +621,7 @@ class AngryTeenagers(sp.Contract):
 
         name = sp.concat([self.name_prefix, token_id_string.value, sp.utils.bytes_of_string('"')])
 
-        formats = sp.local('formats', self.create_format_metadata(self.data.generic_image_ipfs, self.data.generic_image_ipfs, self.data.generic_image_ipfs_thumbnail))
+        formats = sp.local('formats', self.create_format_metadata(self.data.generic_image_ipfs, self.data.generic_image_ipfs_display, self.data.generic_image_ipfs_thumbnail))
 
         meta_map = sp.map(l={
             NAME_METADATA: name,
@@ -629,7 +631,7 @@ class AngryTeenagers(sp.Contract):
             DESCRIPTION_METADATA: self.description,
             DATE_METADATA: sp.pack(sp.now),
             ARTIFACTURI_METADATA: self.data.generic_image_ipfs,
-            DISPLAYURI_METADATA: self.data.generic_image_ipfs,
+            DISPLAYURI_METADATA: self.data.generic_image_ipfs_display,
             THUMBNAILURI_METADATA: self.data.generic_image_ipfs_thumbnail,
             ATTRIBUTES_METADATA: self.attributes_generic,
             RIGHTS_METADATA: self.rights,

@@ -1,6 +1,6 @@
 {
-  "version": "1.0",
-  "description": "Angry Teenagers DAO (majority vote 1).",
+  "version": "1.0.0",
+  "description": "Angry Teenagers Majority voting strategy.",
   "interfaces": [ "TZIP-016" ],
   "authors": [ "EcoMint LTD" ],
   "homepage": "https://www.angryteenagers.xyz",

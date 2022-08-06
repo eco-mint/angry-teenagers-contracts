@@ -89,10 +89,35 @@ A particular care shall be taken to set to correct values to the following field
 be changed anymore:
 - ADMINISTRATOR_ADDRESS (administrator can be changed but only if the first administrator is valid)
 - GENERIC_ARTWORK_IPFS_LINK
+- GENERIC_DISPLAY_ARTWORK_IPFS_LINK
 - GENERIC_THUMBNAIL_ARTWORK_IPFS_LINK
 - PROJECT_ORACLES_STREAM_LINK
 - WHAT3WORDS_FILE_IPFS_LINK
 - TOTAL_SUPPLY
+- ARTIFACT_FILE_TYPE
+- ARTIFACT_FILE_SIZE
+- ARTIFACT_FILE_NAME
+- ARTIFACT_DIMENSIONS
+- ARTIFACT_FILE_UNIT
+- DISPLAY_FILE_TYPE
+- DISPLAY_FILE_SIZE
+- DISPLAY_FILE_NAME
+- DISPLAY_DIMENSIONS
+- DISPLAY_FILE_UNIT
+- THUMBNAIL_FILE_TYPE
+- THUMBNAIL_FILE_SIZE
+- THUMBNAIL_FILE_NAME
+- THUMBNAIL_DIMENSIONS
+- THUMBNAIL_FILE_UNIT
+- NAME_PREFIX
+- SYMBOL
+- DESCRIPTION
+- LANGUAGE
+- ATTRIBUTES_GENERIC
+- RIGHTS
+- CREATORS
+- PROJECTNAME
+
 
 ### Sale
 
@@ -164,7 +189,7 @@ Where:
 
 Contract shall be first compiled.
 
-Example:
+Example -- WARNING: The storage may have to be updated:
 ```
 tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Nft_GhostNet_CR001_1 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q") (Pair {} 0x697066733a2f2f516d576b726b5a6a35363264754d47567777615574506f376948317a50744c594b423275394d3745665559424448)) (Pair (Pair 0x697066733a2f2f516d576b726b5a6a35363264754d47567777615574506f376948317a50744c594b423275394d3745665559424448 {}) (Pair {Elt "" 0x697066733a2f2f516d566e536e31517764714759414466583143466b7973346f78787a375050336e6a425138587239343572677366} 0))) (Pair (Pair (Pair {} False) (Pair 0x636572616d69633a2f2f516d576b726b5a6a35363264754d47567777615574506f376948317a50744c594b423275394d3745665559414141 0x7b22646563696d616c73223a20322c2022736861726573223a207b2022747a3151716f624d6543595931576a656150556370686879713251354333426654453271223a2031307d7d)) (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" {}) (Pair 5236 (Pair {} 0x697066733a2f2f516d555a315679727866374c4c6364725462593566313335634d3264424e6b75445a6e676e39714b3278654e7237)))))' --burn-cap 4
 ```
@@ -174,7 +199,7 @@ The FA2 contract administrator needs to be set accordingly by calling the entryp
 
 Contract shall be first compiled.
 
-Example:
+Example -- WARNING: The storage may have to be updated:
 ```
 tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Sale_GhostNet_CR001_1 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" {}) (Pair "1970-01-01T00:00:00Z" 0)) (Pair (Pair 0 0) (Pair False (Pair {} "KT1XmD6SKw6CFoxmGseB3ttws5n8sTXYkKkq")))) (Pair (Pair (Pair {Elt "" 0x697066733a2f2f516d563433464e4a454a4d47457a70416f4d786d6270536251427633574b7434753454366e64383569743952376a} {}) (Pair 0 0)) (Pair (Pair (Pair 0 (Pair False False)) 0) (Pair 0 (Pair 0 {Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" 85; Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" 15})))))' --burn-cap 4
 ```
@@ -191,13 +216,13 @@ Two contracts shall be deployed. One for the main DAO component and one for the 
 
 Contract shall be first compiled.
 
-Example (majority contract with dynamic quorum for main DAO component):
+Example (majority contract with dynamic quorum for main DAO component) -- WARNING: The storage may have to be updated:
 ```
 tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_Maj_GhostNet_CR001_2 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" 2000) (Pair (Pair 1 (Pair 180 (Pair 80 (Pair 25 (Pair False (Pair 1 5800)))))) {Elt "" 0x697066733a2f2f516d4e74706832446a7256634b394b58724e52735053774d507042705a6a593754693663654e6372626f7234356e})) (Pair (Pair {} None) (Pair None (Pair 0 0))))' --burn-cap 4
 ```
 Set the poll_leader (the main DAO component) by calling the set_poll_leader entrypoint of the contract with the dynamic quorum.
 
-Example (majority contract with fixed quorum for opt out voting strategy):
+Example (majority contract with fixed quorum for opt out voting strategy) -- WARNING: The storage may have to be updated:
 ```
 tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_OtpOutMaj_GhostNet_CR001_2 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" 2000) (Pair (Pair 1 (Pair 180 (Pair 80 (Pair 25 (Pair True (Pair 1 5800)))))) {Elt "" 0x697066733a2f2f516d4e74706832446a7256634b394b58724e52735053774d507042705a6a593754693663654e6372626f7234356e})) (Pair (Pair {} None) (Pair None (Pair 0 0))))' --burn-cap 4
 ```
@@ -207,7 +232,7 @@ Set the poll_leader (the opt out contract) by calling the set_poll_leader entryp
 
 Contract shall be first compiled.
 
-Example:
+Example -- WARNING: The storage may have to be updated:
 ```
 tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_OptOut_GhostNet_CR001_2 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" (Pair 1 (Pair 180 10))) (Pair {Elt "" 0x697066733a2f2f516d586857365847614a6e38426d6e6d3262636a656b36506b6b383465534d5a7431476b4a704a35314856515875} {})) (Pair (Pair None None) (Pair None (Pair 0 0))))' --burn-cap 4
 ```
@@ -218,7 +243,7 @@ Set the poll_leader (the main DAO component) by calling the set_poll_leader entr
 Copy the two deployed contract addresses of the majority voting strategy and opt out voting strategy for the main DAO
 component into the contract storage. Then compile.
 
-Example:
+Example -- WARNING: The storage may have to be updated:
 ```
 tezos-client --endpoint https://rpc.ghostnet.teztnets.xyz/ originate contract AT_Dao_GhostNet_CR001_2 transferring 0 from tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q running ./step_000_cont_0_contract.tz --init '(Pair (Pair (Pair "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q" None) (Pair {Elt "" 0x697066733a2f2f516d627a36673748514755467170475645665956693539676d5a6e3845547a6657597162685a4468666b396d6361} 0)) (Pair (Pair None {}) (Pair {Elt 0 (Pair "KT1DBK9hSKnLeG9W6UDfJBC8bDPDXLovJWjY" "MajorityVote"); Elt 1 (Pair "KT1Ccajj5Sw2PeKTSDhnCGpNUp1nsMhe3iHw" "OptOutVote")} 0)))' --burn-cap 4
 ```

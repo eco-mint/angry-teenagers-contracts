@@ -49,6 +49,7 @@ REVEALED_METADATA = "revealed"
 ROYALTIES_METADATA = "royalties"
 PROJECTORACLEURI_METADATA = "projectOraclesUri"
 
+NAME_PREFIX = '"Angry Teenager #'
 SYMBOL = "ANGRY"
 DECIMALS = "0"
 LANGUAGE = "en-US"
@@ -61,6 +62,19 @@ SHOULDPREFERSYMBOL = "false"
 CREATORS = '["The Angry Teenagers. https://www.angryteenagers.xyz"]'
 PROJECTNAME = "Nsomyam Ye Reforestation"
 REVEALED = "false"
+
+FORMAT_OPEN_SQUAREBRACKET = sp.utils.bytes_of_string("[")
+FORMAT_OPEN_CURLYBRACKET = sp.utils.bytes_of_string("{")
+FORMAT_CLOSE_SQUAREBRACKET = sp.utils.bytes_of_string("]")
+FORMAT_CLOSE_CURLYBRACKET = sp.utils.bytes_of_string("}")
+FORMAT_COMMA = sp.utils.bytes_of_string(",")
+FORMAT_URI = sp.utils.bytes_of_string('"uri"')
+FORMAT_FILENAME = sp.utils.bytes_of_string('"fileName":')
+FORMAT_FILESIZE = sp.utils.bytes_of_string('"fileSize":')
+FORMAT_VALUE = sp.utils.bytes_of_string('"value":')
+FORMAT_UNIT = sp.utils.bytes_of_string('"unit":')
+FORMAT_DIMENSIONS = sp.utils.bytes_of_string('"dimensions":')
+FORMAT_MIMETYPE = sp.utils.bytes_of_string('"mimeType":')
 
 ########################################################################################################################
 ########################################################################################################################
@@ -91,8 +105,46 @@ class Operator_set:
         return set.contains(self.make_key(owner, operator, token_id))
 
 class AngryTeenagers(sp.Contract):
-    def __init__(self, administrator, royalties_bytes, metadata, generic_image_ipfs, generic_image_ipfs_thumbnail, project_oracles_stream, what3words_file_ipfs, total_supply):
+    def __init__(self, administrator,
+                 royalties_bytes,
+                 metadata,
+                 generic_image_ipfs,
+                 generic_image_ipfs_thumbnail,
+                 project_oracles_stream,
+                 what3words_file_ipfs,
+                 total_supply,
+                 artifact_file_type,
+                 artifact_file_size,
+                 artifact_file_name,
+                 artifact_dimensions,
+                 artifact_file_unit,
+                 display_file_type,
+                 display_file_size,
+                 display_file_name,
+                 display_dimensions,
+                 display_file_unit,
+                 thumbnail_file_type,
+                 thumbnail_file_size,
+                 thumbnail_file_name,
+                 thumbnail_dimensions,
+                 thumbnail_file_unit):
         self.operator_set = Operator_set()
+
+        self.artifact_file_type = sp.utils.bytes_of_string(artifact_file_type)
+        self.artifact_file_size = sp.utils.bytes_of_string(artifact_file_size)
+        self.artifact_file_name = sp.utils.bytes_of_string(artifact_file_name)
+        self.artifact_dimensions = sp.utils.bytes_of_string(artifact_dimensions)
+        self.artifact_file_unit = sp.utils.bytes_of_string(artifact_file_unit)
+        self.display_file_type = sp.utils.bytes_of_string(display_file_type)
+        self.display_file_size = sp.utils.bytes_of_string(display_file_size)
+        self.display_file_name = sp.utils.bytes_of_string(display_file_name)
+        self.display_dimensions = sp.utils.bytes_of_string(display_dimensions)
+        self.display_file_unit = sp.utils.bytes_of_string(display_file_unit)
+        self.thumbnail_file_type = sp.utils.bytes_of_string(thumbnail_file_type)
+        self.thumbnail_file_size = sp.utils.bytes_of_string(thumbnail_file_size)
+        self.thumbnail_file_name = sp.utils.bytes_of_string(thumbnail_file_name)
+        self.thumbnail_dimensions = sp.utils.bytes_of_string(thumbnail_dimensions)
+        self.thumbnail_file_unit = sp.utils.bytes_of_string(thumbnail_file_unit)
 
         self.init(
             ledger = sp.big_map(tkey=TOKEN_ID, tvalue=sp.TAddress),
@@ -284,6 +336,41 @@ class AngryTeenagers(sp.Contract):
         sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
         self.data.artwork_administrator = params
 
+    def create_format_metadata_per_uri(self, link, type, size, name, dimensions, unit):
+        value = FORMAT_OPEN_CURLYBRACKET + FORMAT_URI + link + \
+              FORMAT_COMMA + FORMAT_MIMETYPE + type + \
+              FORMAT_COMMA + FORMAT_FILESIZE + size + \
+              FORMAT_COMMA + FORMAT_FILENAME + name + \
+              FORMAT_COMMA + FORMAT_DIMENSIONS + FORMAT_OPEN_CURLYBRACKET + FORMAT_VALUE + dimensions + \
+              FORMAT_COMMA + FORMAT_UNIT + unit + FORMAT_CLOSE_CURLYBRACKET + FORMAT_CLOSE_CURLYBRACKET
+        return value
+
+    def create_format_metadata(self, artifact_link, display_link, thumbnail_link):
+
+        #
+        # [{"uri": "ipfs://QmU1TjZyLYV6TgMJLW5jaBScTsqLaQ7gYc6tPnvFBXTezc", "mimeType": "image/png",
+        #   "fileSize": 425118, "fileName": "oz.png", "dimensions": {"value": "1000x1000", "unit": "px"}},
+        #  {"uri": "ipfs://QmYrvBWE3DvPvhVkNTKPR9vf54jf1FwFrp6mFTiHpjdEdy", "mimeType": "image/jpeg",
+        #   "fileName": "cover-oz.jpg", "fileSize": 143913, "dimensions": {"value": "1000x1000", "unit": "px"}},
+        #  {"uri": "ipfs://QmQJx6Kg6DLtadeDR3CXr29BUueLsBc6SCmPjQg2uLPcUR", "mimeType": "image/jpeg",
+        #   "fileName": "thumbnail-oz.jpg", "fileSize": 26875, "dimensions": {"value": "350x350", "unit": "px"}}]
+
+        value = FORMAT_OPEN_SQUAREBRACKET + \
+                self.create_format_metadata_per_uri(artifact_link, self.artifact_file_type, self.artifact_file_size,
+                                               self.artifact_file_name, self.artifact_dimensions,
+                                               self.artifact_file_unit) + \
+                FORMAT_COMMA + \
+                self.create_format_metadata_per_uri(display_link, self.display_file_type, self.display_file_size,
+                                               self.display_file_name, self.display_dimensions,
+                                               self.display_file_unit) + \
+                FORMAT_COMMA + \
+                self.create_format_metadata_per_uri(thumbnail_link, self.thumbnail_file_type, self.thumbnail_file_size,
+                                               self.thumbnail_file_name, self.thumbnail_dimensions,
+                                               self.thumbnail_file_unit) + \
+                FORMAT_CLOSE_SQUAREBRACKET
+        return value
+
+
     @sp.entry_point
     def update_artwork_data(self, params):
         sp.verify(self.is_artwork_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
@@ -300,9 +387,8 @@ class AngryTeenagers(sp.Contract):
             my_map = sp.update_map(my_map, DISPLAYURI_METADATA, sp.some((sp.snd(artwork_metadata)).displayUri))
             my_map = sp.update_map(my_map, THUMBNAILURI_METADATA, sp.some((sp.snd(artwork_metadata)).thumbnailUri))
             my_map = sp.update_map(my_map, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributesJSonString))
-            formats_bytes_prefix = sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"')
-            formats_bytes_suffix = sp.utils.bytes_of_string('"}]')
-            formats = sp.local(FORMATS_METADATA, formats_bytes_prefix + (sp.snd(artwork_metadata)).artifactUri + formats_bytes_suffix)
+
+            formats = sp.local(FORMATS_METADATA, self.create_format_metadata((sp.snd(artwork_metadata)).artifactUri, (sp.snd(artwork_metadata)).displayUri, (sp.snd(artwork_metadata)).thumbnailUri))
             my_map = sp.update_map(my_map, FORMATS_METADATA, sp.some(formats.value))
 
             self.data.token_metadata[sp.fst(artwork_metadata)] = sp.pair(sp.fst(artwork_metadata), my_map)
@@ -554,11 +640,9 @@ class AngryTeenagers(sp.Contract):
                 token_id_string.value = sp.concat([nat_to_bytes.value[x.value % 10], token_id_string.value])
                 x.value //= 10
 
-        name = sp.concat([sp.utils.bytes_of_string('"Angry Teenager #'), token_id_string.value, sp.utils.bytes_of_string('"')])
+        name = sp.concat([sp.utils.bytes_of_string(NAME_PREFIX), token_id_string.value, sp.utils.bytes_of_string('"')])
 
-        formats_bytes_prefix = sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"')
-        formats_bytes_suffix = sp.utils.bytes_of_string('"}]')
-        formats = sp.local('formats', formats_bytes_prefix + self.data.generic_image_ipfs + formats_bytes_suffix)
+        formats = sp.local('formats', self.create_format_metadata(self.data.generic_image_ipfs, self.data.generic_image_ipfs, self.data.generic_image_ipfs_thumbnail))
 
         meta_map = sp.map(l={
             NAME_METADATA: name,

@@ -49,18 +49,11 @@ REVEALED_METADATA = "revealed"
 ROYALTIES_METADATA = "royalties"
 PROJECTORACLEURI_METADATA = "projectOraclesUri"
 
-NAME_PREFIX = '"Angry Teenager #'
-SYMBOL = "ANGRY"
+
 DECIMALS = "0"
-LANGUAGE = "en-US"
-DESCRIPTION = '"Angry Teenagers: NFTs that fund an exponential cycle of reforestation."'
-ATTRIBUTES_GENERIC = '[{\"name\"}, {\"generic\"}]'
-RIGHTS = '"© 2022 EcoMint. All rights reserved."'
 ISTRANSFERABLE = "true"
 ISBOOLEANAMOUNT = "true"
 SHOULDPREFERSYMBOL = "false"
-CREATORS = '["The Angry Teenagers. https://www.angryteenagers.xyz"]'
-PROJECTNAME = "Nsomyam Ye Reforestation"
 REVEALED = "false"
 
 FORMAT_OPEN_SQUAREBRACKET = sp.utils.bytes_of_string("[")
@@ -127,7 +120,16 @@ class AngryTeenagers(sp.Contract):
                  thumbnail_file_size,
                  thumbnail_file_name,
                  thumbnail_dimensions,
-                 thumbnail_file_unit):
+                 thumbnail_file_unit,
+                 name_prefix,
+                 symbol,
+                 description,
+                 language,
+                 attributes_generic,
+                 rights,
+                 creators,
+                 project_name
+                 ):
         self.operator_set = Operator_set()
 
         self.artifact_file_type = sp.utils.bytes_of_string(artifact_file_type)
@@ -145,6 +147,15 @@ class AngryTeenagers(sp.Contract):
         self.thumbnail_file_name = sp.utils.bytes_of_string(thumbnail_file_name)
         self.thumbnail_dimensions = sp.utils.bytes_of_string(thumbnail_dimensions)
         self.thumbnail_file_unit = sp.utils.bytes_of_string(thumbnail_file_unit)
+
+        self.name_prefix = sp.utils.bytes_of_string(name_prefix)
+        self.symbol = sp.utils.bytes_of_string(symbol)
+        self.description = sp.utils.bytes_of_string(description)
+        self.language = sp.utils.bytes_of_string(language)
+        self.attributes_generic = sp.utils.bytes_of_string(attributes_generic)
+        self.rights = sp.utils.bytes_of_string(rights)
+        self.creators = sp.utils.bytes_of_string(creators)
+        self.project_name = sp.utils.bytes_of_string(project_name)
 
         self.init(
             ledger = sp.big_map(tkey=TOKEN_ID, tvalue=sp.TAddress),
@@ -335,41 +346,6 @@ class AngryTeenagers(sp.Contract):
     def set_artwork_administrator(self, params):
         sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
         self.data.artwork_administrator = params
-
-    def create_format_metadata_per_uri(self, link, type, size, name, dimensions, unit):
-        value = FORMAT_OPEN_CURLYBRACKET + FORMAT_URI + link + \
-              FORMAT_COMMA + FORMAT_MIMETYPE + type + \
-              FORMAT_COMMA + FORMAT_FILESIZE + size + \
-              FORMAT_COMMA + FORMAT_FILENAME + name + \
-              FORMAT_COMMA + FORMAT_DIMENSIONS + FORMAT_OPEN_CURLYBRACKET + FORMAT_VALUE + dimensions + \
-              FORMAT_COMMA + FORMAT_UNIT + unit + FORMAT_CLOSE_CURLYBRACKET + FORMAT_CLOSE_CURLYBRACKET
-        return value
-
-    def create_format_metadata(self, artifact_link, display_link, thumbnail_link):
-
-        #
-        # [{"uri": "ipfs://QmU1TjZyLYV6TgMJLW5jaBScTsqLaQ7gYc6tPnvFBXTezc", "mimeType": "image/png",
-        #   "fileSize": 425118, "fileName": "oz.png", "dimensions": {"value": "1000x1000", "unit": "px"}},
-        #  {"uri": "ipfs://QmYrvBWE3DvPvhVkNTKPR9vf54jf1FwFrp6mFTiHpjdEdy", "mimeType": "image/jpeg",
-        #   "fileName": "cover-oz.jpg", "fileSize": 143913, "dimensions": {"value": "1000x1000", "unit": "px"}},
-        #  {"uri": "ipfs://QmQJx6Kg6DLtadeDR3CXr29BUueLsBc6SCmPjQg2uLPcUR", "mimeType": "image/jpeg",
-        #   "fileName": "thumbnail-oz.jpg", "fileSize": 26875, "dimensions": {"value": "350x350", "unit": "px"}}]
-
-        value = FORMAT_OPEN_SQUAREBRACKET + \
-                self.create_format_metadata_per_uri(artifact_link, self.artifact_file_type, self.artifact_file_size,
-                                               self.artifact_file_name, self.artifact_dimensions,
-                                               self.artifact_file_unit) + \
-                FORMAT_COMMA + \
-                self.create_format_metadata_per_uri(display_link, self.display_file_type, self.display_file_size,
-                                               self.display_file_name, self.display_dimensions,
-                                               self.display_file_unit) + \
-                FORMAT_COMMA + \
-                self.create_format_metadata_per_uri(thumbnail_link, self.thumbnail_file_type, self.thumbnail_file_size,
-                                               self.thumbnail_file_name, self.thumbnail_dimensions,
-                                               self.thumbnail_file_unit) + \
-                FORMAT_CLOSE_SQUAREBRACKET
-        return value
-
 
     @sp.entry_point
     def update_artwork_data(self, params):
@@ -640,27 +616,27 @@ class AngryTeenagers(sp.Contract):
                 token_id_string.value = sp.concat([nat_to_bytes.value[x.value % 10], token_id_string.value])
                 x.value //= 10
 
-        name = sp.concat([sp.utils.bytes_of_string(NAME_PREFIX), token_id_string.value, sp.utils.bytes_of_string('"')])
+        name = sp.concat([self.name_prefix, token_id_string.value, sp.utils.bytes_of_string('"')])
 
         formats = sp.local('formats', self.create_format_metadata(self.data.generic_image_ipfs, self.data.generic_image_ipfs, self.data.generic_image_ipfs_thumbnail))
 
         meta_map = sp.map(l={
             NAME_METADATA: name,
-            SYMBOL_METADATA: sp.utils.bytes_of_string(SYMBOL),
+            SYMBOL_METADATA: self.symbol,
             DECIMALS_METADATA: sp.utils.bytes_of_string(DECIMALS),
-            LANGUAGE_METADATA: sp.utils.bytes_of_string(LANGUAGE),
-            DESCRIPTION_METADATA: sp.utils.bytes_of_string(DESCRIPTION),
+            LANGUAGE_METADATA: self.language,
+            DESCRIPTION_METADATA: self.description,
             DATE_METADATA: sp.pack(sp.now),
             ARTIFACTURI_METADATA: self.data.generic_image_ipfs,
             DISPLAYURI_METADATA: self.data.generic_image_ipfs,
             THUMBNAILURI_METADATA: self.data.generic_image_ipfs_thumbnail,
-            ATTRIBUTES_METADATA: sp.utils.bytes_of_string(ATTRIBUTES_GENERIC),
-            RIGHTS_METADATA: sp.utils.bytes_of_string(RIGHTS),
+            ATTRIBUTES_METADATA: self.attributes_generic,
+            RIGHTS_METADATA: self.rights,
             ISTRANSFERABLE_METADATA: sp.utils.bytes_of_string(ISTRANSFERABLE),
             ISBOOLEANAMOUNT_METADATA: sp.utils.bytes_of_string(ISBOOLEANAMOUNT),
             SHOULDPREFERSYMBOL_METADATA: sp.utils.bytes_of_string(SHOULDPREFERSYMBOL),
-            CREATORS_METADATA: sp.utils.bytes_of_string(CREATORS),
-            PROJECTNAME_METADATA: sp.utils.bytes_of_string(PROJECTNAME),
+            CREATORS_METADATA: self.creators,
+            PROJECTNAME_METADATA: self.project_name,
             FORMATS_METADATA: formats.value,
             WHAT3WORDSFILE_METADATA: self.data.what3words_file_ipfs,
             WHAT3WORDID_METADATA: token_id_string.value,
@@ -670,3 +646,32 @@ class AngryTeenagers(sp.Contract):
         })
 
         self.data.token_metadata[token_id] = sp.pair(token_id, meta_map)
+
+    def create_format_metadata_per_uri(self, link, type, size, name, dimensions, unit):
+        value = FORMAT_OPEN_CURLYBRACKET + FORMAT_URI + link + \
+                FORMAT_COMMA + FORMAT_MIMETYPE + type + \
+                FORMAT_COMMA + FORMAT_FILESIZE + size + \
+                FORMAT_COMMA + FORMAT_FILENAME + name + \
+                FORMAT_COMMA + FORMAT_DIMENSIONS + FORMAT_OPEN_CURLYBRACKET + FORMAT_VALUE + dimensions + \
+                FORMAT_COMMA + FORMAT_UNIT + unit + FORMAT_CLOSE_CURLYBRACKET + FORMAT_CLOSE_CURLYBRACKET
+        return value
+
+
+    def create_format_metadata(self, artifact_link, display_link, thumbnail_link):
+        value = FORMAT_OPEN_SQUAREBRACKET + \
+                self.create_format_metadata_per_uri(artifact_link, self.artifact_file_type, self.artifact_file_size,
+                                                    self.artifact_file_name, self.artifact_dimensions,
+                                                    self.artifact_file_unit) + \
+                FORMAT_COMMA + \
+                self.create_format_metadata_per_uri(display_link, self.display_file_type, self.display_file_size,
+                                                    self.display_file_name, self.display_dimensions,
+                                                    self.display_file_unit) + \
+                FORMAT_COMMA + \
+                self.create_format_metadata_per_uri(thumbnail_link, self.thumbnail_file_type, self.thumbnail_file_size,
+                                                    self.thumbnail_file_name, self.thumbnail_dimensions,
+                                                    self.thumbnail_file_unit) + \
+                FORMAT_CLOSE_SQUAREBRACKET
+        return value
+
+
+

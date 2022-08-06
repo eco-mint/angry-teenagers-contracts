@@ -32,4 +32,12 @@ sp.add_compilation_target(Config.CONTRACT_NAME,
                               thumbnail_file_size=Config.THUMBNAIL_FILE_SIZE,
                               thumbnail_file_name=Config.THUMBNAIL_FILE_NAME,
                               thumbnail_dimensions=Config.THUMBNAIL_DIMENSIONS,
-                              thumbnail_file_unit=Config.THUMBNAIL_FILE_UNIT))
+                              thumbnail_file_unit=Config.THUMBNAIL_FILE_UNIT,
+                              name_prefix=Config.NAME_PREFIX,
+                              symbol=Config.SYMBOL,
+                              description=Config.DESCRIPTION,
+                              language=Config.LANGUAGE,
+                              attributes_generic=Config.ATTRIBUTES_GENERIC,
+                              rights=Config.RIGHTS,
+                              creators=Config.CREATORS,
+                              project_name=Config.PROJECTNAME))

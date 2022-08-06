@@ -49,6 +49,27 @@ REVEALED_METADATA = "revealed"
 ROYALTIES_METADATA = "royalties"
 PROJECTORACLEURI_METADATA = "projectOraclesUri"
 
+
+DECIMALS = "0"
+ISTRANSFERABLE = "true"
+ISBOOLEANAMOUNT = "true"
+SHOULDPREFERSYMBOL = "false"
+REVEALED = "false"
+
+FORMAT_OPEN_SQUAREBRACKET = sp.utils.bytes_of_string("[")
+FORMAT_OPEN_CURLYBRACKET = sp.utils.bytes_of_string("{")
+FORMAT_CLOSE_SQUAREBRACKET = sp.utils.bytes_of_string("]")
+FORMAT_CLOSE_CURLYBRACKET = sp.utils.bytes_of_string("}")
+FORMAT_COMMA = sp.utils.bytes_of_string(",")
+FORMAT_QUOTE = sp.utils.bytes_of_string('"')
+FORMAT_URI = sp.utils.bytes_of_string('"uri":')
+FORMAT_FILENAME = sp.utils.bytes_of_string('"fileName":')
+FORMAT_FILESIZE = sp.utils.bytes_of_string('"fileSize":')
+FORMAT_VALUE = sp.utils.bytes_of_string('"value":')
+FORMAT_UNIT = sp.utils.bytes_of_string('"unit":')
+FORMAT_DIMENSIONS = sp.utils.bytes_of_string('"dimensions":')
+FORMAT_MIMETYPE = sp.utils.bytes_of_string('"mimeType":')
+
 ########################################################################################################################
 ########################################################################################################################
 # Classes
@@ -78,8 +99,65 @@ class Operator_set:
         return set.contains(self.make_key(owner, operator, token_id))
 
 class AngryTeenagers(sp.Contract):
-    def __init__(self, administrator, royalties_bytes, metadata, generic_image_ipfs, generic_image_ipfs_thumbnail, project_oracles_stream, what3words_file_ipfs, total_supply):
+    def __init__(self, administrator,
+                 royalties_bytes,
+                 metadata,
+                 generic_image_ipfs,
+                 generic_image_ipfs_display,
+                 generic_image_ipfs_thumbnail,
+                 project_oracles_stream,
+                 what3words_file_ipfs,
+                 total_supply,
+                 artifact_file_type,
+                 artifact_file_size,
+                 artifact_file_name,
+                 artifact_dimensions,
+                 artifact_file_unit,
+                 display_file_type,
+                 display_file_size,
+                 display_file_name,
+                 display_dimensions,
+                 display_file_unit,
+                 thumbnail_file_type,
+                 thumbnail_file_size,
+                 thumbnail_file_name,
+                 thumbnail_dimensions,
+                 thumbnail_file_unit,
+                 name_prefix,
+                 symbol,
+                 description,
+                 language,
+                 attributes_generic,
+                 rights,
+                 creators,
+                 project_name
+                 ):
         self.operator_set = Operator_set()
+
+        self.artifact_file_type = sp.utils.bytes_of_string(artifact_file_type)
+        self.artifact_file_size = sp.utils.bytes_of_string(artifact_file_size)
+        self.artifact_file_name = sp.utils.bytes_of_string(artifact_file_name)
+        self.artifact_dimensions = sp.utils.bytes_of_string(artifact_dimensions)
+        self.artifact_file_unit = sp.utils.bytes_of_string(artifact_file_unit)
+        self.display_file_type = sp.utils.bytes_of_string(display_file_type)
+        self.display_file_size = sp.utils.bytes_of_string(display_file_size)
+        self.display_file_name = sp.utils.bytes_of_string(display_file_name)
+        self.display_dimensions = sp.utils.bytes_of_string(display_dimensions)
+        self.display_file_unit = sp.utils.bytes_of_string(display_file_unit)
+        self.thumbnail_file_type = sp.utils.bytes_of_string(thumbnail_file_type)
+        self.thumbnail_file_size = sp.utils.bytes_of_string(thumbnail_file_size)
+        self.thumbnail_file_name = sp.utils.bytes_of_string(thumbnail_file_name)
+        self.thumbnail_dimensions = sp.utils.bytes_of_string(thumbnail_dimensions)
+        self.thumbnail_file_unit = sp.utils.bytes_of_string(thumbnail_file_unit)
+
+        self.name_prefix = sp.utils.bytes_of_string(name_prefix)
+        self.symbol = sp.utils.bytes_of_string(symbol)
+        self.description = sp.utils.bytes_of_string(description)
+        self.language = sp.utils.bytes_of_string(language)
+        self.attributes_generic = sp.utils.bytes_of_string(attributes_generic)
+        self.rights = sp.utils.bytes_of_string(rights)
+        self.creators = sp.utils.bytes_of_string(creators)
+        self.project_name = sp.utils.bytes_of_string(project_name)
 
         self.init(
             ledger = sp.big_map(tkey=TOKEN_ID, tvalue=sp.TAddress),
@@ -109,6 +187,7 @@ class AngryTeenagers(sp.Contract):
             extra_token_metadata = sp.big_map(l={}, tkey=TOKEN_ID, tvalue=sp.TRecord(token_id =TOKEN_ID, token_info = sp.TMap(sp.TString, sp.TBytes))),
 
             generic_image_ipfs = generic_image_ipfs,
+            generic_image_ipfs_display = generic_image_ipfs_display,
             generic_image_ipfs_thumbnail = generic_image_ipfs_thumbnail,
 
             project_oracles_stream = project_oracles_stream,
@@ -287,9 +366,8 @@ class AngryTeenagers(sp.Contract):
             my_map = sp.update_map(my_map, DISPLAYURI_METADATA, sp.some((sp.snd(artwork_metadata)).displayUri))
             my_map = sp.update_map(my_map, THUMBNAILURI_METADATA, sp.some((sp.snd(artwork_metadata)).thumbnailUri))
             my_map = sp.update_map(my_map, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributesJSonString))
-            formats_bytes_prefix = sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"')
-            formats_bytes_suffix = sp.utils.bytes_of_string('"}]')
-            formats = sp.local(FORMATS_METADATA, formats_bytes_prefix + (sp.snd(artwork_metadata)).artifactUri + formats_bytes_suffix)
+
+            formats = sp.local(FORMATS_METADATA, self.create_format_metadata((sp.snd(artwork_metadata)).artifactUri, (sp.snd(artwork_metadata)).displayUri, (sp.snd(artwork_metadata)).thumbnailUri))
             my_map = sp.update_map(my_map, FORMATS_METADATA, sp.some(formats.value))
 
             self.data.token_metadata[sp.fst(artwork_metadata)] = sp.pair(sp.fst(artwork_metadata), my_map)
@@ -541,35 +619,62 @@ class AngryTeenagers(sp.Contract):
                 token_id_string.value = sp.concat([nat_to_bytes.value[x.value % 10], token_id_string.value])
                 x.value //= 10
 
-        name = sp.concat([sp.utils.bytes_of_string('"Angry Teenager #'), token_id_string.value, sp.utils.bytes_of_string('"')])
+        name = sp.concat([self.name_prefix, token_id_string.value, sp.utils.bytes_of_string('"')])
 
-        formats_bytes_prefix = sp.utils.bytes_of_string('[{"mimeType": "image/png","uri":"')
-        formats_bytes_suffix = sp.utils.bytes_of_string('"}]')
-        formats = sp.local('formats', formats_bytes_prefix + self.data.generic_image_ipfs + formats_bytes_suffix)
+        formats = sp.local('formats', self.create_format_metadata(self.data.generic_image_ipfs, self.data.generic_image_ipfs_display, self.data.generic_image_ipfs_thumbnail))
 
         meta_map = sp.map(l={
             NAME_METADATA: name,
-            SYMBOL_METADATA: sp.utils.bytes_of_string("ANGRY"),
-            DECIMALS_METADATA: sp.utils.bytes_of_string("0"),
-            LANGUAGE_METADATA: sp.utils.bytes_of_string("en-US"),
-            DESCRIPTION_METADATA: sp.utils.bytes_of_string('"Angry Teenagers ... on the Tezos blockchain."'),
+            SYMBOL_METADATA: self.symbol,
+            DECIMALS_METADATA: sp.utils.bytes_of_string(DECIMALS),
+            LANGUAGE_METADATA: self.language,
+            DESCRIPTION_METADATA: self.description,
             DATE_METADATA: sp.pack(sp.now),
             ARTIFACTURI_METADATA: self.data.generic_image_ipfs,
-            DISPLAYURI_METADATA: self.data.generic_image_ipfs,
+            DISPLAYURI_METADATA: self.data.generic_image_ipfs_display,
             THUMBNAILURI_METADATA: self.data.generic_image_ipfs_thumbnail,
-            ATTRIBUTES_METADATA: sp.utils.bytes_of_string('[{\"name\", \"generic\"}]'),
-            RIGHTS_METADATA: sp.utils.bytes_of_string('"© 2022 EcoMint. All rights reserved."'),
-            ISTRANSFERABLE_METADATA: sp.utils.bytes_of_string("true"),
-            ISBOOLEANAMOUNT_METADATA: sp.utils.bytes_of_string("true"),
-            SHOULDPREFERSYMBOL_METADATA: sp.utils.bytes_of_string("false"),
-            CREATORS_METADATA: sp.utils.bytes_of_string('["EcoMint LTD. https://www.angryteenagers.xyz"]'),
-            PROJECTNAME_METADATA: sp.utils.bytes_of_string("Project-1"),
+            ATTRIBUTES_METADATA: self.attributes_generic,
+            RIGHTS_METADATA: self.rights,
+            ISTRANSFERABLE_METADATA: sp.utils.bytes_of_string(ISTRANSFERABLE),
+            ISBOOLEANAMOUNT_METADATA: sp.utils.bytes_of_string(ISBOOLEANAMOUNT),
+            SHOULDPREFERSYMBOL_METADATA: sp.utils.bytes_of_string(SHOULDPREFERSYMBOL),
+            CREATORS_METADATA: self.creators,
+            PROJECTNAME_METADATA: self.project_name,
             FORMATS_METADATA: formats.value,
             WHAT3WORDSFILE_METADATA: self.data.what3words_file_ipfs,
             WHAT3WORDID_METADATA: token_id_string.value,
-            REVEALED_METADATA: sp.utils.bytes_of_string("false"),
+            REVEALED_METADATA: sp.utils.bytes_of_string(REVEALED),
             ROYALTIES_METADATA: self.data.royalties,
             PROJECTORACLEURI_METADATA: self.data.project_oracles_stream
         })
 
         self.data.token_metadata[token_id] = sp.pair(token_id, meta_map)
+
+    def create_format_metadata_per_uri(self, link, type, size, name, dimensions, unit):
+        value = FORMAT_OPEN_CURLYBRACKET + FORMAT_URI + FORMAT_QUOTE + link + FORMAT_QUOTE + \
+                FORMAT_COMMA + FORMAT_MIMETYPE + type + \
+                FORMAT_COMMA + FORMAT_FILESIZE + size + \
+                FORMAT_COMMA + FORMAT_FILENAME + name + \
+                FORMAT_COMMA + FORMAT_DIMENSIONS + FORMAT_OPEN_CURLYBRACKET + FORMAT_VALUE + dimensions + \
+                FORMAT_COMMA + FORMAT_UNIT + unit + FORMAT_CLOSE_CURLYBRACKET + FORMAT_CLOSE_CURLYBRACKET
+        return value
+
+
+    def create_format_metadata(self, artifact_link, display_link, thumbnail_link):
+        value = FORMAT_OPEN_SQUAREBRACKET + \
+                self.create_format_metadata_per_uri(artifact_link, self.artifact_file_type, self.artifact_file_size,
+                                                    self.artifact_file_name, self.artifact_dimensions,
+                                                    self.artifact_file_unit) + \
+                FORMAT_COMMA + \
+                self.create_format_metadata_per_uri(display_link, self.display_file_type, self.display_file_size,
+                                                    self.display_file_name, self.display_dimensions,
+                                                    self.display_file_unit) + \
+                FORMAT_COMMA + \
+                self.create_format_metadata_per_uri(thumbnail_link, self.thumbnail_file_type, self.thumbnail_file_size,
+                                                    self.thumbnail_file_name, self.thumbnail_dimensions,
+                                                    self.thumbnail_file_unit) + \
+                FORMAT_CLOSE_SQUAREBRACKET
+        return value
+
+
+

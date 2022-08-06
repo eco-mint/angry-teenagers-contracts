@@ -27,14 +27,65 @@ class TestHelper():
     def create_contracts(scenario, admin, john):
         c1 = Sale.AngryTeenagersSale(admin.address, sp.list([sp.pair(admin.address, sp.nat(85)), sp.pair(john.address, sp.nat(15))]), sp.utils.metadata_of_url("https://example.com"))
         scenario += c1
+
+        ARTIFACT_FILE_TYPE = '"image/png"'
+        ARTIFACT_FILE_SIZE = '425118'
+        ARTIFACT_FILE_NAME = '"angry_teenagers.png"'
+        ARTIFACT_DIMENSIONS = '"1000x1000"'
+        ARTIFACT_FILE_UNIT = '"px"'
+        DISPLAY_FILE_TYPE = '"image/jpeg"'
+        DISPLAY_FILE_SIZE = '143913'
+        DISPLAY_FILE_NAME = '"angry_teenagers_display.jpeg"'
+        DISPLAY_DIMENSIONS = '"1000x1000"'
+        DISPLAY_FILE_UNIT = '"px"'
+        THUMBNAIL_FILE_TYPE = '"image/jpeg"'
+        THUMBNAIL_FILE_SIZE = '26875'
+        THUMBNAIL_FILE_NAME = '"angry_teenagers_thumbnail.jpeg"'
+        THUMBNAIL_DIMENSIONS = '"350x350"'
+        THUMBNAIL_FILE_UNIT = '"px"'
+
+        NAME_PREFIX = '"Angry Teenager #'
+        SYMBOL = "ANGRY"
+        DESCRIPTION = '"Angry Teenagers: NFTs that fund an exponential cycle of reforestation."'
+        LANGUAGE = "en-US"
+        ATTRIBUTES_GENERIC = '[{\"name\"}, {\"generic\"}]'
+        RIGHTS = '"© 2022 EcoMint. All rights reserved."'
+        CREATORS = '["The Angry Teenagers. https://www.angryteenagers.xyz"]'
+        PROJECTNAME = "Nsomyam Ye Reforestation"
+
         c2  = NFT.AngryTeenagers(administrator=admin.address,
                                    royalties_bytes=sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'),
                                    metadata=sp.utils.metadata_of_url("https://example.com"),
                                    generic_image_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
+                                   generic_image_ipfs_display=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
                                    generic_image_ipfs_thumbnail=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
                                    project_oracles_stream=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"),
                                    what3words_file_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"),
-                                   total_supply=5236)
+                                   total_supply=5236,
+                                   artifact_file_type=ARTIFACT_FILE_TYPE,
+                                   artifact_file_size=ARTIFACT_FILE_SIZE,
+                                   artifact_file_name=ARTIFACT_FILE_NAME,
+                                   artifact_dimensions=ARTIFACT_DIMENSIONS,
+                                   artifact_file_unit=ARTIFACT_FILE_UNIT,
+                                   display_file_type=DISPLAY_FILE_TYPE,
+                                   display_file_size=DISPLAY_FILE_SIZE,
+                                   display_file_name=DISPLAY_FILE_NAME,
+                                   display_dimensions=DISPLAY_DIMENSIONS,
+                                   display_file_unit=DISPLAY_FILE_UNIT,
+                                   thumbnail_file_type=THUMBNAIL_FILE_TYPE,
+                                   thumbnail_file_size=THUMBNAIL_FILE_SIZE,
+                                   thumbnail_file_name=THUMBNAIL_FILE_NAME,
+                                   thumbnail_dimensions=THUMBNAIL_DIMENSIONS,
+                                   thumbnail_file_unit=THUMBNAIL_FILE_UNIT,
+                                   name_prefix=NAME_PREFIX,
+                                   symbol=SYMBOL,
+                                   description=DESCRIPTION,
+                                   language=LANGUAGE,
+                                   attributes_generic=ATTRIBUTES_GENERIC,
+                                   rights=RIGHTS,
+                                   creators=CREATORS,
+                                   project_name=PROJECTNAME
+                                 )
         scenario += c2
         c1.register_fa2(c2.address).run(valid=True, sender=admin)
         c2.set_administrator(c1.address).run(valid=True, sender=admin)

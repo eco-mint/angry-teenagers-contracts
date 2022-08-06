@@ -61,7 +61,8 @@ FORMAT_OPEN_CURLYBRACKET = sp.utils.bytes_of_string("{")
 FORMAT_CLOSE_SQUAREBRACKET = sp.utils.bytes_of_string("]")
 FORMAT_CLOSE_CURLYBRACKET = sp.utils.bytes_of_string("}")
 FORMAT_COMMA = sp.utils.bytes_of_string(",")
-FORMAT_URI = sp.utils.bytes_of_string('"uri"')
+FORMAT_QUOTE = sp.utils.bytes_of_string('"')
+FORMAT_URI = sp.utils.bytes_of_string('"uri":')
 FORMAT_FILENAME = sp.utils.bytes_of_string('"fileName":')
 FORMAT_FILESIZE = sp.utils.bytes_of_string('"fileSize":')
 FORMAT_VALUE = sp.utils.bytes_of_string('"value":')
@@ -648,7 +649,7 @@ class AngryTeenagers(sp.Contract):
         self.data.token_metadata[token_id] = sp.pair(token_id, meta_map)
 
     def create_format_metadata_per_uri(self, link, type, size, name, dimensions, unit):
-        value = FORMAT_OPEN_CURLYBRACKET + FORMAT_URI + link + \
+        value = FORMAT_OPEN_CURLYBRACKET + FORMAT_URI + FORMAT_QUOTE + link + FORMAT_QUOTE + \
                 FORMAT_COMMA + FORMAT_MIMETYPE + type + \
                 FORMAT_COMMA + FORMAT_FILESIZE + size + \
                 FORMAT_COMMA + FORMAT_FILENAME + name + \

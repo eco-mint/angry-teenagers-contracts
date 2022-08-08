@@ -234,23 +234,50 @@ def unit_test_mutez_transfer(is_default=True):
         admin, alice, bob, john = TestHelper.create_account(scenario)
         c1, simulated_voting_strategy_one, simulated_voting_strategy_two, simulated_fa2 = TestHelper.create_contracts(scenario, admin, john)
 
-        scenario.h2("Test the mutez_transfer entrypoint.  (Who: Only for the admin)")
+        scenario.h2("Test the mutez_transfer entrypoint.  (Who: Only for the DAO)")
         scenario.p("This entrypoint is called byt the admin to extract fund on the contract. Normally no funds are supposed to be held in the contract however if something bad happens or somebody makes a mistake transfer, we still want to have the ability to extract the fund.")
 
         scenario.p("1. Add fund to the contract")
         c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin, amount=sp.mutez(300000000))
 
-        scenario.p("2. Check that only the admin can call this entrypoint")
+        scenario.p("2. Check that only the DAO can call this entrypoint")
         c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=False, sender=alice)
-        c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=False, sender=bob)
+        c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=False, sender=admin)
         c1.mutez_transfer(sp.record(destination=admin.address, amount=sp.mutez(200000000))).run(valid=False, sender=john)
 
         scenario.p("3. Check the function extracts the fund as expected")
-        c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=True, sender=admin)
-        c1.mutez_transfer(sp.record(destination=admin.address, amount=sp.mutez(100000000))).run(valid=True, sender=admin)
+        c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=True, sender=c1.address)
+        c1.mutez_transfer(sp.record(destination=admin.address, amount=sp.mutez(100000000))).run(valid=True, sender=c1.address)
 
         scenario.p("3. Check no fund are remaining")
-        c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(100000000))).run(valid=False, sender=admin)
+        c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(100000000))).run(valid=False, sender=c1.address)
+
+def unit_test_set_delegate(is_default=True):
+    @sp.add_test(name="unit_test_set_delegate", is_default=is_default)
+    def test():
+        scenario = TestHelper.create_scenario("unit_test_set_delegate")
+
+        admin, alice, bob, john = TestHelper.create_account(scenario)
+        c1, simulated_voting_strategy_one, simulated_voting_strategy_two, simulated_fa2 = TestHelper.create_contracts(
+            scenario, admin, john)
+
+        scenario.h2("Test the set_delegate entrypoint.  (Who: Only for the DAO)")
+
+        scenario.p("1. Check the delegate doesn't exist by default")
+        scenario.verify(~c1.baker.is_some())
+
+        scenario.p("1. Check that only the DAO can call this entrypoint")
+        votings_powers = sp.map(l = {alice.public_key_hash: 10, admin.public_key_hash: 100, john.public_key_hash: 20}, tkey=sp.TKeyHash, tvalue=sp.TNat)
+        c1.delegate(sp.some(alice.public_key_hash)).run(valid=False, sender=alice, voting_powers=votings_powers)
+        c1.delegate(sp.some(alice.public_key_hash)).run(valid=False, sender=admin, voting_powers=votings_powers)
+        c1.delegate(sp.some(alice.public_key_hash)).run(valid=False, sender=john, voting_powers=votings_powers)
+
+        scenario.p("2. Check the entrypoint works as expected")
+        c1.delegate(sp.some(alice.public_key_hash)).run(valid=True, sender=c1.address, voting_powers=votings_powers)
+        scenario.verify(c1.baker.open_some() == alice.public_key_hash)
+        c1.delegate(sp.some(admin.public_key_hash)).run(valid=True, sender=c1.address, voting_powers=votings_powers)
+        scenario.verify(c1.baker.open_some() == admin.public_key_hash)
+
 
 def unit_test_add_voting_strategy(is_default = True):
     @sp.add_test(name="unit_test_add_voting_strategy", is_default=is_default)
@@ -777,6 +804,7 @@ unit_test_initial_storage()
 unit_test_set_administrator()
 unit_test_register_angry_teenager_fa2()
 unit_test_mutez_transfer()
+unit_test_set_delegate()
 unit_test_add_voting_strategy()
 unit_test_propose()
 unit_test_propose_callback()

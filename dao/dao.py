@@ -109,6 +109,21 @@ class AngryTeenagersDao(sp.Contract):
 ################################################################
 
 ########################################################################################################################
+# delegate
+########################################################################################################################
+    @sp.entry_point
+    def delegate(self, baker):
+        sp.verify_equal(sp.sender, sp.self_address, Error.ErrorMessage.dao_only_for_dao())
+        sp.set_delegate(baker)
+
+########################################################################################################################
+# default
+########################################################################################################################
+    @sp.entry_point
+    def default(self):
+        pass
+
+########################################################################################################################
 # set_metadata
 ########################################################################################################################
     @sp.entry_point
@@ -117,7 +132,7 @@ class AngryTeenagersDao(sp.Contract):
         self.data.metadata[k] = v
 
 ########################################################################################################################
-# set_metadata
+# set_administrator
 ########################################################################################################################
     @sp.entry_point
     def set_administrator(self, params):
@@ -296,7 +311,7 @@ class AngryTeenagersDao(sp.Contract):
         sp.set_type(params.amount, sp.TMutez)
 
         # Asserts
-        sp.verify(self.data.admin == sp.sender, Error.ErrorMessage.unauthorized_user())
+        sp.verify_equal(sp.sender, sp.self_address, Error.ErrorMessage.dao_only_for_dao())
 
         # Send mutez
         sp.send(params.destination, params.amount)

@@ -9,6 +9,31 @@ NFT = sp.io.import_script_from_url("file:./nft/nft.py")
 ##################################################################################################################
 # Unit Test ------------------------------------------------------------------------------------------------------------
 
+ARTIFACT_FILE_TYPE = '"image/png"'
+ARTIFACT_FILE_SIZE = '425118'
+ARTIFACT_FILE_NAME = '"angry_teenagers.png"'
+ARTIFACT_DIMENSIONS = '"1000x1000"'
+ARTIFACT_FILE_UNIT = '"px"'
+DISPLAY_FILE_TYPE = '"image/jpeg"'
+DISPLAY_FILE_SIZE = '143913'
+DISPLAY_FILE_NAME = '"angry_teenagers_display.jpeg"'
+DISPLAY_DIMENSIONS = '"1000x1000"'
+DISPLAY_FILE_UNIT = '"px"'
+THUMBNAIL_FILE_TYPE = '"image/jpeg"'
+THUMBNAIL_FILE_SIZE = '26875'
+THUMBNAIL_FILE_NAME = '"angry_teenagers_thumbnail.jpeg"'
+THUMBNAIL_DIMENSIONS = '"350x350"'
+THUMBNAIL_FILE_UNIT = '"px"'
+
+NAME_PREFIX = '"Angry Teenager #'
+SYMBOL = "ANGRY"
+DESCRIPTION = '"Angry Teenagers: NFTs that fund an exponential cycle of reforestation."'
+LANGUAGE = "en-US"
+ATTRIBUTES_GENERIC = '[{\"name\"}, {\"generic\"}]'
+RIGHTS = '"© 2022 EcoMint. All rights reserved."'
+CREATORS = '["The Angry Teenagers. https://www.angryteenagers.xyz"]'
+PROJECTNAME = "Nsomyam Ye Reforestation"
+
 ########################################################################################################################
 # Helper class for unit testing
 ########################################################################################################################
@@ -20,31 +45,6 @@ class TestHelper():
         return scenario
 
     def create_contracts(scenario, admin, john):
-        ARTIFACT_FILE_TYPE = '"image/png"'
-        ARTIFACT_FILE_SIZE = '425118'
-        ARTIFACT_FILE_NAME = '"angry_teenagers.png"'
-        ARTIFACT_DIMENSIONS = '"1000x1000"'
-        ARTIFACT_FILE_UNIT = '"px"'
-        DISPLAY_FILE_TYPE = '"image/jpeg"'
-        DISPLAY_FILE_SIZE = '143913'
-        DISPLAY_FILE_NAME = '"angry_teenagers_display.jpeg"'
-        DISPLAY_DIMENSIONS = '"1000x1000"'
-        DISPLAY_FILE_UNIT = '"px"'
-        THUMBNAIL_FILE_TYPE = '"image/jpeg"'
-        THUMBNAIL_FILE_SIZE = '26875'
-        THUMBNAIL_FILE_NAME = '"angry_teenagers_thumbnail.jpeg"'
-        THUMBNAIL_DIMENSIONS = '"350x350"'
-        THUMBNAIL_FILE_UNIT = '"px"'
-
-        NAME_PREFIX = '"Angry Teenager #'
-        SYMBOL = "ANGRY"
-        DESCRIPTION = '"Angry Teenagers: NFTs that fund an exponential cycle of reforestation."'
-        LANGUAGE = "en-US"
-        ATTRIBUTES_GENERIC = '[{\"name\"}, {\"generic\"}]'
-        RIGHTS = '"© 2022 EcoMint. All rights reserved."'
-        CREATORS = '["The Angry Teenagers. https://www.angryteenagers.xyz"]'
-        PROJECTNAME = "Nsomyam Ye Reforestation"
-
         c1  = NFT.AngryTeenagers(administrator=admin.address,
                         royalties_bytes=sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'),
                         metadata=sp.utils.metadata_of_url("https://example.com"),
@@ -56,17 +56,17 @@ class TestHelper():
                             "ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"),
                         total_supply=128,
                         artifact_file_type=ARTIFACT_FILE_TYPE,
-                        artifact_file_size=ARTIFACT_FILE_SIZE,
+                        artifact_file_size_generic=ARTIFACT_FILE_SIZE,
                         artifact_file_name=ARTIFACT_FILE_NAME,
                         artifact_dimensions=ARTIFACT_DIMENSIONS,
                         artifact_file_unit=ARTIFACT_FILE_UNIT,
                         display_file_type=DISPLAY_FILE_TYPE,
-                        display_file_size=DISPLAY_FILE_SIZE,
+                        display_file_size_generic=DISPLAY_FILE_SIZE,
                         display_file_name=DISPLAY_FILE_NAME,
                         display_dimensions=DISPLAY_DIMENSIONS,
                         display_file_unit=DISPLAY_FILE_UNIT,
                         thumbnail_file_type=THUMBNAIL_FILE_TYPE,
-                        thumbnail_file_size=THUMBNAIL_FILE_SIZE,
+                        thumbnail_file_size_generic=THUMBNAIL_FILE_SIZE,
                         thumbnail_file_name=THUMBNAIL_FILE_NAME,
                         thumbnail_dimensions=THUMBNAIL_DIMENSIONS,
                         thumbnail_file_unit=THUMBNAIL_FILE_UNIT,
@@ -146,12 +146,12 @@ class TestHelper():
         for i in (0, sp.len(a)):
             scenario.verify(sp.slice(a, i, i).open_some() != sp.slice(b, i, i).open_some())
 
-    def format_helper(artifact_link, display_link, thumbnail_link):
+    def format_helper(artifact_link, display_link, thumbnail_link, artifact_size, display_size, thumbnail_size):
         # This function hardcodes string to be sure the contract is building the expected final string
         value = '[{"uri":"' + artifact_link + \
-                '","mimeType":"image/png","fileSize":425118,"fileName":"angry_teenagers.png","dimensions":{"value":"1000x1000","unit":"px"}},{"uri":"' + \
-                display_link + '","mimeType":"image/jpeg","fileSize":143913,"fileName":"angry_teenagers_display.jpeg","dimensions":{"value":"1000x1000","unit":"px"}},{"uri":"' + \
-                thumbnail_link + '","mimeType":"image/jpeg","fileSize":26875,"fileName":"angry_teenagers_thumbnail.jpeg","dimensions":{"value":"350x350","unit":"px"}}]'
+                '","mimeType":"image/png","fileSize":' + artifact_size + ',"fileName":"angry_teenagers.png","dimensions":{"value":"1000x1000","unit":"px"}},{"uri":"' + \
+                display_link + '","mimeType":"image/jpeg","fileSize":' + display_size + ',"fileName":"angry_teenagers_display.jpeg","dimensions":{"value":"1000x1000","unit":"px"}},{"uri":"' + \
+                thumbnail_link + '","mimeType":"image/jpeg","fileSize":' + thumbnail_size + ',"fileName":"angry_teenagers_thumbnail.jpeg","dimensions":{"value":"350x350","unit":"px"}}]'
         return sp.utils.bytes_of_string(value)
 
 ########################################################################################################################
@@ -568,18 +568,36 @@ def unit_fa2_test_update_artwork_data(is_default=True):
         scenario.h2("Test the entrypoint update_artwork_data. (Who: Only main admin and artwork admin)")
         scenario.p("Used to pause the FA2 contract.")
 
-        record1 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
-                            displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
-                            thumbnailUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"),
-                            attributesJSonString=sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'))
-        record2 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"),
-                            displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"),
-                            thumbnailUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"),
-                            attributesJSonString=sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'))
-        record3 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"),
-                            displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"),
-                            thumbnailUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"),
-                            attributesJSonString=sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'))
+        artifact_size_1 = "400001"
+        artifact_size_2 = "400002"
+        artifact_size_3 = "400003"
+        display_size_1 = "100001"
+        display_size_2 = "100002"
+        display_size_3 = "100003"
+        thumbnail_size_1 = "20001"
+        thumbnail_size_2 = "20002"
+        thumbnail_size_3 = "20003"
+        record1 = sp.record(artifact_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
+                            display_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
+                            thumbnail_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"),
+                            attributes=sp.utils.bytes_of_string('[{\"name\", \"generic1\"}]'),
+                            artifact_size=sp.utils.bytes_of_string(artifact_size_1),
+                            display_size=sp.utils.bytes_of_string(display_size_1),
+                            thumbnail_size=sp.utils.bytes_of_string(thumbnail_size_1))
+        record2 = sp.record(artifact_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB12"),
+                            display_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB22"),
+                            thumbnail_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB32"),
+                            attributes=sp.utils.bytes_of_string('[{\"name\", \"generic2\"}]'),
+                            artifact_size=sp.utils.bytes_of_string(artifact_size_2),
+                            display_size=sp.utils.bytes_of_string(display_size_2),
+                            thumbnail_size=sp.utils.bytes_of_string(thumbnail_size_2))
+        record3 = sp.record(artifact_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB13"),
+                            display_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB23"),
+                            thumbnail_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB33"),
+                            attributes=sp.utils.bytes_of_string('[{\"name\", \"generic3\"}]'),
+                            artifact_size=sp.utils.bytes_of_string(artifact_size_3),
+                            display_size=sp.utils.bytes_of_string(display_size_3),
+                            thumbnail_size=sp.utils.bytes_of_string(thumbnail_size_3))
         list1 = sp.list({sp.pair(1, record1), sp.pair(2, record2)})
         list2 = sp.list({sp.pair(3, record3)})
 
@@ -969,7 +987,12 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(info[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
         scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #0"'))
-        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
+        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1",
+                                                                                   "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2",
+                                                                                   "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3",
+                                                                                   ARTIFACT_FILE_SIZE,
+                                                                                   DISPLAY_FILE_SIZE,
+                                                                                   THUMBNAIL_FILE_SIZE))
         scenario.verify_equal(info[NFT.SYMBOL_METADATA], c1.symbol)
         scenario.verify_equal(info[NFT.ATTRIBUTES_METADATA], c1.attributes_generic)
         scenario.verify_equal(info[NFT.DECIMALS_METADATA], sp.utils.bytes_of_string(NFT.DECIMALS))
@@ -998,7 +1021,12 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
         scenario.verify_equal(info[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(info[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
-        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
+        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1",
+                                                                                   "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2",
+                                                                                   "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3",
+                                                                                   ARTIFACT_FILE_SIZE,
+                                                                                   DISPLAY_FILE_SIZE,
+                                                                                   THUMBNAIL_FILE_SIZE))
         scenario.verify_equal(info[NFT.SYMBOL_METADATA], c1.symbol)
         scenario.verify_equal(info[NFT.ATTRIBUTES_METADATA], c1.attributes_generic)
         scenario.verify_equal(info[NFT.DECIMALS_METADATA], sp.utils.bytes_of_string(NFT.DECIMALS))
@@ -1011,10 +1039,16 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[NFT.CREATORS_METADATA], c1.creators)
         scenario.verify_equal(info[NFT.PROJECTNAME_METADATA], c1.project_name)
 
-        record1 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
-                            displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
-                            thumbnailUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"),
-                            attributesJSonString=c1.attributes_generic)
+        artifact_size_1 = "400001"
+        display_size_1 = "100001"
+        thumbnail_size_1 = "20001"
+        record1 = sp.record(artifact_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
+                            display_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
+                            thumbnail_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"),
+                            attributes=c1.attributes_generic,
+                            artifact_size=sp.utils.bytes_of_string(artifact_size_1),
+                            display_size=sp.utils.bytes_of_string(display_size_1),
+                            thumbnail_size=sp.utils.bytes_of_string(thumbnail_size_1))
         list1 = sp.list({sp.pair(49, record1)})
         c1.update_artwork_data(list1).run(valid=True, sender=admin)
 
@@ -1030,7 +1064,10 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
         scenario.verify_equal(info[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(info[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
-        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
+        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11",
+                                                                                   "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21",
+                                                                                   "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31",
+                                                                                   artifact_size_1, display_size_1, thumbnail_size_1))
         scenario.verify_equal(info[NFT.SYMBOL_METADATA], c1.symbol)
         scenario.verify_equal(info[NFT.ATTRIBUTES_METADATA], c1.attributes_generic)
         scenario.verify_equal(info[NFT.DECIMALS_METADATA], sp.utils.bytes_of_string(NFT.DECIMALS))
@@ -1081,7 +1118,12 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(metadata[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
         scenario.verify_equal(metadata[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #0"'))
-        scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
+        scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1",
+                                                                                       "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2",
+                                                                                       "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3",
+                                                                                       ARTIFACT_FILE_SIZE,
+                                                                                       DISPLAY_FILE_SIZE,
+                                                                                       THUMBNAIL_FILE_SIZE))
         scenario.verify_equal(metadata[NFT.SYMBOL_METADATA], c1.symbol)
         scenario.verify_equal(metadata[NFT.ATTRIBUTES_METADATA], c1.attributes_generic)
         scenario.verify_equal(metadata[NFT.DECIMALS_METADATA], sp.utils.bytes_of_string(NFT.DECIMALS))
@@ -1108,7 +1150,12 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
         scenario.verify_equal(metadata[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(metadata[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
-        scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
+        scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1",
+                                                                                       "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2",
+                                                                                       "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3",
+                                                                                       ARTIFACT_FILE_SIZE,
+                                                                                       DISPLAY_FILE_SIZE,
+                                                                                       THUMBNAIL_FILE_SIZE))
         scenario.verify_equal(metadata[NFT.SYMBOL_METADATA], c1.symbol)
         scenario.verify_equal(metadata[NFT.ATTRIBUTES_METADATA], c1.attributes_generic)
         scenario.verify_equal(metadata[NFT.DECIMALS_METADATA], sp.utils.bytes_of_string(NFT.DECIMALS))
@@ -1121,10 +1168,16 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[NFT.CREATORS_METADATA], c1.creators)
         scenario.verify_equal(metadata[NFT.PROJECTNAME_METADATA], c1.project_name)
 
-        record1 = sp.record(artifactUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
-                            displayUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
-                            thumbnailUri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"),
-                            attributesJSonString=c1.attributes_generic)
+        artifact_size_1 = "400001"
+        display_size_1 = "100001"
+        thumbnail_size_1 = "20001"
+        record1 = sp.record(artifact_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11"),
+                            display_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21"),
+                            thumbnail_uri=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"),
+                            attributes=c1.attributes_generic,
+                            artifact_size=sp.utils.bytes_of_string(artifact_size_1),
+                            display_size=sp.utils.bytes_of_string(display_size_1),
+                            thumbnail_size=sp.utils.bytes_of_string(thumbnail_size_1))
         list1 = sp.list({sp.pair(49, record1)})
         c1.update_artwork_data(list1).run(valid=True, sender=admin)
 
@@ -1139,7 +1192,10 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
         scenario.verify_equal(metadata[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(metadata[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
-        scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
+        scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11",
+                                                                                       "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB21",
+                                                                                       "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31",
+                                                                                       artifact_size_1, display_size_1, thumbnail_size_1))
         scenario.verify_equal(metadata[NFT.SYMBOL_METADATA], c1.symbol)
         scenario.verify_equal(metadata[NFT.ATTRIBUTES_METADATA], c1.attributes_generic)
         scenario.verify_equal(metadata[NFT.DECIMALS_METADATA], sp.utils.bytes_of_string(NFT.DECIMALS))

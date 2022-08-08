@@ -56,17 +56,17 @@ class TestHelper():
                             "ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"),
                         total_supply=128,
                         artifact_file_type=ARTIFACT_FILE_TYPE,
-                        artifact_file_size=ARTIFACT_FILE_SIZE,
+                        artifact_file_size_generic=ARTIFACT_FILE_SIZE,
                         artifact_file_name=ARTIFACT_FILE_NAME,
                         artifact_dimensions=ARTIFACT_DIMENSIONS,
                         artifact_file_unit=ARTIFACT_FILE_UNIT,
                         display_file_type=DISPLAY_FILE_TYPE,
-                        display_file_size=DISPLAY_FILE_SIZE,
+                        display_file_size_generic=DISPLAY_FILE_SIZE,
                         display_file_name=DISPLAY_FILE_NAME,
                         display_dimensions=DISPLAY_DIMENSIONS,
                         display_file_unit=DISPLAY_FILE_UNIT,
                         thumbnail_file_type=THUMBNAIL_FILE_TYPE,
-                        thumbnail_file_size=THUMBNAIL_FILE_SIZE,
+                        thumbnail_file_size_generic=THUMBNAIL_FILE_SIZE,
                         thumbnail_file_name=THUMBNAIL_FILE_NAME,
                         thumbnail_dimensions=THUMBNAIL_DIMENSIONS,
                         thumbnail_file_unit=THUMBNAIL_FILE_UNIT,
@@ -146,12 +146,12 @@ class TestHelper():
         for i in (0, sp.len(a)):
             scenario.verify(sp.slice(a, i, i).open_some() != sp.slice(b, i, i).open_some())
 
-    def format_helper(artifact_link, display_link, thumbnail_link):
+    def format_helper(artifact_link, display_link, thumbnail_link, artifact_size, display_size, thumbnail_size):
         # This function hardcodes string to be sure the contract is building the expected final string
         value = '[{"uri":"' + artifact_link + \
-                '","mimeType":"image/png","fileSize":425118,"fileName":"angry_teenagers.png","dimensions":{"value":"1000x1000","unit":"px"}},{"uri":"' + \
-                display_link + '","mimeType":"image/jpeg","fileSize":143913,"fileName":"angry_teenagers_display.jpeg","dimensions":{"value":"1000x1000","unit":"px"}},{"uri":"' + \
-                thumbnail_link + '","mimeType":"image/jpeg","fileSize":26875,"fileName":"angry_teenagers_thumbnail.jpeg","dimensions":{"value":"350x350","unit":"px"}}]'
+                '","mimeType":"image/png","fileSize":' + artifact_size + ',"fileName":"angry_teenagers.png","dimensions":{"value":"1000x1000","unit":"px"}},{"uri":"' + \
+                display_link + '","mimeType":"image/jpeg","fileSize":' + display_size + ',"fileName":"angry_teenagers_display.jpeg","dimensions":{"value":"1000x1000","unit":"px"}},{"uri":"' + \
+                thumbnail_link + '","mimeType":"image/jpeg","fileSize":' + thumbnail_size + ',"fileName":"angry_teenagers_thumbnail.jpeg","dimensions":{"value":"350x350","unit":"px"}}]'
         return sp.utils.bytes_of_string(value)
 
 ########################################################################################################################
@@ -969,7 +969,10 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(info[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
         scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #0"'))
-        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2", "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
+        scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1",
+                                                                                   "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2",
+                                                                                   "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3",
+                                                                                   c1.))
         scenario.verify_equal(info[NFT.SYMBOL_METADATA], c1.symbol)
         scenario.verify_equal(info[NFT.ATTRIBUTES_METADATA], c1.attributes_generic)
         scenario.verify_equal(info[NFT.DECIMALS_METADATA], sp.utils.bytes_of_string(NFT.DECIMALS))

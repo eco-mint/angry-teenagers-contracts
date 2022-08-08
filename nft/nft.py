@@ -16,7 +16,7 @@ TRANSFER_TX_TYPE = sp.TRecord(to_=sp.TAddress, token_id=TOKEN_ID, amount=sp.TNat
 TRANSFER_TYPE = sp.TRecord(from_=sp.TAddress, txs=sp.TList(TRANSFER_TX_TYPE)).layout(("from_", "txs"))
 TRANSFER_FUNCTION_TYPE = sp.TList(TRANSFER_TYPE)
 OPERATOR_TYPE = sp.TRecord(owner=sp.TAddress, operator=sp.TAddress, token_id=TOKEN_ID).layout(("owner", ("operator", "token_id")))
-ARTWORKS_CONTAINER_FUNCTION_TYPE = sp.TRecord(artifactUri=sp.TBytes, displayUri=sp.TBytes, thumbnailUri=sp.TBytes, attributesJSonString=sp.TBytes)
+ARTWORKS_CONTAINER_FUNCTION_TYPE = sp.TRecord(artifact_uri=sp.TBytes, artifact_size=sp.TBytes, display_uri=sp.TBytes, display_size=sp.TBytes, thumbnail_uri=sp.TBytes, thumbnail_size=sp.TBytes, attributes=sp.TBytes)
 UPDATE_ARTWORK_METADATA_FUNCTION_TYPE = sp.TList(sp.TPair(TOKEN_ID, ARTWORKS_CONTAINER_FUNCTION_TYPE))
 
 BALANCE_RECORD_TYPE = sp.TMap(sp.TNat, sp.TNat)
@@ -109,17 +109,17 @@ class AngryTeenagers(sp.Contract):
                  what3words_file_ipfs,
                  total_supply,
                  artifact_file_type,
-                 artifact_file_size,
+                 artifact_file_size_generic,
                  artifact_file_name,
                  artifact_dimensions,
                  artifact_file_unit,
                  display_file_type,
-                 display_file_size,
+                 display_file_size_generic,
                  display_file_name,
                  display_dimensions,
                  display_file_unit,
                  thumbnail_file_type,
-                 thumbnail_file_size,
+                 thumbnail_file_size_generic,
                  thumbnail_file_name,
                  thumbnail_dimensions,
                  thumbnail_file_unit,
@@ -135,17 +135,17 @@ class AngryTeenagers(sp.Contract):
         self.operator_set = Operator_set()
 
         self.artifact_file_type = sp.utils.bytes_of_string(artifact_file_type)
-        self.artifact_file_size = sp.utils.bytes_of_string(artifact_file_size)
+        self.artifact_file_size_generic = sp.utils.bytes_of_string(artifact_file_size_generic)
         self.artifact_file_name = sp.utils.bytes_of_string(artifact_file_name)
         self.artifact_dimensions = sp.utils.bytes_of_string(artifact_dimensions)
         self.artifact_file_unit = sp.utils.bytes_of_string(artifact_file_unit)
         self.display_file_type = sp.utils.bytes_of_string(display_file_type)
-        self.display_file_size = sp.utils.bytes_of_string(display_file_size)
+        self.display_file_size_generic = sp.utils.bytes_of_string(display_file_size_generic)
         self.display_file_name = sp.utils.bytes_of_string(display_file_name)
         self.display_dimensions = sp.utils.bytes_of_string(display_dimensions)
         self.display_file_unit = sp.utils.bytes_of_string(display_file_unit)
         self.thumbnail_file_type = sp.utils.bytes_of_string(thumbnail_file_type)
-        self.thumbnail_file_size = sp.utils.bytes_of_string(thumbnail_file_size)
+        self.thumbnail_file_size_generic = sp.utils.bytes_of_string(thumbnail_file_size_generic)
         self.thumbnail_file_name = sp.utils.bytes_of_string(thumbnail_file_name)
         self.thumbnail_dimensions = sp.utils.bytes_of_string(thumbnail_dimensions)
         self.thumbnail_file_unit = sp.utils.bytes_of_string(thumbnail_file_unit)
@@ -362,12 +362,18 @@ class AngryTeenagers(sp.Contract):
             sp.verify(info[REVEALED_METADATA] == sp.utils.bytes_of_string("false"), Error.ErrorMessage.token_revealed())
 
             my_map = sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), REVEALED_METADATA, sp.some(sp.utils.bytes_of_string("true")))
-            my_map = sp.update_map(my_map, ARTIFACTURI_METADATA, sp.some((sp.snd(artwork_metadata)).artifactUri))
-            my_map = sp.update_map(my_map, DISPLAYURI_METADATA, sp.some((sp.snd(artwork_metadata)).displayUri))
-            my_map = sp.update_map(my_map, THUMBNAILURI_METADATA, sp.some((sp.snd(artwork_metadata)).thumbnailUri))
-            my_map = sp.update_map(my_map, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributesJSonString))
+            my_map = sp.update_map(my_map, ARTIFACTURI_METADATA, sp.some((sp.snd(artwork_metadata)).artifact_uri))
+            my_map = sp.update_map(my_map, DISPLAYURI_METADATA, sp.some((sp.snd(artwork_metadata)).display_uri))
+            my_map = sp.update_map(my_map, THUMBNAILURI_METADATA, sp.some((sp.snd(artwork_metadata)).thumbnail_uri))
+            my_map = sp.update_map(my_map, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributes))
+            my_map = sp.update_map(my_map, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributes))
 
-            formats = sp.local(FORMATS_METADATA, self.create_format_metadata((sp.snd(artwork_metadata)).artifactUri, (sp.snd(artwork_metadata)).displayUri, (sp.snd(artwork_metadata)).thumbnailUri))
+            formats = sp.local(FORMATS_METADATA, self.create_format_metadata((sp.snd(artwork_metadata)).artifact_uri,
+                                                                             (sp.snd(artwork_metadata)).display_uri,
+                                                                             (sp.snd(artwork_metadata)).thumbnail_uri,
+                                                                             (sp.snd(artwork_metadata)).artifact_size,
+                                                                             (sp.snd(artwork_metadata)).display_size,
+                                                                             (sp.snd(artwork_metadata)).thumbnail_size))
             my_map = sp.update_map(my_map, FORMATS_METADATA, sp.some(formats.value))
 
             self.data.token_metadata[sp.fst(artwork_metadata)] = sp.pair(sp.fst(artwork_metadata), my_map)
@@ -621,7 +627,12 @@ class AngryTeenagers(sp.Contract):
 
         name = sp.concat([self.name_prefix, token_id_string.value, sp.utils.bytes_of_string('"')])
 
-        formats = sp.local('formats', self.create_format_metadata(self.data.generic_image_ipfs, self.data.generic_image_ipfs_display, self.data.generic_image_ipfs_thumbnail))
+        formats = sp.local('formats', self.create_format_metadata(self.data.generic_image_ipfs,
+                                                                  self.data.generic_image_ipfs_display,
+                                                                  self.data.generic_image_ipfs_thumbnail,
+                                                                  self.artifact_file_size_generic,
+                                                                  self.display_file_size_generic,
+                                                                  self.thumbnail_file_size_generic))
 
         meta_map = sp.map(l={
             NAME_METADATA: name,
@@ -660,17 +671,17 @@ class AngryTeenagers(sp.Contract):
         return value
 
 
-    def create_format_metadata(self, artifact_link, display_link, thumbnail_link):
+    def create_format_metadata(self, artifact_link, display_link, thumbnail_link, artifact_size, display_size, thumbnail_size):
         value = FORMAT_OPEN_SQUAREBRACKET + \
-                self.create_format_metadata_per_uri(artifact_link, self.artifact_file_type, self.artifact_file_size,
+                self.create_format_metadata_per_uri(artifact_link, self.artifact_file_type, artifact_size,
                                                     self.artifact_file_name, self.artifact_dimensions,
                                                     self.artifact_file_unit) + \
                 FORMAT_COMMA + \
-                self.create_format_metadata_per_uri(display_link, self.display_file_type, self.display_file_size,
+                self.create_format_metadata_per_uri(display_link, self.display_file_type, display_size,
                                                     self.display_file_name, self.display_dimensions,
                                                     self.display_file_unit) + \
                 FORMAT_COMMA + \
-                self.create_format_metadata_per_uri(thumbnail_link, self.thumbnail_file_type, self.thumbnail_file_size,
+                self.create_format_metadata_per_uri(thumbnail_link, self.thumbnail_file_type, thumbnail_size,
                                                     self.thumbnail_file_name, self.thumbnail_dimensions,
                                                     self.thumbnail_file_unit) + \
                 FORMAT_CLOSE_SQUAREBRACKET

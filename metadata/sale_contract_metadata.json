@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Angry Teenagers Crowdsale contract",
   "interfaces": [ "TZIP-016", "TZIP-021" ],
   "authors": [ "EcoMint LTD" ],

@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Angry Teenagers DAO.",
   "interfaces": [ "TZIP-016" ],
   "authors": [ "EcoMint LTD" ],
@@ -100,7 +100,7 @@
               { "prim": "CDR" },
               { "prim": "SWAP" },
               { "prim": "GET" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "360" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "375" } ] }, { "prim": "FAILWITH" } ], [] ] }
             ]
           }
         }
@@ -203,7 +203,7 @@
               },
               { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CAR" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "373" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "388" } ] }, { "prim": "FAILWITH" } ], [] ] }
             ]
           }
         }

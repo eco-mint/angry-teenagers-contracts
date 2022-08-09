@@ -210,7 +210,7 @@ class AngryTeenagers(sp.Contract):
         ]
 
         metadata_base = {
-             "version": "1.0.0"
+             "version": "1.0.2"
              , "description": (
                      "Angry Teenagers: NFTs that fund an exponential cycle of reforestation."
         )

@@ -13,8 +13,8 @@ GENERIC_THUMBNAIL_ARTWORK_IPFS_LINK = "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB
 # TODO: A valid project oracles is needed as it cannot be changed later on
 PROJECT_ORACLES_STREAM_LINK = "ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"
 
-WHAT3WORDS_FILE_IPFS_LINK = "ipfs://QmUZ1Vyrxf7LLcdrTbY5f135cM2dBNkuDZngn9qK2xeNr7"
-TOTAL_SUPPLY=5236
+WHAT3WORDS_FILE_IPFS_LINK = "ipfs://QmckScaHGB3t8B9dXJBttBimbMMn637ZHbyc61bpP1gFd8"
+TOTAL_SUPPLY=4901
 
 # TODO: These values will have to adjusted to our artwork
 ARTIFACT_FILE_TYPE = '"image/png"'

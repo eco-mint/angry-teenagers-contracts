@@ -206,6 +206,7 @@ class AngryTeenagers(sp.Contract):
              , self.is_operator
              , self.total_supply
              , self.token_metadata
+             , self.get_project_oracles_stream
              , self.get_all_non_revealed_token
         ]
 

@@ -33,11 +33,11 @@ THUMBNAIL_FILE_NAME = '"angry_teenagers_thumbnail.jpeg"'
 THUMBNAIL_DIMENSIONS = '"350x350"'
 THUMBNAIL_FILE_UNIT = '"px"'
 
-NAME_PREFIX = '"Angry Teenager #'
+NAME_PREFIX = "Angry Teenager #"
 SYMBOL = "ANGRY"
-DESCRIPTION = '"Angry Teenagers: NFTs that fund an exponential cycle of reforestation."'
+DESCRIPTION = "Angry Teenagers: NFTs that fund an exponential cycle of reforestation."
 LANGUAGE = "en-US"
 ATTRIBUTES_GENERIC = '[{\"name\"}, {\"generic\"}]'
-RIGHTS = '"© 2022 EcoMint. All rights reserved."'
+RIGHTS = "© 2022 EcoMint. All rights reserved."
 CREATORS = '["The Angry Teenagers. https://www.angryteenagers.xyz"]'
 PROJECTNAME = "Nsomyam Ye Reforestation"

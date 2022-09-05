@@ -25,12 +25,12 @@ THUMBNAIL_FILE_NAME = '"angry_teenagers_thumbnail.jpeg"'
 THUMBNAIL_DIMENSIONS = '"350x350"'
 THUMBNAIL_FILE_UNIT = '"px"'
 
-NAME_PREFIX = '"Angry Teenager #'
+NAME_PREFIX = "Angry Teenager #"
 SYMBOL = "ANGRY"
-DESCRIPTION = '"Angry Teenagers: NFTs that fund an exponential cycle of reforestation."'
+DESCRIPTION = "Angry Teenagers: NFTs that fund an exponential cycle of reforestation."
 LANGUAGE = "en-US"
 ATTRIBUTES_GENERIC = '[{\"name\"}, {\"generic\"}]'
-RIGHTS = '"© 2022 EcoMint. All rights reserved."'
+RIGHTS = "© 2022 EcoMint. All rights reserved."
 CREATORS = '["The Angry Teenagers. https://www.angryteenagers.xyz"]'
 PROJECTNAME = "Nsomyam Ye Reforestation"
 
@@ -986,7 +986,7 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[NFT.REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(info[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(info[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
-        scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #0"'))
+        scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string("Angry Teenager #0"))
         scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1",
                                                                                    "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2",
                                                                                    "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3",
@@ -1018,7 +1018,7 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify_equal(info[NFT.ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(info[NFT.REVEALED_METADATA], sp.utils.bytes_of_string('false'))
-        scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
+        scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string("Angry Teenager #49"))
         scenario.verify_equal(info[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(info[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
         scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1",
@@ -1061,7 +1061,7 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
         scenario.verify_equal(info[NFT.ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(info[NFT.REVEALED_METADATA], sp.utils.bytes_of_string('true'))
-        scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
+        scenario.verify_equal(info[NFT.NAME_METADATA], sp.utils.bytes_of_string("Angry Teenager #49"))
         scenario.verify_equal(info[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(info[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
         scenario.verify_equal(info[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11",
@@ -1117,7 +1117,7 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[NFT.REVEALED_METADATA], sp.utils.bytes_of_string('false'))
         scenario.verify_equal(metadata[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(metadata[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("0"))
-        scenario.verify_equal(metadata[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #0"'))
+        scenario.verify_equal(metadata[NFT.NAME_METADATA], sp.utils.bytes_of_string("Angry Teenager #0"))
         scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1",
                                                                                        "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2",
                                                                                        "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3",
@@ -1147,7 +1147,7 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify_equal(metadata[NFT.ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(metadata[NFT.REVEALED_METADATA], sp.utils.bytes_of_string('false'))
-        scenario.verify_equal(metadata[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
+        scenario.verify_equal(metadata[NFT.NAME_METADATA], sp.utils.bytes_of_string("Angry Teenager #49"))
         scenario.verify_equal(metadata[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(metadata[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
         scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1",
@@ -1189,7 +1189,7 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[NFT.THUMBNAILURI_METADATA], sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB31"))
         scenario.verify_equal(metadata[NFT.ROYALTIES_METADATA], sp.utils.bytes_of_string('{"decimals": 3, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'))
         scenario.verify_equal(metadata[NFT.REVEALED_METADATA], sp.utils.bytes_of_string('true'))
-        scenario.verify_equal(metadata[NFT.NAME_METADATA], sp.utils.bytes_of_string('"Angry Teenager #49"'))
+        scenario.verify_equal(metadata[NFT.NAME_METADATA], sp.utils.bytes_of_string("Angry Teenager #49"))
         scenario.verify_equal(metadata[NFT.WHAT3WORDSFILE_METADATA], sp.utils.bytes_of_string("ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
         scenario.verify_equal(metadata[NFT.WHAT3WORDID_METADATA], sp.utils.bytes_of_string("49"))
         scenario.verify_equal(metadata[NFT.FORMATS_METADATA], TestHelper.format_helper("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYB11",

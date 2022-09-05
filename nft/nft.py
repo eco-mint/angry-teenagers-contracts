@@ -626,7 +626,7 @@ class AngryTeenagers(sp.Contract):
                 token_id_string.value = sp.concat([nat_to_bytes.value[x.value % 10], token_id_string.value])
                 x.value //= 10
 
-        name = sp.concat([self.name_prefix, token_id_string.value, sp.utils.bytes_of_string('"')])
+        name = sp.concat([self.name_prefix, token_id_string.value])
 
         formats = sp.local('formats', self.create_format_metadata(self.data.generic_image_ipfs,
                                                                   self.data.generic_image_ipfs_display,

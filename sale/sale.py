@@ -479,6 +479,35 @@ class AngryTeenagersSale(sp.Contract):
         self.data.allowlist = sp.set(l={}, t=sp.TAddress)
         self.data.pre_allowlist = sp.set(l={}, t=sp.TAddress)
 
+########################################################################################################################
+# admin_process_presale
+########################################################################################################################
+    @sp.entry_point
+    def admin_process_presale(self, params):
+        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(~self.is_any_event_open(), Error.ErrorMessage.sale_event_already_open())
+        sp.set_type(params, sp.TAddress)
+
+        tokens = sp.view("all_tokens", params, sp.unit).open_some(Error.ErrorMessage.invalid_parameter())
+
+        sp.for token in tokens:
+            is_burn = sp.view("is_token_burned", params, token).open_some(Error.ErrorMessage.invalid_parameter())
+            burn_list = sp.local("burn_list", sp.list(l={}, t=sp.TNat))
+
+            sp.if ~is_burn:
+                owner = sp.view("get_token_owner", params, token).open_some(Error.ErrorMessage.invalid_parameter())
+                self.mint_internal(amount=1, address=owner)
+                burn_list.value.push(token)
+
+            presale_contract_handle = sp.contract(
+                sp.TList(sp.TNat),
+                params,
+                "burn"
+            ).open_some("Interface mismatch")
+
+            presale_contract_arg = burn_list.value
+            self.call(presale_contract_handle, presale_contract_arg)
+
 
 ########################################################################################################################
 # mutez_transfer
@@ -493,6 +522,9 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # Helpers
 ########################################################################################################################
+    def call(self, c, x):
+        sp.transfer(x, sp.mutez(0), c)
+
     def is_administrator(self):
         return sp.sender == self.data.administrator
 

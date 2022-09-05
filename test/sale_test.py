@@ -18,6 +18,43 @@ class TestHelper():
         def __init__(self):
             self.init()
 
+    class SimulatedPreSaleContract(sp.Contract):
+        def __init__(self):
+            self.init(
+                tokens = sp.map(l={0: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU01"),
+                                        1: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU02"),
+                                        2: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU03"),
+                                        3: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU04"),
+                                        4: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU05"),
+                                        5: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU06"),
+                                        6: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU07"),
+                                        7: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU08"),
+                                        8: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU09"),
+                                        9: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU010"),
+                                        10: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU11")}, tkey=sp.TNat, tvalue=sp.TAddress),
+                burned_tokens = sp.set(l={}, t=sp.TNat)
+                    )
+
+        @sp.entry_point
+        def burn(self, params):
+            sp.for token in params:
+                sp.verify(self.data.tokens.contains(token))
+                self.data.burned_tokens.add(token)
+
+        @sp.onchain_view(pure=True)
+        def all_tokens(self):
+            sp.result(sp.list(l={0,1,2,3,4,5,6,7,8,9,10}, t=sp.TNat))
+
+        @sp.onchain_view(pure=True)
+        def get_token_owner(self, token):
+            sp.verify(self.data.tokens.contains(token))
+            sp.result(self.data.tokens[token])
+
+        @sp.onchain_view(pure=True)
+        def is_token_burned(self, token):
+            sp.result(self.data.burned_tokens.contains(token))
+
+
     def create_scenario(name):
         scenario = sp.test_scenario()
         scenario.h1(name)
@@ -27,6 +64,9 @@ class TestHelper():
     def create_contracts(scenario, admin, john):
         c1 = Sale.AngryTeenagersSale(admin.address, sp.list([sp.pair(admin.address, sp.nat(85)), sp.pair(john.address, sp.nat(15))]), sp.utils.metadata_of_url("https://example.com"))
         scenario += c1
+
+        simulated_presale_contract = TestHelper.SimulatedPreSaleContract()
+        scenario += simulated_presale_contract
 
         ARTIFACT_FILE_TYPE = '"image/png"'
         ARTIFACT_FILE_SIZE = '425118'
@@ -94,7 +134,7 @@ class TestHelper():
         scenario.p("c1: This sale contract to test")
         scenario.p("c2: The underlying FA2 contract (tested in ./contracts/nft/angry_teenagers_nft.py)")
 
-        return c1, c2
+        return c1, c2, simulated_presale_contract
 
     def create_account(scenario):
         admin = sp.test_account("admin")
@@ -132,7 +172,7 @@ def unit_test_initial_storage(is_default = True):
     def test():
         scenario = TestHelper.create_scenario("unit_test_initial_storage")
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the storage is initialized as expected.")
 
@@ -167,7 +207,7 @@ def unit_test_admin_fill_allowlist(is_default = True):
     def test():
         scenario = TestHelper.create_scenario("unit_test_admin_fill_allowlist")
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the entrypoint used to fill the allowlist. (Who: Only for admin)")
         scenario.p("1. Verify the state of the contract is as expected (see state machine at the top of this file)")
@@ -215,7 +255,7 @@ def unit_test_admin_fill_pre_allowlist(is_default = True):
     def test():
         scenario = TestHelper.create_scenario("unit_test_admin_fill_pre_allowlist")
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the entrypoint used to fill the pre-allowlist (Who: Only for admin).")
 
@@ -260,7 +300,7 @@ def unit_test_open_event_priv_allowlist_reg(is_default = True):
         scenario = TestHelper.create_scenario("unit_test_open_event_priv_allowlist_reg")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the open_event_priv_allowlist_reg entrypoint. (Who: Only for admin).")
         scenario.p("This entrypoint opens an event where users in the pre-allowlist can register to the allowlist. The amount of XTZ to pay to enter to register to given as a parameter to this entrypoint. Deadline can be used. In this case, the event closes alone when the deadline is met.")
@@ -298,7 +338,7 @@ def unit_test_pay_to_enter_allowlist_priv(is_default = True):
         scenario = TestHelper.create_scenario("unit_test_pay_to_enter_allowlist_priv")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the pay_to_enter_allowlist_priv entrypoint. (Who: Only for the users in the pre-allowlist).")
         scenario.p("Users in the pre-allowlist can call this entrypoint and pay the configured XTZ price to register into the allowlist.")
@@ -343,7 +383,7 @@ def unit_test_open_event_pub_allowlist_reg(is_default = True):
         scenario = TestHelper.create_scenario("unit_test_open_event_pub_allowlist_reg")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the open_event_pub_allowlist_reg entrypoint. (Who: Only for the admin).")
         scenario.p("This entrypoint is used to open an event where any users can take a space in the allowlist by paying a price in XTZ (parameters to this entrypoint) as long as space are remaining. One user gets one spot max. A deadline can be defined to automatically close the event.")
@@ -396,7 +436,7 @@ def unit_test_pay_to_enter_allowlist_pub(is_default = True):
         scenario = TestHelper.create_scenario("unit_test_pay_to_enter_allowlist_pub")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the pay_to_enter_allowlist_pub entrypoint. (Who: For all users).")
         scenario.p("This entrypoint is used by any users to register in the allowlist when the associated event (public allowlist registration) is used by paying the configured XTZ price. Users have only one spot in the allowlist.")
@@ -468,7 +508,7 @@ def unit_test_open_pre_sale(is_default = True):
         scenario = TestHelper.create_scenario("unit_test_open_pre_sale")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the open_pre_sale entrypoint. (Who: Only for the admin)")
         scenario.p("This entrypoint is used by the admin to open a pre-sale event. During a pre-sale, only users in the allowlist can mint tokens.")
@@ -517,7 +557,7 @@ def unit_test_open_pub_sale(is_default = True):
         scenario = TestHelper.create_scenario("unit_test_open_pub_sale")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the open_pub_sale entrypoint. (Who: Only for the admin)")
         scenario.p("This entrypoint is used by the admin to open a public-sale event without the use of the allowlist.")
@@ -569,7 +609,7 @@ def unit_test_open_pub_sale_with_allowlist(is_default = True):
         scenario = TestHelper.create_scenario("unit_test_open_pub_sale_with_allowlist")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the open_pub_sale_with_allowlist entrypoint. (Who: Only for the admin)")
         scenario.p("This entrypoint is used by the admin to open a public-sale event with an allowlist.")
@@ -667,7 +707,7 @@ def unit_test_set_fa2_administrator_function(is_default=True):
         scenario = TestHelper.create_scenario("unit_test_set_fa2_administrator_function")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the set_fa2_administrator_function entrypoint. (Who: Only for the admin)")
         scenario.p("This function is used to set the admin of the underlying FA2 contract. A FA2 contract needs to be registered.")
@@ -693,7 +733,7 @@ def unit_test_mint_and_give(is_default=True):
         scenario = TestHelper.create_scenario("unit_test_mint_and_give")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the mint_and_give entrypoint. (Who: Only for the admin)")
         scenario.p("This function is used by the admin to mint and give tokens when no sales event are opened.")
@@ -738,7 +778,7 @@ def unit_test_set_administrator(is_default = True):
         scenario = TestHelper.create_scenario("unit_test_set_administrator")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the set_administrator entrypoint. (Who: Only for the admin)")
         scenario.p("This function is used to change the administrator of the contract.")
@@ -774,7 +814,7 @@ def unit_test_set_transfer_addresses(is_default=True):
         scenario = TestHelper.create_scenario("unit_test_set_transfer_addresses")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the set_transfer_addresses entrypoint. (Who: Only for the admin)")
         scenario.p("The transfer addresses are used to redirect the fund received when a user mints a NFTs to wallet.")
@@ -803,7 +843,7 @@ def unit_test_register_fa2(is_default=True):
         scenario = TestHelper.create_scenario("unit_test_register_fa2")
 
         admin, alice, bob, john, nat, ben, gabe, gaston, chris = TestHelper.create_more_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the register_fa2 entrypoint. (Who: Only for the admin)")
         scenario.p("This function is used to register the underlying FA2 contract.")
@@ -831,7 +871,7 @@ def unit_test_user_mint_during_public_sale(is_default=True):
         scenario = TestHelper.create_scenario("unit_test_user_mint_during_public_sale")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the user_mint_during_public_sale entrypoint. (Who: for all users)")
         scenario.p("This entrypoint is called by users to mint NFTs when a public sale is opened.")
@@ -906,7 +946,7 @@ def unit_test_user_mint_during_pre_sale(is_default=True):
         scenario = TestHelper.create_scenario("unit_test_user_mint_during_pre_sale")
 
         admin, alice, bob, john, nat, ben, gabe, gaston, chris = TestHelper.create_more_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the user_mint_during_pre_sale entrypoint.  (Who: for all users in the allowlist)")
         scenario.p("This entrypoint is called by users to mint NFTs when a pre-sale is opened. to mint during pre-sale, a user needs to be registered in the allowlist.")
@@ -987,7 +1027,7 @@ def unit_test_user_mint_during_public_sale_with_allowlist_discount(is_default=Tr
         scenario = TestHelper.create_scenario("unit_test_user_mint_during_public_sale_with_allowlist_discount")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the user_mint_during_public_sale_with_allowlist_discount entrypoint.  (Who: for all users)")
         scenario.p("This entrypoint is called by users to mint NFTs when a public sale is opened using the allowlist and the associated discount. Any users can miint during the public sale but only the ones in the allowlist will have a discount.")
@@ -1071,7 +1111,7 @@ def unit_test_user_mint_during_public_sale_with_allowlist_mint_rights(is_default
         scenario = TestHelper.create_scenario("unit_test_user_mint_during_public_sale_with_allowlist_mint_rights")
 
         admin, alice, bob, john, nat, ben, gabe, gaston, chris = TestHelper.create_more_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the user_mint_during_public_sale_with_allowlist_mint_rights entrypoint.  (Who: for all users)")
         scenario.p("This entrypoint is called by users to mint NFTs when a public sale is opened using the allowlist and mint rights feature enabled. Any users can mint during the public sale. The ones in the allowlist have mint rights, meaning they can mint theirs NFTs (bounded by the defined max number of NFTs per user) even if all the total allocated supply is minted as long as the event is opened.")
@@ -1115,9 +1155,10 @@ def unit_test_mutez_transfer(is_default=True):
         scenario = TestHelper.create_scenario("unit_test_mutez_transfer")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test the mutez_transfer entrypoint.  (Who: Only for the admin)")
+
         scenario.p("This entrypoint is called byt the admin to extract fund on the contract. Normally no funds are supposed to be held in the contract however if something bad happens or somebody makes a mistake transfer, we still want to have the ability to extract the fund.")
 
         scenario.p("1. Add fund to the contract")
@@ -1136,6 +1177,64 @@ def unit_test_mutez_transfer(is_default=True):
         c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(100000000))).run(valid=False, sender=admin)
 
 ########################################################################################################################
+# unit_test_admin_process_presale
+########################################################################################################################
+def unit_test_admin_process_presale(is_default=True):
+    @sp.add_test(name="unit_test_admin_process_presale", is_default=is_default)
+    def test():
+        scenario = TestHelper.create_scenario("unit_test_admin_process_presale")
+
+        admin, alice, bob, john = TestHelper.create_account(scenario)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
+
+        scenario.h2("Test the unit_test_admin_process_presale entrypoint.  (Who: Only for the admin)")
+
+        scenario.p("1. Only admin can call the entrypoint")
+        c1.admin_process_presale(simulated_presale_contract.address).run(valid=False, sender=alice)
+        c1.admin_process_presale(simulated_presale_contract.address).run(valid=False, sender=bob)
+        c1.admin_process_presale(simulated_presale_contract.address).run(valid=False, sender=john)
+
+        scenario.p("2. Burn some tokens")
+        simulated_presale_contract.burn(sp.list(l={1,3,7}, t=sp.TNat)).run(valid=True)
+
+        scenario.p("3. Call the entrypoint successfully")
+        c1.admin_process_presale(simulated_presale_contract.address).run(valid=True, sender=admin)
+
+        scenario.p("3. Check the FA2 ledger contains the expected NFTs")
+        scenario.verify(c2.data.ledger.contains(0))
+        scenario.verify(c2.data.ledger.contains(1))
+        scenario.verify(c2.data.ledger.contains(2))
+        scenario.verify(c2.data.ledger.contains(3))
+        scenario.verify(c2.data.ledger.contains(4))
+        scenario.verify(c2.data.ledger.contains(5))
+        scenario.verify(c2.data.ledger.contains(6))
+        scenario.verify(c2.data.ledger.contains(7))
+        scenario.verify(~c2.data.ledger.contains(8))
+        scenario.verify(c2.data.ledger[0] == simulated_presale_contract.data.tokens[0])
+        scenario.verify(c2.data.ledger[1] == simulated_presale_contract.data.tokens[2])
+        scenario.verify(c2.data.ledger[2] == simulated_presale_contract.data.tokens[4])
+        scenario.verify(c2.data.ledger[3] == simulated_presale_contract.data.tokens[5])
+        scenario.verify(c2.data.ledger[4] == simulated_presale_contract.data.tokens[6])
+        scenario.verify(c2.data.ledger[5] == simulated_presale_contract.data.tokens[8])
+        scenario.verify(c2.data.ledger[6] == simulated_presale_contract.data.tokens[9])
+        scenario.verify(c2.data.ledger[7] == simulated_presale_contract.data.tokens[10])
+
+        scenario.p("3. Check all tokens are burned")
+        scenario.verify(simulated_presale_contract.data.burned_tokens.contains(0))
+        scenario.verify(simulated_presale_contract.data.burned_tokens.contains(1))
+        scenario.verify(simulated_presale_contract.data.burned_tokens.contains(2))
+        scenario.verify(simulated_presale_contract.data.burned_tokens.contains(3))
+        scenario.verify(simulated_presale_contract.data.burned_tokens.contains(4))
+        scenario.verify(simulated_presale_contract.data.burned_tokens.contains(5))
+        scenario.verify(simulated_presale_contract.data.burned_tokens.contains(6))
+        scenario.verify(simulated_presale_contract.data.burned_tokens.contains(7))
+        scenario.verify(simulated_presale_contract.data.burned_tokens.contains(8))
+        scenario.verify(simulated_presale_contract.data.burned_tokens.contains(9))
+        scenario.verify(simulated_presale_contract.data.burned_tokens.contains(10))
+        scenario.verify(~simulated_presale_contract.data.burned_tokens.contains(11))
+
+
+########################################################################################################################
 # module_test_pre_sale_public_sale_with_allowlist
 ########################################################################################################################
 def module_test_pre_sale_public_sale_with_allowlist(is_default=True):
@@ -1143,7 +1242,7 @@ def module_test_pre_sale_public_sale_with_allowlist(is_default=True):
     def test():
         scenario = TestHelper.create_scenario("module_test_pre_sale_public_sale_with_allowlist")
         admin, alice, bob, john, nat, ben, gabe, gaston, chris = TestHelper.create_more_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test a scenario with a pre-sale and then a public sale with allowlist")
 
@@ -1369,7 +1468,7 @@ def module_test_public_sale(is_default=True):
         scenario = TestHelper.create_scenario("module_test_public_sale")
 
         admin, alice, bob, john, nat, ben, gabe, gaston, chris = TestHelper.create_more_account(scenario)
-        c1, c2 = TestHelper.create_contracts(scenario, admin, john)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
         scenario.h2("Test a scenario with a a public sale without allowlist")
 
@@ -1430,5 +1529,6 @@ unit_test_user_mint_during_pre_sale()
 unit_test_user_mint_during_public_sale_with_allowlist_discount()
 unit_test_user_mint_during_public_sale_with_allowlist_mint_rights()
 unit_test_mutez_transfer()
+unit_test_admin_process_presale()
 module_test_pre_sale_public_sale_with_allowlist()
 module_test_public_sale()

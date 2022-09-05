@@ -18,6 +18,42 @@ class TestHelper():
         def __init__(self):
             self.init()
 
+    class SimulatedPreSaleContract(sp.Contract):
+        def __init__(self):
+            self.tokens = sp.map(l={0: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU01"),
+                                    1: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU02"),
+                                    2: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU03"),
+                                    3: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU04"),
+                                    4: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU05"),
+                                    5: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU06"),
+                                    6: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU07"),
+                                    7: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU08"),
+                                    8: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU09"),
+                                    9: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU010"),
+                                    10: sp.address("tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHU11")}, tkey=sp.TNat, tvalue=sp.TAddress)
+            self.burned_tokens = sp.set(l={}, t=sp.TNat)
+
+        @sp.entry_point
+        def burn(self, params):
+            sp.for token in params:
+                sp.verify(self.data.tokens.contains(token), message=Error.ErrorMessage.token_undefined())
+                self.burned_tokens.add(token)
+
+        @sp.onchain_view(pure=True)
+        def all_tokens(self):
+            sp.result(self.tokens)
+
+        @sp.onchain_view(pure=True)
+        def get_token_owner(self, token):
+            sp.verify(self.tokens.contains(token))
+            sp.result(self.tokens[token])
+
+        @sp.onchain_view(pure=True)
+        def is_token_burned(self, token):
+            sp.result(self.burned_tokens.contains(token))
+
+
+
     def create_scenario(name):
         scenario = sp.test_scenario()
         scenario.h1(name)

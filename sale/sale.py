@@ -498,7 +498,7 @@ class AngryTeenagersSale(sp.Contract):
             sp.if ~is_burn:
                 owner = sp.view("get_token_owner", params, token).open_some(Error.ErrorMessage.invalid_parameter())
                 self.mint_internal(amount=1, address=owner)
-                burn_list.push(token)
+                burn_list.value.push(token)
 
             presale_contract_handle = sp.contract(
                 sp.TList(sp.TNat),
@@ -506,7 +506,7 @@ class AngryTeenagersSale(sp.Contract):
                 "burn"
             ).open_some("Interface mismatch")
 
-            presale_contract_arg = burn_list
+            presale_contract_arg = burn_list.value
             self.call(presale_contract_handle, presale_contract_arg)
 
 
@@ -523,6 +523,9 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # Helpers
 ########################################################################################################################
+    def call(self, c, x):
+        sp.transfer(x, sp.mutez(0), c)
+
     def is_administrator(self):
         return sp.sender == self.data.administrator
 

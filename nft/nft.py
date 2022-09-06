@@ -16,8 +16,7 @@ TRANSFER_TX_TYPE = sp.TRecord(to_=sp.TAddress, token_id=TOKEN_ID, amount=sp.TNat
 TRANSFER_TYPE = sp.TRecord(from_=sp.TAddress, txs=sp.TList(TRANSFER_TX_TYPE)).layout(("from_", "txs"))
 TRANSFER_FUNCTION_TYPE = sp.TList(TRANSFER_TYPE)
 OPERATOR_TYPE = sp.TRecord(owner=sp.TAddress, operator=sp.TAddress, token_id=TOKEN_ID).layout(("owner", ("operator", "token_id")))
-ARTWORKS_CONTAINER_FUNCTION_TYPE = sp.TRecord(artifact_uri=sp.TBytes, artifact_size=sp.TBytes, display_uri=sp.TBytes, display_size=sp.TBytes, thumbnail_uri=sp.TBytes, thumbnail_size=sp.TBytes, attributes=sp.TBytes)
-UPDATE_ARTWORK_METADATA_FUNCTION_TYPE = sp.TList(sp.TPair(TOKEN_ID, ARTWORKS_CONTAINER_FUNCTION_TYPE))
+UPDATE_ARTWORK_METADATA_FUNCTION_TYPE = sp.TList(sp.TPair(TOKEN_ID, sp.TBytes))
 
 BALANCE_RECORD_TYPE = sp.TMap(sp.TNat, sp.TNat)
 
@@ -26,49 +25,6 @@ BALANCE_RECORD_TYPE = sp.TMap(sp.TNat, sp.TNat)
 # Constants
 ########################################################################################################################
 ##################################################################################################################
-NAME_METADATA = "name"
-SYMBOL_METADATA = "symbol"
-DECIMALS_METADATA = "decimals"
-LANGUAGE_METADATA = "language"
-DESCRIPTION_METADATA = "description"
-DATE_METADATA = "date"
-ARTIFACTURI_METADATA = "artifactUri"
-DISPLAYURI_METADATA = "displayUri"
-THUMBNAILURI_METADATA = "thumbnailUri"
-ATTRIBUTES_METADATA = "attributes"
-RIGHTS_METADATA = "rights"
-ISTRANSFERABLE_METADATA = "isTransferable"
-ISBOOLEANAMOUNT_METADATA = "isBooleanAmount"
-SHOULDPREFERSYMBOL_METADATA = "shouldPreferSymbol"
-CREATORS_METADATA = "creators"
-PROJECTNAME_METADATA = "projectName"
-FORMATS_METADATA = "formats"
-WHAT3WORDSFILE_METADATA = "what3wordsFile"
-WHAT3WORDID_METADATA = "what3wordsId"
-REVEALED_METADATA = "revealed"
-ROYALTIES_METADATA = "royalties"
-PROJECTORACLEURI_METADATA = "projectOraclesUri"
-
-
-DECIMALS = "0"
-ISTRANSFERABLE = "true"
-ISBOOLEANAMOUNT = "true"
-SHOULDPREFERSYMBOL = "false"
-REVEALED = "false"
-
-FORMAT_OPEN_SQUAREBRACKET = sp.utils.bytes_of_string("[")
-FORMAT_OPEN_CURLYBRACKET = sp.utils.bytes_of_string("{")
-FORMAT_CLOSE_SQUAREBRACKET = sp.utils.bytes_of_string("]")
-FORMAT_CLOSE_CURLYBRACKET = sp.utils.bytes_of_string("}")
-FORMAT_COMMA = sp.utils.bytes_of_string(",")
-FORMAT_QUOTE = sp.utils.bytes_of_string('"')
-FORMAT_URI = sp.utils.bytes_of_string('"uri":')
-FORMAT_FILENAME = sp.utils.bytes_of_string('"fileName":')
-FORMAT_FILESIZE = sp.utils.bytes_of_string('"fileSize":')
-FORMAT_VALUE = sp.utils.bytes_of_string('"value":')
-FORMAT_UNIT = sp.utils.bytes_of_string('"unit":')
-FORMAT_DIMENSIONS = sp.utils.bytes_of_string('"dimensions":')
-FORMAT_MIMETYPE = sp.utils.bytes_of_string('"mimeType":')
 
 ########################################################################################################################
 ########################################################################################################################
@@ -99,65 +55,14 @@ class Operator_set:
         return set.contains(self.make_key(owner, operator, token_id))
 
 class AngryTeenagers(sp.Contract):
-    def __init__(self, administrator,
-                 royalties_bytes,
+    def __init__(self,
+                 administrator,
                  metadata,
-                 generic_image_ipfs,
-                 generic_image_ipfs_display,
-                 generic_image_ipfs_thumbnail,
+                 generic_ipfs,
                  project_oracles_stream,
                  what3words_file_ipfs,
-                 total_supply,
-                 artifact_file_type,
-                 artifact_file_size_generic,
-                 artifact_file_name,
-                 artifact_dimensions,
-                 artifact_file_unit,
-                 display_file_type,
-                 display_file_size_generic,
-                 display_file_name,
-                 display_dimensions,
-                 display_file_unit,
-                 thumbnail_file_type,
-                 thumbnail_file_size_generic,
-                 thumbnail_file_name,
-                 thumbnail_dimensions,
-                 thumbnail_file_unit,
-                 name_prefix,
-                 symbol,
-                 description,
-                 language,
-                 attributes_generic,
-                 rights,
-                 creators,
-                 project_name
-                 ):
+                 total_supply):
         self.operator_set = Operator_set()
-
-        self.artifact_file_type = sp.utils.bytes_of_string(artifact_file_type)
-        self.artifact_file_size_generic = sp.utils.bytes_of_string(artifact_file_size_generic)
-        self.artifact_file_name = sp.utils.bytes_of_string(artifact_file_name)
-        self.artifact_dimensions = sp.utils.bytes_of_string(artifact_dimensions)
-        self.artifact_file_unit = sp.utils.bytes_of_string(artifact_file_unit)
-        self.display_file_type = sp.utils.bytes_of_string(display_file_type)
-        self.display_file_size_generic = sp.utils.bytes_of_string(display_file_size_generic)
-        self.display_file_name = sp.utils.bytes_of_string(display_file_name)
-        self.display_dimensions = sp.utils.bytes_of_string(display_dimensions)
-        self.display_file_unit = sp.utils.bytes_of_string(display_file_unit)
-        self.thumbnail_file_type = sp.utils.bytes_of_string(thumbnail_file_type)
-        self.thumbnail_file_size_generic = sp.utils.bytes_of_string(thumbnail_file_size_generic)
-        self.thumbnail_file_name = sp.utils.bytes_of_string(thumbnail_file_name)
-        self.thumbnail_dimensions = sp.utils.bytes_of_string(thumbnail_dimensions)
-        self.thumbnail_file_unit = sp.utils.bytes_of_string(thumbnail_file_unit)
-
-        self.name_prefix = sp.utils.bytes_of_string(name_prefix)
-        self.symbol = sp.utils.bytes_of_string(symbol)
-        self.description = sp.utils.bytes_of_string(description)
-        self.language = sp.utils.bytes_of_string(language)
-        self.attributes_generic = sp.utils.bytes_of_string(attributes_generic)
-        self.rights = sp.utils.bytes_of_string(rights)
-        self.creators = sp.utils.bytes_of_string(creators)
-        self.project_name = sp.utils.bytes_of_string(project_name)
 
         self.init(
             ledger = sp.big_map(tkey=TOKEN_ID, tvalue=sp.TAddress),
@@ -184,15 +89,10 @@ class AngryTeenagers(sp.Contract):
 
             # Token metadata
             token_metadata = sp.big_map(l={}, tkey=TOKEN_ID, tvalue=sp.TPair(TOKEN_ID, sp.TMap(sp.TString, sp.TBytes))),
-            extra_token_metadata = sp.big_map(l={}, tkey=TOKEN_ID, tvalue=sp.TRecord(token_id =TOKEN_ID, token_info = sp.TMap(sp.TString, sp.TBytes))),
 
-            generic_image_ipfs = generic_image_ipfs,
-            generic_image_ipfs_display = generic_image_ipfs_display,
-            generic_image_ipfs_thumbnail = generic_image_ipfs_thumbnail,
+            generic_ipfs = generic_ipfs,
 
             project_oracles_stream = project_oracles_stream,
-
-            royalties = royalties_bytes,
 
             metadata = metadata
         )
@@ -205,7 +105,6 @@ class AngryTeenagers(sp.Contract):
              , self.get_user_tokens
              , self.is_operator
              , self.total_supply
-             , self.token_metadata
              , self.get_project_oracles_stream
              , self.get_all_non_revealed_token
         ]
@@ -265,7 +164,6 @@ class AngryTeenagers(sp.Contract):
             current_from = transfer.from_
             sp.for tx in transfer.txs:
                 sender_verify = (current_from == sp.sender)
-                message = Error.ErrorMessage.not_owner()
                 message = Error.ErrorMessage.not_operator()
                 sender_verify |= (self.operator_set.is_member(self.data.operators,
                                                               current_from,
@@ -325,13 +223,6 @@ class AngryTeenagers(sp.Contract):
         self.data.metadata[k] = v
 
     @sp.entry_point
-    def set_extra_token_metadata(self, tok, k2, v):
-        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
-        sp.if ~self.data.extra_token_metadata.contains(tok):
-            self.data.extra_token_metadata[tok] = sp.record(token_id=tok, token_info=sp.map(l={}, tkey=sp.TString, tvalue=sp.TBytes))
-        self.data.extra_token_metadata[tok].token_info[k2] = v
-
-    @sp.entry_point
     def set_pause(self, params):
         sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
         self.data.paused = params
@@ -357,52 +248,9 @@ class AngryTeenagers(sp.Contract):
         sp.set_type(params, UPDATE_ARTWORK_METADATA_FUNCTION_TYPE)
         sp.for artwork_metadata in params:
             sp.verify(self.data.ledger.contains(sp.fst(artwork_metadata)), message=Error.ErrorMessage.token_undefined())
-            sp.verify(self.data.token_metadata.contains(sp.fst(artwork_metadata)), Error.ErrorMessage.token_undefined())
-            info = sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)])
-            sp.verify(info.contains(REVEALED_METADATA), Error.ErrorMessage.token_undefined())
-            sp.verify(info[REVEALED_METADATA] == sp.utils.bytes_of_string("false"), Error.ErrorMessage.token_revealed())
+            # TODO: Use a reveal token list to avoid multiple reveal
+            self.data.token_metadata[sp.fst(artwork_metadata)] = sp.pair(sp.fst(artwork_metadata), sp.map(l={ "": sp.snd(artwork_metadata)}, tkey=sp.TString, tvalue=sp.TBytes))
 
-            my_map = sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), REVEALED_METADATA, sp.some(sp.utils.bytes_of_string("true")))
-            my_map = sp.update_map(my_map, ARTIFACTURI_METADATA, sp.some((sp.snd(artwork_metadata)).artifact_uri))
-            my_map = sp.update_map(my_map, DISPLAYURI_METADATA, sp.some((sp.snd(artwork_metadata)).display_uri))
-            my_map = sp.update_map(my_map, THUMBNAILURI_METADATA, sp.some((sp.snd(artwork_metadata)).thumbnail_uri))
-            my_map = sp.update_map(my_map, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributes))
-            my_map = sp.update_map(my_map, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributes))
-
-            formats = sp.local(FORMATS_METADATA, self.create_format_metadata((sp.snd(artwork_metadata)).artifact_uri,
-                                                                             (sp.snd(artwork_metadata)).display_uri,
-                                                                             (sp.snd(artwork_metadata)).thumbnail_uri,
-                                                                             (sp.snd(artwork_metadata)).artifact_size,
-                                                                             (sp.snd(artwork_metadata)).display_size,
-                                                                             (sp.snd(artwork_metadata)).thumbnail_size))
-            my_map = sp.update_map(my_map, FORMATS_METADATA, sp.some(formats.value))
-
-            self.data.token_metadata[sp.fst(artwork_metadata)] = sp.pair(sp.fst(artwork_metadata), my_map)
-
-
-    @sp.entry_point
-    def set_royalties(self, params):
-        # Verify type
-        sp.set_type(params, sp.TBytes)
-
-        # Asserts
-        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
-
-        # Set the royalties field for NFTs not minted yet
-        self.data.royalties = params
-
-        # Change already minted NFTs
-        i = sp.local("i", sp.nat(0))
-        sp.while i.value < self.data.minted_tokens:
-            sp.verify(self.data.ledger.contains(i.value), message=Error.ErrorMessage.token_undefined())
-            sp.verify(self.data.token_metadata.contains(i.value), message=Error.ErrorMessage.token_undefined())
-            info = sp.snd(self.data.token_metadata[i.value])
-            sp.verify(info.contains(ROYALTIES_METADATA), Error.ErrorMessage.token_undefined())
-
-            my_map = sp.update_map(sp.snd(self.data.token_metadata[i.value]), ROYALTIES_METADATA, sp.some(params))
-            self.data.token_metadata[i.value] = sp.pair(i.value, my_map)
-
-            i.value = i.value + 1
 
     @sp.entry_point
     def mint(self, params):
@@ -497,12 +345,7 @@ class AngryTeenagers(sp.Contract):
         """Get all non-revealed token.
         """
         token_list = sp.local('token_list', sp.list(l={}, t=TOKEN_ID))
-        i = sp.local("i", sp.nat(0))
-        sp.while i.value < self.data.minted_tokens:
-            sp.verify(self.data.token_metadata.contains(i.value), message=Error.ErrorMessage.token_undefined())
-            sp.if (sp.snd(self.data.token_metadata[i.value]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"):
-                token_list.value.push(i.value)
-            i.value = i.value + 1
+        # TODO: To rework
         sp.result(token_list.value)
 
     @sp.offchain_view(pure=True)
@@ -550,16 +393,6 @@ class AngryTeenagers(sp.Contract):
         """
         sp.result(self.data.project_oracles_stream)
 
-    @sp.offchain_view(pure=True)
-    def token_metadata(self, tok):
-        """Get token metadata
-        """
-        sp.set_type(tok, sp.TNat)
-        sp.verify(tok < self.data.total_supply)
-        sp.verify(self.data.ledger.contains(tok), message=Error.ErrorMessage.token_undefined())
-        sp.verify(self.data.token_metadata.contains(tok), message=Error.ErrorMessage.token_undefined())
-
-        sp.result(self.data.token_metadata[tok])
 
 ########################################################################################################################
 # Internal functions
@@ -601,92 +434,8 @@ class AngryTeenagers(sp.Contract):
     def build_token_metadata(self, token_id):
         # set type
         sp.set_type(token_id, sp.TNat)
+        self.data.token_metadata[token_id] = sp.pair(token_id, sp.map(l={"": self.data.generic_ipfs}, tkey=sp.TString, tvalue=sp.TBytes))
 
-        # asserts
-        sp.verify(~self.data.token_metadata.contains(token_id), Error.ErrorMessage.invalid_token_metadata())
-
-        nat_to_bytes = sp.local('nat_to_bytes', sp.map(l={sp.nat(0): sp.bytes('0x30'),
-                                                          sp.nat(1): sp.bytes('0x31'),
-                                                          sp.nat(2): sp.bytes('0x32'),
-                                                          sp.nat(3): sp.bytes('0x33'),
-                                                          sp.nat(4): sp.bytes('0x34'),
-                                                          sp.nat(5): sp.bytes('0x35'),
-                                                          sp.nat(6): sp.bytes('0x36'),
-                                                          sp.nat(7): sp.bytes('0x37'),
-                                                          sp.nat(8): sp.bytes('0x38'),
-                                                          sp.nat(9): sp.bytes('0x39')}, tkey=sp.TNat,
-                                                       tvalue=sp.TBytes));
-
-        x = sp.local('x', token_id)
-        token_id_string = sp.local('token_id_string', sp.bytes('0x'))
-        sp.if x.value == 0:
-            token_id_string.value = sp.concat([token_id_string.value, nat_to_bytes.value[0]]);
-        sp.else:
-            sp.while 0 < x.value:
-                token_id_string.value = sp.concat([nat_to_bytes.value[x.value % 10], token_id_string.value])
-                x.value //= 10
-
-        name = sp.concat([self.name_prefix, token_id_string.value])
-
-        formats = sp.local('formats', self.create_format_metadata(self.data.generic_image_ipfs,
-                                                                  self.data.generic_image_ipfs_display,
-                                                                  self.data.generic_image_ipfs_thumbnail,
-                                                                  self.artifact_file_size_generic,
-                                                                  self.display_file_size_generic,
-                                                                  self.thumbnail_file_size_generic))
-
-        meta_map = sp.map(l={
-            NAME_METADATA: name,
-            SYMBOL_METADATA: self.symbol,
-            DECIMALS_METADATA: sp.utils.bytes_of_string(DECIMALS),
-            LANGUAGE_METADATA: self.language,
-            DESCRIPTION_METADATA: self.description,
-            DATE_METADATA: sp.pack(sp.now),
-            ARTIFACTURI_METADATA: self.data.generic_image_ipfs,
-            DISPLAYURI_METADATA: self.data.generic_image_ipfs_display,
-            THUMBNAILURI_METADATA: self.data.generic_image_ipfs_thumbnail,
-            ATTRIBUTES_METADATA: self.attributes_generic,
-            RIGHTS_METADATA: self.rights,
-            ISTRANSFERABLE_METADATA: sp.utils.bytes_of_string(ISTRANSFERABLE),
-            ISBOOLEANAMOUNT_METADATA: sp.utils.bytes_of_string(ISBOOLEANAMOUNT),
-            SHOULDPREFERSYMBOL_METADATA: sp.utils.bytes_of_string(SHOULDPREFERSYMBOL),
-            CREATORS_METADATA: self.creators,
-            PROJECTNAME_METADATA: self.project_name,
-            FORMATS_METADATA: formats.value,
-            WHAT3WORDSFILE_METADATA: self.data.what3words_file_ipfs,
-            WHAT3WORDID_METADATA: token_id_string.value,
-            REVEALED_METADATA: sp.utils.bytes_of_string(REVEALED),
-            ROYALTIES_METADATA: self.data.royalties,
-            PROJECTORACLEURI_METADATA: self.data.project_oracles_stream
-        })
-
-        self.data.token_metadata[token_id] = sp.pair(token_id, meta_map)
-
-    def create_format_metadata_per_uri(self, link, type, size, name, dimensions, unit):
-        value = FORMAT_OPEN_CURLYBRACKET + FORMAT_URI + FORMAT_QUOTE + link + FORMAT_QUOTE + \
-                FORMAT_COMMA + FORMAT_MIMETYPE + type + \
-                FORMAT_COMMA + FORMAT_FILESIZE + size + \
-                FORMAT_COMMA + FORMAT_FILENAME + name + \
-                FORMAT_COMMA + FORMAT_DIMENSIONS + FORMAT_OPEN_CURLYBRACKET + FORMAT_VALUE + dimensions + \
-                FORMAT_COMMA + FORMAT_UNIT + unit + FORMAT_CLOSE_CURLYBRACKET + FORMAT_CLOSE_CURLYBRACKET
-        return value
-
-
-    def create_format_metadata(self, artifact_link, display_link, thumbnail_link, artifact_size, display_size, thumbnail_size):
-        value = FORMAT_OPEN_SQUAREBRACKET + \
-                self.create_format_metadata_per_uri(artifact_link, self.artifact_file_type, artifact_size,
-                                                    self.artifact_file_name, self.artifact_dimensions,
-                                                    self.artifact_file_unit) + \
-                FORMAT_COMMA + \
-                self.create_format_metadata_per_uri(display_link, self.display_file_type, display_size,
-                                                    self.display_file_name, self.display_dimensions,
-                                                    self.display_file_unit) + \
-                FORMAT_COMMA + \
-                self.create_format_metadata_per_uri(thumbnail_link, self.thumbnail_file_type, thumbnail_size,
-                                                    self.thumbnail_file_name, self.thumbnail_dimensions,
-                                                    self.thumbnail_file_unit) + \
-                FORMAT_CLOSE_SQUAREBRACKET
-        return value
 
 
 

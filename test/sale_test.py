@@ -750,7 +750,7 @@ def unit_test_mint_and_give(is_default=True):
 
         scenario.p("3. Check this entrypoint cannot be called when a sale is opened")
         c1.mint_and_give(sp.record(amount=2, address=bob.address)).run(valid=False, sender=admin)
-        c1.user_mint(80).run(valid=True, amount=sp.mutez(800000000), sender=alice)
+        c1.user_mint(sp.record(amount=80, address=alice.address)).run(valid=True, amount=sp.mutez(800000000), sender=alice)
 
         scenario.p("4. Close the open public sale")
         c1.close_any_open_event().run(valid=True, sender=admin)
@@ -877,7 +877,7 @@ def unit_test_user_mint_during_public_sale(is_default=True):
         scenario.p("This entrypoint is called by users to mint NFTs when a public sale is opened.")
 
         scenario.p("1. Check users cannot mint when event is not opened")
-        c1.user_mint(8).run(valid=False, sender=alice)
+        c1.user_mint(sp.record(amount=8, address=alice.address)).run(valid=False, sender=alice)
 
         scenario.p("2. Start a public sale event without allowlist with a max supply of NFTs to mint and max NFTs to mint per user")
         c1.open_pub_sale(sp.record(max_supply=50,
@@ -886,40 +886,40 @@ def unit_test_user_mint_during_public_sale(is_default=True):
                                             use_deadline=False, deadline=sp.timestamp(0))).run(valid=True, sender=admin)
 
         scenario.p("3. Verify a users cannot mint more than allowed")
-        c1.user_mint(24).run(valid=False, amount=sp.tez(240), sender=alice)
+        c1.user_mint(sp.record(amount=24, address=alice.address)).run(valid=False, amount=sp.tez(240), sender=alice)
 
         scenario.p("4. Verify a user cannot mint 0 NFT")
-        c1.user_mint(0).run(valid=False, amount=sp.tez(10), sender=alice)
+        c1.user_mint(sp.record(amount=0, address=alice.address)).run(valid=False, amount=sp.tez(10), sender=alice)
 
         scenario.p("5. Verify a user cannot mint if he doesn't provide the right amount of XTZ")
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(0), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(100000), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(99999999), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(2123456), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(5555), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(100000001), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(0), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(100000), sender=admin)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(99999999), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(2123456), sender=john)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(5555), sender=bob)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(100000001), sender=alice)
 
         scenario.p("7. Mint some NFTs")
-        c1.user_mint(10).run(valid=True, amount=sp.tez(100), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=True, amount=sp.tez(100), sender=alice)
         scenario.verify(c1.balance == sp.mutez(0))
-        c1.user_mint(5).run(valid=True, amount=sp.tez(50), sender=john)
+        c1.user_mint(sp.record(amount=5, address=john.address)).run(valid=True, amount=sp.tez(50), sender=john)
         scenario.verify(c1.balance == sp.mutez(0))
-        c1.user_mint(3).run(valid=True, amount=sp.tez(30), sender=admin)
+        c1.user_mint(sp.record(amount=3, address=admin.address)).run(valid=True, amount=sp.tez(30), sender=admin)
         scenario.verify(c1.balance == sp.tez(0))
-        c1.user_mint(1).run(valid=True, amount=sp.tez(10), sender=bob)
+        c1.user_mint(sp.record(amount=1, address=bob.address)).run(valid=True, amount=sp.tez(10), sender=bob)
         scenario.verify(c1.balance == sp.tez(0))
         # Only 31 token remaining in the current sale
-        c1.user_mint(10).run(valid=True, amount=sp.tez(100), sender=alice)
-        c1.user_mint(15).run(valid=True, amount=sp.tez(150), sender=bob)
-        c1.user_mint(5).run(valid=True, amount=sp.tez(50), sender=bob)
-        c1.user_mint(2).run(valid=False, amount=sp.tez(20), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=True, amount=sp.tez(100), sender=alice)
+        c1.user_mint(sp.record(amount=15, address=bob.address)).run(valid=True, amount=sp.tez(150), sender=bob)
+        c1.user_mint(sp.record(amount=5, address=bob.address)).run(valid=True, amount=sp.tez(50), sender=bob)
+        c1.user_mint(sp.record(amount=2, address=alice.address)).run(valid=False, amount=sp.tez(20), sender=alice)
 
         scenario.p("7. Verify users cannot mint more than total allocated supply")
-        c1.user_mint(2).run(valid=False, amount=sp.tez(20), sender=alice)
-        c1.user_mint(24).run(valid=False, amount=sp.tez(240), sender=john)
+        c1.user_mint(sp.record(amount=2, address=alice.address)).run(valid=False, amount=sp.tez(20), sender=alice)
+        c1.user_mint(sp.record(amount=24, address=john.address)).run(valid=False, amount=sp.tez(240), sender=john)
 
         scenario.p("8. One is still mintable. Mint it.")
-        c1.user_mint(1).run(valid=True, amount=sp.tez(10), sender=alice)
+        c1.user_mint(sp.record(amount=1, address=alice.address)).run(valid=True, amount=sp.tez(10), sender=alice)
 
         scenario.p("9. Verify the FA2 ledger contains the expected NFTs")
         TestHelper.check_fa2_ledger(scenario=scenario, contract=c2,
@@ -956,51 +956,51 @@ def unit_test_user_mint_during_pre_sale(is_default=True):
             run(valid=True, sender=admin)
 
         scenario.p("2. Verify this entrypoint cannot be called when the associated event is not opened")
-        c1.user_mint(8).run(valid=False, sender=alice)
+        c1.user_mint(sp.record(amount=8, address=alice.address)).run(valid=False, sender=alice)
 
         scenario.p("3. Start the pre-sale event")
         c1.open_pre_sale(sp.record(max_supply=50, max_per_user=23, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=True,
                                                                                                           sender=admin)
 
         scenario.p("4. Verify users cannot mint more than the number of defined NFT per users")
-        c1.user_mint(24).run(valid=False, amount=sp.tez(240), sender=alice)
+        c1.user_mint(sp.record(amount=24, address=alice.address)).run(valid=False, amount=sp.tez(240), sender=alice)
 
         scenario.p("5. Verify cannot mint if not in the allowlist")
-        c1.user_mint(10).run(valid=False, amount=sp.tez(100), sender=gabe)
+        c1.user_mint(sp.record(amount=10, address=gabe.address)).run(valid=False, amount=sp.tez(100), sender=gabe)
 
         scenario.p("6. Verify user cannot mint 0 NFT")
-        c1.user_mint(0).run(valid=False, amount=sp.tez(10), sender=alice)
+        c1.user_mint(sp.record(amount=0, address=alice.address)).run(valid=False, amount=sp.tez(10), sender=alice)
 
         scenario.p("7. Verify user cannot mint if he does not provide the expected amount of XTZ")
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(0), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(100000), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(99999999), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(2123456), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(5555), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(100000001), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(0), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(100000), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(99999999), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(2123456), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(5555), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(100000001), sender=alice)
 
         scenario.p("8. Mint some NFTs")
-        c1.user_mint(10).run(valid=True, amount=sp.tez(100), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=True, amount=sp.tez(100), sender=alice)
         # Mint some more
-        c1.user_mint(5).run(valid=True, amount=sp.tez(50), sender=john)
+        c1.user_mint(sp.record(amount=5, address=john.address)).run(valid=True, amount=sp.tez(50), sender=john)
         scenario.verify(c1.balance == sp.mutez(0))
         # And again
-        c1.user_mint(3).run(valid=True, amount=sp.tez(30), sender=admin)
+        c1.user_mint(sp.record(amount=3, address=admin.address)).run(valid=True, amount=sp.tez(30), sender=admin)
         scenario.verify(c1.balance == sp.tez(0))
-        c1.user_mint(1).run(valid=True, amount=sp.tez(10), sender=bob)
+        c1.user_mint(sp.record(amount=1, address=bob.address)).run(valid=True, amount=sp.tez(10), sender=bob)
         scenario.verify(c1.balance == sp.tez(0))
         # Only 31 token remaining in the current sale
-        c1.user_mint(10).run(valid=True, amount=sp.tez(100), sender=alice)
-        c1.user_mint(15).run(valid=True, amount=sp.tez(150), sender=bob)
-        c1.user_mint(5).run(valid=True, amount=sp.tez(50), sender=bob)
-        c1.user_mint(2).run(valid=False, amount=sp.tez(20), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=True, amount=sp.tez(100), sender=alice)
+        c1.user_mint(sp.record(amount=15, address=bob.address)).run(valid=True, amount=sp.tez(150), sender=bob)
+        c1.user_mint(sp.record(amount=5, address=bob.address)).run(valid=True, amount=sp.tez(50), sender=bob)
+        c1.user_mint(sp.record(amount=2, address=alice.address)).run(valid=False, amount=sp.tez(20), sender=alice)
 
         scenario.p("8. Verify users cannot mint more than the total allocated supply")
-        c1.user_mint(2).run(valid=False, amount=sp.tez(20), sender=alice)
-        c1.user_mint(24).run(valid=False, amount=sp.tez(240), sender=john)
+        c1.user_mint(sp.record(amount=2, address=alice.address)).run(valid=False, amount=sp.tez(20), sender=alice)
+        c1.user_mint(sp.record(amount=24, address=john.address)).run(valid=False, amount=sp.tez(240), sender=john)
 
         scenario.p("9. One is still mintable. Mint it.")
-        c1.user_mint(1).run(valid=True, amount=sp.tez(10), sender=alice)
+        c1.user_mint(sp.record(amount=1, address=alice.address)).run(valid=True, amount=sp.tez(10), sender=alice)
 
         scenario.p("10. Verify the FA2 ledger contains the expected NFTs")
         TestHelper.check_fa2_ledger(scenario=scenario, contract=c2,
@@ -1036,7 +1036,7 @@ def unit_test_user_mint_during_public_sale_with_allowlist_discount(is_default=Tr
         c1.admin_fill_allowlist(sp.set(l=[alice.address, bob.address], t=sp.TAddress)).run(valid=True, sender=admin)
 
         scenario.p("2. Verify users cannot mint if no event are opened")
-        c1.user_mint(8).run(valid=False, amount=sp.tez(80), sender=alice)
+        c1.user_mint(sp.record(amount=8, address=alice.address)).run(valid=False, amount=sp.tez(80), sender=alice)
 
         scenario.p("3. Open a public sale with allowlist suing the discount feature")
         c1.open_pub_sale_with_allowlist(sp.record(max_supply=50,
@@ -1049,42 +1049,42 @@ def unit_test_user_mint_during_public_sale_with_allowlist_discount(is_default=Tr
                                             )).run(valid=True, sender=admin)
 
         scenario.p("4. Verify users cannot mint more than the max numbers per user")
-        c1.user_mint(24).run(valid=False, amount=sp.tez(120), sender=alice)
+        c1.user_mint(sp.record(amount=24, address=alice.address)).run(valid=False, amount=sp.tez(120), sender=alice)
 
         scenario.p("5. Verify user cannot mint 0 NFT")
-        c1.user_mint(0).run(valid=False, amount=sp.tez(5), sender=alice)
+        c1.user_mint(sp.record(amount=0, address=alice.address)).run(valid=False, amount=sp.tez(5), sender=alice)
 
         scenario.p("6. Verify users can only mint if the they provide the right amount of XTZ")
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(0), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(100000), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(99999999), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(2123456), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(5555), sender=alice)
-        c1.user_mint(10).run(valid=False, amount=sp.mutez(50000001), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(0), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(100000), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(99999999), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(2123456), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(5555), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=False, amount=sp.mutez(50000001), sender=alice)
 
         scenario.p("7. Mint some NFTs")
         scenario.p("8. Verify users in the allowlist get a discount")
-        c1.user_mint(10).run(valid=True, amount=sp.tez(50), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=True, amount=sp.tez(50), sender=john)
         # Mint some more
-        c1.user_mint(5).run(valid=True, amount=sp.tez(50), sender=john)
+        c1.user_mint(sp.record(amount=5, address=john.address)).run(valid=True, amount=sp.tez(50), sender=john)
         scenario.verify(c1.balance == sp.mutez(0))
         # And again
-        c1.user_mint(3).run(valid=True, amount=sp.tez(30), sender=admin)
+        c1.user_mint(sp.record(amount=3, address=admin.address)).run(valid=True, amount=sp.tez(30), sender=admin)
         scenario.verify(c1.balance == sp.tez(0))
-        c1.user_mint(1).run(valid=True, amount=sp.tez(5), sender=bob)
+        c1.user_mint(sp.record(amount=1, address=bob.address)).run(valid=True, amount=sp.tez(5), sender=bob)
         scenario.verify(c1.balance == sp.tez(0))
         # Only 31 token remaining in the current sale
-        c1.user_mint(10).run(valid=True, amount=sp.tez(50), sender=alice)
-        c1.user_mint(15).run(valid=True, amount=sp.tez(75), sender=bob)
-        c1.user_mint(5).run(valid=True, amount=sp.tez(25), sender=bob)
-        c1.user_mint(2).run(valid=False, amount=sp.tez(10), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=alice.address)).run(valid=True, amount=sp.tez(50), sender=alice)
+        c1.user_mint(sp.record(amount=15, address=bob.address)).run(valid=True, amount=sp.tez(75), sender=bob)
+        c1.user_mint(sp.record(amount=5, address=bob.address)).run(valid=True, amount=sp.tez(25), sender=bob)
+        c1.user_mint(sp.record(amount=2, address=alice.address)).run(valid=False, amount=sp.tez(10), sender=alice)
 
         scenario.p("9. Verify users cannot mint more than the total allocated supply")
-        c1.user_mint(2).run(valid=False, amount=sp.tez(10), sender=alice)
-        c1.user_mint(24).run(valid=False, amount=sp.tez(240), sender=john)
+        c1.user_mint(sp.record(amount=2, address=alice.address)).run(valid=False, amount=sp.tez(10), sender=alice)
+        c1.user_mint(sp.record(amount=24, address=john.address)).run(valid=False, amount=sp.tez(240), sender=john)
 
         scenario.p("9. One is still mintable. Mint it.")
-        c1.user_mint(1).run(valid=True, amount=sp.tez(5), sender=alice)
+        c1.user_mint(sp.record(amount=1, address=alice.address)).run(valid=True, amount=sp.tez(5), sender=alice)
 
         scenario.p("11. Verify the Fa2 ledger contains expected NFTs")
         TestHelper.check_fa2_ledger(scenario=scenario, contract=c2,
@@ -1120,7 +1120,7 @@ def unit_test_user_mint_during_public_sale_with_allowlist_mint_rights(is_default
         c1.admin_fill_allowlist(sp.set(l=[alice.address, bob.address, nat.address], t=sp.TAddress)).run(valid=True, sender=admin)
 
         scenario.p("2. Verify users cannot mint if no event are opened")
-        c1.user_mint(8).run(valid=False, sender=alice)
+        c1.user_mint(sp.record(amount=8, address=alice.address)).run(valid=False, sender=alice)
 
         scenario.p("3. Start a public sale with minting rights enabled")
         c1.open_pub_sale_with_allowlist(sp.record(max_supply=100,
@@ -1133,18 +1133,18 @@ def unit_test_user_mint_during_public_sale_with_allowlist_mint_rights(is_default
                                             )).run(valid=True, sender=admin)
 
         scenario.p("4. Mint NFTs")
-        c1.user_mint(30).run(valid=True, amount=sp.tez(300), sender=john)
-        c1.user_mint(20).run(valid=True, amount=sp.tez(200), sender=nat)
-        c1.user_mint(20).run(valid=True, amount=sp.tez(200), sender=ben)
-        c1.user_mint(20).run(valid=True, amount=sp.tez(200), sender=gaston)
-        c1.user_mint(30).run(valid=True, amount=sp.tez(300), sender=gabe)
+        c1.user_mint(sp.record(amount=30, address=john.address)).run(valid=True, amount=sp.tez(300), sender=john)
+        c1.user_mint(sp.record(amount=20, address=nat.address)).run(valid=True, amount=sp.tez(200), sender=nat)
+        c1.user_mint(sp.record(amount=20, address=ben.address)).run(valid=True, amount=sp.tez(200), sender=ben)
+        c1.user_mint(sp.record(amount=20, address=gaston.address)).run(valid=True, amount=sp.tez(200), sender=gaston)
+        c1.user_mint(sp.record(amount=30, address=gabe.address)).run(valid=True, amount=sp.tez(300), sender=gabe)
 
         scenario.p("5. Verify users in the allowlist can always mint theirs NFTs even if all total supply is minted")
-        c1.user_mint(10).run(valid=False, amount=sp.tez(100), sender=ben)
-        c1.user_mint(10).run(valid=True, amount=sp.tez(100), sender=nat)
-        c1.user_mint(30).run(valid=True, amount=sp.tez(300), sender=alice)
-        c1.user_mint(20).run(valid=True, amount=sp.tez(200), sender=bob)
-        c1.user_mint(10).run(valid=True, amount=sp.tez(100), sender=bob)
+        c1.user_mint(sp.record(amount=10, address=ben.address)).run(valid=False, amount=sp.tez(100), sender=ben)
+        c1.user_mint(sp.record(amount=10, address=nat.address)).run(valid=True, amount=sp.tez(100), sender=nat)
+        c1.user_mint(sp.record(amount=30, address=alice.address)).run(valid=True, amount=sp.tez(300), sender=alice)
+        c1.user_mint(sp.record(amount=20, address=bob.address)).run(valid=True, amount=sp.tez(200), sender=bob)
+        c1.user_mint(sp.record(amount=10, address=bob.address)).run(valid=True, amount=sp.tez(100), sender=bob)
 
 ########################################################################################################################
 # unit_test_mutez_transfer
@@ -1340,22 +1340,22 @@ def module_test_pre_sale_public_sale_with_allowlist(is_default=True):
 
 
         scenario.p("25. Verify users cannot mint more than the number of NFT mintable per user in this event")
-        c1.user_mint(16).run(valid=False, amount=sp.tez(1600), sender=alice)
+        c1.user_mint(sp.record(amount=16, address=alice.address)).run(valid=False, amount=sp.tez(1600), sender=alice)
 
 
         scenario.p("26. Verify users shall pay the right amount of XTZ to mint")
-        c1.user_mint(16).run(valid=False, amount=sp.tez(1495), sender=alice)
-        c1.user_mint(15).run(valid=True, amount=sp.tez(1500), sender=alice)
-        c1.user_mint(15).run(valid=True, amount=sp.tez(1500), sender=bob)
+        c1.user_mint(sp.record(amount=16, address=alice.address)).run(valid=False, amount=sp.tez(1495), sender=alice)
+        c1.user_mint(sp.record(amount=15, address=alice.address)).run(valid=True, amount=sp.tez(1500), sender=alice)
+        c1.user_mint(sp.record(amount=15, address=bob.address)).run(valid=True, amount=sp.tez(1500), sender=bob)
         scenario.verify(c1.get_mint_token_available(bob.address) == 0)
 
         scenario.p("27. Verify users cannot mint more than the total supply allocated in this event")
-        c1.user_mint(10).run(valid=True, amount=sp.tez(1000), sender=nat)
+        c1.user_mint(sp.record(amount=10, address=nat.address)).run(valid=True, amount=sp.tez(1000), sender=nat)
         scenario.verify(c1.get_mint_token_available(nat.address) == 5)
-        c1.user_mint(5).run(valid=True, amount=sp.tez(500), sender=gaston)
+        c1.user_mint(sp.record(amount=5, address=gaston.address)).run(valid=True, amount=sp.tez(500), sender=gaston)
         # Not enough remaining
-        c1.user_mint(6).run(valid=False, amount=sp.tez(600), sender=gabe)
-        c1.user_mint(5).run(valid=True, amount=sp.tez(500), sender=gabe)
+        c1.user_mint(sp.record(amount=6, address=gabe.address)).run(valid=False, amount=sp.tez(600), sender=gabe)
+        c1.user_mint(sp.record(amount=5, address=gabe.address)).run(valid=True, amount=sp.tez(500), sender=gabe)
 
         scenario.p("28. Check the offchain view get_mint_token_available returns the expected result")
         scenario.verify(c1.get_mint_token_available(bob.address) == 0)
@@ -1395,15 +1395,15 @@ def module_test_pre_sale_public_sale_with_allowlist(is_default=True):
         scenario.verify(c1.get_mint_token_available(ben.address) == 20)
 
         scenario.p("34. Verify Alice can mint with a discount as she is in the allowlist")
-        c1.user_mint(20).run(valid=False, amount=sp.tez(4000), sender=alice)
-        c1.user_mint(21).run(valid=False, amount=sp.tez(2100), sender=alice)
-        c1.user_mint(20).run(valid=True, amount=sp.tez(2000), sender=alice)
+        c1.user_mint(sp.record(amount=20, address=alice.address)).run(valid=False, amount=sp.tez(4000), sender=alice)
+        c1.user_mint(sp.record(amount=21, address=alice.address)).run(valid=False, amount=sp.tez(2100), sender=alice)
+        c1.user_mint(sp.record(amount=20, address=alice.address)).run(valid=True, amount=sp.tez(2000), sender=alice)
 
         scenario.p("35. Verify John can mint but without the discount as he is not in the allowlist")
-        c1.user_mint(20).run(valid=False, amount=sp.tez(2000), sender=john)
-        c1.user_mint(20).run(valid=True, amount=sp.tez(4000), sender=john)
+        c1.user_mint(sp.record(amount=20, address=john.address)).run(valid=False, amount=sp.tez(2000), sender=john)
+        c1.user_mint(sp.record(amount=20, address=john.address)).run(valid=True, amount=sp.tez(4000), sender=john)
         scenario.verify(c1.get_mint_token_available(john.address) == 0)
-        c1.user_mint(10).run(valid=True, amount=sp.tez(2000), sender=ben)
+        c1.user_mint(sp.record(amount=10, address=ben.address)).run(valid=True, amount=sp.tez(2000), sender=ben)
 
         scenario.p("36. Check the offchain view get_mint_token_available returns the expected result")
         scenario.verify(c1.get_mint_token_available(alice.address) == 0)
@@ -1412,18 +1412,18 @@ def module_test_pre_sale_public_sale_with_allowlist(is_default=True):
         scenario.verify(c1.get_mint_token_available(bob.address) == 20)
 
         scenario.p("37. Verify there is no supply anymore for users not in the allowlist")
-        c1.user_mint(1).run(valid=False, amount=sp.tez(200), sender=chris)
+        c1.user_mint(sp.record(amount=1, address=chris.address)).run(valid=False, amount=sp.tez(200), sender=chris)
 
         scenario.p("38. Verify users in the allowlist can still mint using their mint rights")
-        c1.user_mint(20).run(valid=True, amount=sp.tez(2000), sender=bob)
+        c1.user_mint(sp.record(amount=20, address=bob.address)).run(valid=True, amount=sp.tez(2000), sender=bob)
         scenario.verify(c1.get_mint_token_available(bob.address) == 0)
-        c1.user_mint(10).run(valid=True, amount=sp.tez(1000), sender=nat)
+        c1.user_mint(sp.record(amount=10, address=nat.address)).run(valid=True, amount=sp.tez(1000), sender=nat)
         scenario.verify(c1.get_mint_token_available(nat.address) == 10)
-        c1.user_mint(10).run(valid=True, amount=sp.tez(1000), sender=nat)
+        c1.user_mint(sp.record(amount=10, address=nat.address)).run(valid=True, amount=sp.tez(1000), sender=nat)
         scenario.verify(c1.get_mint_token_available(nat.address) == 0)
 
         scenario.p("39. Verify that even users with mint rights cannot mint more than the max number of NFT mintable per user")
-        c1.user_mint(10).run(valid=False, amount=sp.tez(1000), sender=nat)
+        c1.user_mint(sp.record(amount=10, address=nat.address)).run(valid=False, amount=sp.tez(1000), sender=nat)
 
         scenario.p("40. Verify only admin can close the event")
         c1.close_any_open_event().run(valid=False, sender=nat)
@@ -1432,7 +1432,7 @@ def module_test_pre_sale_public_sale_with_allowlist(is_default=True):
         c1.close_any_open_event().run(valid=True, sender=admin)
 
         scenario.p("42. Verify users, even if in allowlist, cannot mint anymore when event is closed")
-        c1.user_mint(20).run(valid=False, amount=sp.tez(2000), sender=gabe)
+        c1.user_mint(sp.record(amount=20, address=gabe.address)).run(valid=False, amount=sp.tez(2000), sender=gabe)
 
         scenario.p("43. Verify only admin can clear the allowlist")
         c1.clear_allowlist().run(valid=False, sender=bob)
@@ -1485,18 +1485,18 @@ def module_test_public_sale(is_default=True):
             price=sp.tez(200), use_deadline=False, deadline=sp.timestamp(0))).run(valid=True, sender=admin)
 
         scenario.p("3. Check users cannot mint more NFTs that the max number mintable per user in this event")
-        c1.user_mint(21).run(valid=False, amount=sp.tez(4200), sender=alice)
+        c1.user_mint(sp.record(amount=21, address=alice.address)).run(valid=False, amount=sp.tez(4200), sender=alice)
 
         scenario.p("4. Check the user can mint the max number of NFT mintable per user in this event in one call")
-        c1.user_mint(20).run(valid=True, amount=sp.tez(4000), sender=alice)
-        c1.user_mint(20).run(valid=False, amount=sp.tez(4000), sender=john)
-        c1.user_mint(10).run(valid=True, amount=sp.tez(2000), sender=ben)
+        c1.user_mint(sp.record(amount=20, address=alice.address)).run(valid=True, amount=sp.tez(4000), sender=alice)
+        c1.user_mint(sp.record(amount=10, address=john.address)).run(valid=False, amount=sp.tez(4000), sender=john)
+        c1.user_mint(sp.record(amount=10, address=ben.address)).run(valid=True, amount=sp.tez(2000), sender=ben)
 
         scenario.p("5. Check the user cannot mint more than the total allocated supply in this event")
-        c1.user_mint(10).run(valid=False, amount=sp.tez(2000), sender=ben)
+        c1.user_mint(sp.record(amount=10, address=ben.address)).run(valid=False, amount=sp.tez(2000), sender=ben)
 
         scenario.p("6. Check users can mint exactly the total allocated supply in this event")
-        c1.user_mint(20).run(valid=False, amount=sp.tez(4000), sender=chris)
+        c1.user_mint(sp.record(amount=20, address=chris.address)).run(valid=False, amount=sp.tez(4000), sender=chris)
 
         scenario.p("7. Check only admin can close the event")
         c1.close_any_open_event().run(valid=False, sender=nat)

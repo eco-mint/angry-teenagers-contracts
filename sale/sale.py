@@ -385,10 +385,10 @@ class AngryTeenagersSale(sp.Contract):
     @sp.entry_point
     def user_mint(self, params):
         self.check_event_duration()
-        sp.set_type(params, sp.TNat)
+        sp.set_type(params, sp.TRecord(amount=sp.TNat, address=sp.TAddress))
 
-        sp.verify(params > 0, Error.ErrorMessage.sale_no_token())
-        sp.verify(params <= self.data.event_max_per_user, Error.ErrorMessage.sale_no_token())
+        sp.verify(params.amount > 0, Error.ErrorMessage.sale_no_token())
+        sp.verify(params.amount <= self.data.event_max_per_user, Error.ErrorMessage.sale_no_token())
 
         sp.if self.data.state == STATE_EVENT_PRESALE_5:
             self.mint_pre_sale(params)
@@ -592,52 +592,52 @@ class AngryTeenagersSale(sp.Contract):
 
     def mint_pre_sale(self, params):
         # Pre-sale. Must be on the allow list
-        sp.verify(self.data.allowlist.contains(sp.sender), Error.ErrorMessage.forbidden_operation())
+        sp.verify(self.data.allowlist.contains(params.address), Error.ErrorMessage.forbidden_operation())
 
         # Enough supply
-        sp.verify(self.data.token_minted_in_event + params <= self.data.event_max_supply,
+        sp.verify(self.data.token_minted_in_event + params.amount <= self.data.event_max_supply,
                   Error.ErrorMessage.sale_no_token())
 
         # User minted his token already ?
-        sp.if self.data.event_user_balance.contains(sp.sender):
-            sp.verify(self.data.event_user_balance[sp.sender] + params <= self.data.event_max_per_user,
+        sp.if self.data.event_user_balance.contains(params.address):
+            sp.verify(self.data.event_user_balance[params.address] + params.amount <= self.data.event_max_per_user,
                       Error.ErrorMessage.sale_no_token())
 
         # User gave the right amount of Tez. If yes transfer these Tez to the transfer address
-        self.check_amount_and_transfer_tez(params, self.data.event_price)
-        self.mint_internal(params, sp.sender)
+        self.check_amount_and_transfer_tez(params.amount, self.data.event_price)
+        self.mint_internal(params.amount, params.address)
 
-        sp.if self.data.event_user_balance.contains(sp.sender):
-            self.data.event_user_balance[sp.sender] = self.data.event_user_balance[sp.sender] + params
+        sp.if self.data.event_user_balance.contains(params.address):
+            self.data.event_user_balance[params.address] = self.data.event_user_balance[params.address] + params.amount
         sp.else:
-            self.data.event_user_balance[sp.sender] = params
+            self.data.event_user_balance[params.address] = params.amount
 
-        self.data.token_minted_in_event = self.data.token_minted_in_event + params
+        self.data.token_minted_in_event = self.data.token_minted_in_event + params.amount
 
     def mint_public_sale(self, params):
-        sp.if ~(self.data.allowlist.contains(sp.sender) & self.data.public_sale_allowlist_config.minting_rights):
-            sp.verify(self.data.token_minted_in_event + params <= self.data.event_max_supply,
+        sp.if ~(self.data.allowlist.contains(params.address) & self.data.public_sale_allowlist_config.minting_rights):
+            sp.verify(self.data.token_minted_in_event + params.amount <= self.data.event_max_supply,
                       Error.ErrorMessage.sale_no_token())
-            self.data.token_minted_in_event = self.data.token_minted_in_event + params
+            self.data.token_minted_in_event = self.data.token_minted_in_event + params.amount
 
         # User minted his token already ?
-        sp.if self.data.event_user_balance.contains(sp.sender):
-            sp.verify(self.data.event_user_balance[sp.sender] + params <= self.data.event_max_per_user,
+        sp.if self.data.event_user_balance.contains(params.address):
+            sp.verify(self.data.event_user_balance[params.address] + params.amount <= self.data.event_max_per_user,
                       Error.ErrorMessage.forbidden_operation())
 
         # User gave the right amount of Tez. If yes transfer these Tez to the transfer address
-        sp.if self.data.allowlist.contains(sp.sender):
-            self.check_amount_and_transfer_tez(params,
+        sp.if self.data.allowlist.contains(params.address):
+            self.check_amount_and_transfer_tez(params.amount,
                                                self.data.event_price - self.data.public_sale_allowlist_config.discount)
         sp.else:
-            self.check_amount_and_transfer_tez(params, self.data.event_price)
+            self.check_amount_and_transfer_tez(params.amount, self.data.event_price)
 
-        self.mint_internal(params, sp.sender)
+        self.mint_internal(params.amount, params.address)
 
-        sp.if self.data.event_user_balance.contains(sp.sender):
-            self.data.event_user_balance[sp.sender] = self.data.event_user_balance[sp.sender] + params
+        sp.if self.data.event_user_balance.contains(params.address):
+            self.data.event_user_balance[params.address] = self.data.event_user_balance[params.address] + params.amount
         sp.else:
-            self.data.event_user_balance[sp.sender] = params
+            self.data.event_user_balance[params.address] = params.amount
 
     def redirect_fund(self, amount):
         sp.for item in self.data.transfer_addresses:

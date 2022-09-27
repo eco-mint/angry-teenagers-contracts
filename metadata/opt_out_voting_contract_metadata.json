@@ -1,8 +1,9 @@
 {
-  "version": "1.0.2",
+  "name": "Angry Teenagers DAO OptOut vote",
+  "version": "1.0.4",
   "description": "Angry Teenagers Opt out strategy.",
   "interfaces": [ "TZIP-016" ],
-  "authors": [ "EcoMint LTD" ],
+  "authors": [ "EcoMint LTD <www.angryteenagers.xyz>" ],
   "homepage": "https://www.angryteenagers.xyz",
   "views": [
     {
@@ -108,7 +109,7 @@
               { "prim": "GET", "args": [ { "int": "4" } ] },
               { "prim": "SWAP" },
               { "prim": "GET" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "511" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "513" } ] }, { "prim": "FAILWITH" } ], [] ] }
             ]
           }
         }
@@ -208,13 +209,12 @@
               {
                 "prim": "IF_NONE",
                 "args": [
-                  [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_DAO_NO_VOTE_OPEN" } ] }, { "prim": "FAILWITH" } ],
-                  [ { "prim": "DROP" } ]
+                  [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_DAO_NO_VOTE_OPEN" } ] }, { "prim": "FAILWITH" } ], [ { "prim": "DROP" } ]
                 ]
               },
               { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CDR" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "518" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "520" } ] }, { "prim": "FAILWITH" } ], [] ] }
             ]
           }
         }

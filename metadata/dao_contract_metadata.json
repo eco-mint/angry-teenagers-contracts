@@ -1,8 +1,9 @@
 {
-  "version": "1.0.2",
+  "name": "Angry Teenagers DAO",
+  "version": "1.0.4",
   "description": "Angry Teenagers DAO.",
   "interfaces": [ "TZIP-016" ],
-  "authors": [ "EcoMint LTD" ],
+  "authors": [ "EcoMint LTD <www.angryteenagers.xyz>" ],
   "homepage": "https://www.angryteenagers.xyz",
   "views": [
     {
@@ -100,7 +101,7 @@
               { "prim": "CDR" },
               { "prim": "SWAP" },
               { "prim": "GET" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "375" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "377" } ] }, { "prim": "FAILWITH" } ], [] ] }
             ]
           }
         }
@@ -197,13 +198,12 @@
               {
                 "prim": "IF_NONE",
                 "args": [
-                  [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_DAO_NO_VOTE_OPEN" } ] }, { "prim": "FAILWITH" } ],
-                  [ { "prim": "DROP" } ]
+                  [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_DAO_NO_VOTE_OPEN" } ] }, { "prim": "FAILWITH" } ], [ { "prim": "DROP" } ]
                 ]
               },
               { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CAR" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "388" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "390" } ] }, { "prim": "FAILWITH" } ], [] ] }
             ]
           }
         }

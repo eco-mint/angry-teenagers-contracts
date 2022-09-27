@@ -252,6 +252,9 @@ class AngryTeenagersDao(sp.Contract):
         # Call the appropriate voting strategy
         self.call_voting_strategy_vote(voting_power, sp.sender, params.vote_value)
 
+        event = sp.record(address=sp.sender, amount=voting_power, vote=params.vote_value, proposal=params.proposal_id)
+        sp.emit(event, with_type=True, tag="Send vote")
+
 ########################################################################################################################
 # end
 ########################################################################################################################

@@ -211,13 +211,15 @@ class AngryTeenagers(sp.Contract):
         ]
 
         metadata_base = {
-             "version": "1.0.2"
+             "name": "Angry Teenagers"
+            ,
+             "version": "1.0.4"
              , "description": (
                      "Angry Teenagers: NFTs that fund an exponential cycle of reforestation."
         )
              , "interfaces": ["TZIP-012", "TZIP-016", "TZIP-021"]
              , "authors": [
-                 "EcoMint LTD"
+                 "EcoMint LTD <www.angryteenagers.xyz>"
             ]
              , "homepage": "https://www.angryteenagers.xyz"
              , "views": list_of_views

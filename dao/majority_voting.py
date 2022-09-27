@@ -143,13 +143,15 @@ class DaoMajorityVoting(sp.Contract):
       ]
 
       metadata_base = {
-          "version": "1.0.2"
+          "name": "Angry Teenagers DAO Majority vote"
+          ,
+          "version": "1.0.4"
           , "description": (
               "Angry Teenagers Majority voting strategy."
           )
           , "interfaces": ["TZIP-016"]
           , "authors": [
-              "EcoMint LTD"
+              "EcoMint LTD <www.angryteenagers.xyz>"
           ]
           , "homepage": "https://www.angryteenagers.xyz"
           , "views": list_of_views

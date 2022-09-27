@@ -89,13 +89,15 @@ class AngryTeenagersDao(sp.Contract):
       ]
 
       metadata_base = {
-          "version": "1.0.2"
+          "name": "Angry Teenagers DAO"
+          ,
+          "version": "1.0.4"
           , "description": (
               "Angry Teenagers DAO."
           )
           , "interfaces": ["TZIP-016"]
           , "authors": [
-              "EcoMint LTD"
+              "EcoMint LTD <www.angryteenagers.xyz>"
           ]
           , "homepage": "https://www.angryteenagers.xyz"
           , "views": list_of_views

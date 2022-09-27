@@ -1,8 +1,9 @@
 {
-  "version": "1.0.2",
+  "name": "Angry Teenagers",
+  "version": "1.0.4",
   "description": "Angry Teenagers: NFTs that fund an exponential cycle of reforestation.",
   "interfaces": [ "TZIP-012", "TZIP-016", "TZIP-021" ],
-  "authors": [ "EcoMint LTD" ],
+  "authors": [ "EcoMint LTD <www.angryteenagers.xyz>" ],
   "homepage": "https://www.angryteenagers.xyz",
   "views": [
     {
@@ -35,7 +36,7 @@
               { "prim": "DIG", "args": [ { "int": "2" } ] },
               { "prim": "CDR" },
               { "prim": "GET" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "541" } ] }, { "prim": "FAILWITH" } ], [] ] },
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "543" } ] }, { "prim": "FAILWITH" } ], [] ] },
               { "prim": "COMPARE" },
               { "prim": "EQ" },
               {
@@ -157,7 +158,7 @@
                     { "prim": "GET", "args": [ { "int": "5" } ] },
                     { "prim": "DUP", "args": [ { "int": "3" } ] },
                     { "prim": "GET" },
-                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "490" } ] }, { "prim": "FAILWITH" } ], [] ] },
+                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "492" } ] }, { "prim": "FAILWITH" } ], [] ] },
                     { "prim": "COMPARE" },
                     { "prim": "EQ" },
                     { "prim": "IF", "args": [ [ { "prim": "DUP" }, { "prim": "DUG", "args": [ { "int": "2" } ] }, { "prim": "CONS" }, { "prim": "SWAP" } ], [] ] },
@@ -279,7 +280,7 @@
               { "prim": "CDR" },
               { "prim": "SWAP" },
               { "prim": "GET" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "562" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "564" } ] }, { "prim": "FAILWITH" } ], [] ] }
             ]
           }
         }
@@ -333,11 +334,11 @@
                     { "prim": "CDR" },
                     { "prim": "DUP", "args": [ { "int": "3" } ] },
                     { "prim": "GET" },
-                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "503" } ] }, { "prim": "FAILWITH" } ], [] ] },
+                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "505" } ] }, { "prim": "FAILWITH" } ], [] ] },
                     { "prim": "CDR" },
                     { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "revealed" } ] },
                     { "prim": "GET" },
-                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "503" } ] }, { "prim": "FAILWITH" } ], [] ] },
+                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "505" } ] }, { "prim": "FAILWITH" } ], [] ] },
                     { "prim": "COMPARE" },
                     { "prim": "EQ" },
                     { "prim": "IF", "args": [ [ { "prim": "DUP" }, { "prim": "DUG", "args": [ { "int": "2" } ] }, { "prim": "CONS" }, { "prim": "SWAP" } ], [] ] },

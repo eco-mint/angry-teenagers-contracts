@@ -1,8 +1,9 @@
 {
-  "version": "1.0.2",
+  "name": "Angry Teenagers CrowdSale",
+  "version": "1.0.4",
   "description": "Angry Teenagers Crowdsale contract",
   "interfaces": [ "TZIP-016", "TZIP-021" ],
-  "authors": [ "EcoMint LTD" ],
+  "authors": [ "EcoMint LTD <www.angryteenagers.xyz>" ],
   "homepage": "https://www.angryteenagers.xyz",
   "views": [
     {
@@ -36,7 +37,7 @@
                     { "prim": "DUP" },
                     { "prim": "DUG", "args": [ { "int": "2" } ] },
                     { "prim": "GET" },
-                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "120" } ] }, { "prim": "FAILWITH" } ], [] ] }
+                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "122" } ] }, { "prim": "FAILWITH" } ], [] ] }
                   ],
                   []
                 ]

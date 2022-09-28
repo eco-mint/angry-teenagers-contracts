@@ -39,5 +39,5 @@ DESCRIPTION = "Angry Teenagers: NFTs that fund an exponential cycle of reforesta
 LANGUAGE = "en-US"
 ATTRIBUTES_GENERIC = '[{\"name\"}, {\"generic\"}]'
 RIGHTS = "© 2022 EcoMint. All rights reserved."
-CREATORS = '["The Angry Teenagers. https://www.angryteenagers.xyz"]'
+CREATORS = '["KT1XmjJdFxUzuCJJVMyrXxS23hQrVtqSnhTH"]'
 PROJECTNAME = "Nsomyam Ye Reforestation"

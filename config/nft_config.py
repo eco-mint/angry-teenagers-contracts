@@ -2,7 +2,7 @@ import smartpy as sp
 
 CONTRACT_NAME = "AngryTeenagers"
 ADMINISTRATOR_ADDRESS = "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"
-ROYALTIES_BYTES ='{"decimals": 3, "shares": { "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q": 10}}'
+ROYALTIES_BYTES ='{"decimals": 2, "shares": { "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q": 10}}'
 CONTRACT_METADATA_IPFS_LINK ="ipfs://QmTrdr1QbnDA8MJzECAUGerXY3kWSbKUJi9eWuvRNziVE2"
 
 # TODO: This is not a valid generic image and displayUri is missing
@@ -39,5 +39,5 @@ DESCRIPTION = "Angry Teenagers: NFTs that fund an exponential cycle of reforesta
 LANGUAGE = "en-US"
 ATTRIBUTES_GENERIC = '[{\"name\"}, {\"generic\"}]'
 RIGHTS = "© 2022 EcoMint. All rights reserved."
-CREATORS = '["The Angry Teenagers. https://www.angryteenagers.xyz"]'
+CREATORS = '["KT1XmjJdFxUzuCJJVMyrXxS23hQrVtqSnhTH"]'
 PROJECTNAME = "Nsomyam Ye Reforestation"

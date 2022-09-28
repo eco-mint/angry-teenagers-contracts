@@ -252,6 +252,8 @@ class DaoOptOutVoting(sp.Contract):
         # Change the state of the contract
         self.data.vote_state = PHASE_1_OPT_OUT
 
+        sp.emit(self.data.vote_id, with_type=True, tag="Start a new vote")
+
 ########################################################################################################################
 # vote
 ########################################################################################################################
@@ -273,6 +275,8 @@ class DaoOptOutVoting(sp.Contract):
                 self.phase_2_vote(params)
             sp.else:
                 sp.failwith(Error.ErrorMessage.dao_no_vote_open())
+
+        sp.emit(params, with_type=True, tag="Vote")
 
 ########################################################################################################################
 # propose_callback
@@ -318,6 +322,8 @@ class DaoOptOutVoting(sp.Contract):
                 self.phase_2_end()
             sp.else:
                 sp.failwith(Error.ErrorMessage.dao_no_vote_open())
+
+        sp.emit(params, with_type=True, tag="End vote")
 
 ########################################################################################################################
 # end_callback

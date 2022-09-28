@@ -201,6 +201,8 @@ class AngryTeenagersDao(sp.Contract):
         # Call voting strategy to start the poll
         self.call_voting_strategy_start(total_available_voters)
 
+        sp.emit(self.data.next_proposal_id, with_type=True, tag="Propose vote")
+
 ########################################################################################################################
 # propose_callback
 ########################################################################################################################
@@ -252,6 +254,9 @@ class AngryTeenagersDao(sp.Contract):
         # Call the appropriate voting strategy
         self.call_voting_strategy_vote(voting_power, sp.sender, params.vote_value)
 
+        event = sp.record(address=sp.sender, amount=voting_power, vote=params.vote_value, proposal=params.proposal_id)
+        sp.emit(event, with_type=True, tag="Send vote")
+
 ########################################################################################################################
 # end
 ########################################################################################################################
@@ -271,6 +276,8 @@ class AngryTeenagersDao(sp.Contract):
 
         # Call the appropriate voting strategy
         self.call_voting_strategy_end()
+
+        sp.emit(proposal_id, with_type=True, tag="End vote")
 
 ########################################################################################################################
 # end_callback

@@ -223,6 +223,8 @@ class AngryTeenagersSale(sp.Contract):
         # Go to state STATE_EVENT_PRIV_ALLOWLIST_REG_1
         self.data.state = STATE_EVENT_PRIV_ALLOWLIST_REG_1
 
+        sp.emit(params, with_type=True, tag="Open a private sale")
+
 ########################################################################################################################
 # pay_to_enter_allowlist_priv
 ########################################################################################################################
@@ -238,6 +240,8 @@ class AngryTeenagersSale(sp.Contract):
         self.redirect_fund(sp.amount)
         self.data.pre_allowlist.remove(sp.sender)
         self.data.allowlist.add(sp.sender)
+
+        sp.emit(sp.sender, with_type=True, tag="User registered to allowlist during private event")
 
 ########################################################################################################################
 # open_event_pub_allowlist_reg
@@ -263,6 +267,9 @@ class AngryTeenagersSale(sp.Contract):
 
         # Go to state STATE_EVENT_PUB_ALLOWLIST_REG_3
         self.data.state = STATE_EVENT_PUB_ALLOWLIST_REG_3
+
+        sp.emit(params, with_type=True, tag="Open a public allowlist registration")
+
 
 ########################################################################################################################
 # pay_to_enter_allowlist_pub
@@ -290,6 +297,9 @@ class AngryTeenagersSale(sp.Contract):
         sp.if self.data.public_allowlist_space_taken >= self.data.public_allowlist_max_space:
             self.stop_internal_event()
 
+        sp.emit(sp.sender, with_type=True, tag="User registered to allowlist during public event")
+
+
 ########################################################################################################################
 # open_pre_sale
 ########################################################################################################################
@@ -313,6 +323,9 @@ class AngryTeenagersSale(sp.Contract):
         self.start_sale_init(params.max_supply, params.max_per_user, params.price, params.use_deadline, params.deadline)
 
         self.data.state = STATE_EVENT_PRESALE_5
+
+        sp.emit(params, with_type=True, tag="Open a pre-sale")
+
 
 ########################################################################################################################
 # open_pub_sale
@@ -342,6 +355,9 @@ class AngryTeenagersSale(sp.Contract):
         self.start_sale_init(params.max_supply, params.max_per_user, params.price, params.use_deadline, params.deadline)
 
         self.data.state = STATE_EVENT_PUBLIC_SALE_6
+
+        sp.emit(params, with_type=True, tag="Open a public sale")
+
 
 ########################################################################################################################
 # open_pub_sale_with_allowlist
@@ -373,6 +389,9 @@ class AngryTeenagersSale(sp.Contract):
 
         self.data.state = STATE_EVENT_PUBLIC_SALE_6
 
+        sp.emit(params, with_type=True, tag="Open a public sale with allowlist")
+
+
 ########################################################################################################################
 # set_metadata
 ########################################################################################################################
@@ -400,6 +419,10 @@ class AngryTeenagersSale(sp.Contract):
             sp.else:
                 sp.failwith(Error.ErrorMessage.forbidden_operation())
 
+        event = sp.record(sender=sp.sender, receiver=params.address, amount=params.amount)
+        sp.emit(event, with_type=True, tag="Mint")
+
+
 ########################################################################################################################
 # close_any_open_event
 ########################################################################################################################
@@ -409,6 +432,8 @@ class AngryTeenagersSale(sp.Contract):
 
         sp.verify(self.is_any_event_open(), Error.ErrorMessage.sale_no_event_open())
         self.stop_internal_event()
+
+        sp.emit(self.data.state, with_type=True, tag="Close open event")
 
 ########################################################################################################################
 # mint_and_give
@@ -423,6 +448,9 @@ class AngryTeenagersSale(sp.Contract):
 
         # Mint token(s) and transfer them to user
         self.mint_internal(amount=params.amount, address=params.address)
+
+        event = sp.record(sender=sp.sender, receiver=params.address, amount=params.amount)
+        sp.emit(event, with_type=True, tag="Mint from admin")
 
 ########################################################################################################################
 # set_administrator
@@ -480,6 +508,8 @@ class AngryTeenagersSale(sp.Contract):
         self.data.state = STATE_NO_EVENT_OPEN_0
         self.data.allowlist = sp.set(l={}, t=sp.TAddress)
         self.data.pre_allowlist = sp.set(l={}, t=sp.TAddress)
+
+        sp.emit(sp.unit, with_type=True, tag="Clear allowlist")
 
 ########################################################################################################################
 # admin_process_presale

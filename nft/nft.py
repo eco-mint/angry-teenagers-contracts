@@ -281,6 +281,10 @@ class AngryTeenagers(sp.Contract):
 
                 self.update_balance(current_from, tx.to_)
 
+                event = sp.record(from_=current_from, to_=tx.to_, token_id=tx.token_id)
+                sp.emit(event, with_type=True, tag="Transfer")
+
+
     @sp.entry_point
     def update_operators(self, params):
         sp.set_type(params, sp.TList(
@@ -381,6 +385,9 @@ class AngryTeenagers(sp.Contract):
 
             self.data.token_metadata[sp.fst(artwork_metadata)] = sp.pair(sp.fst(artwork_metadata), my_map)
 
+            event = sp.fst(artwork_metadata)
+            sp.emit(event, with_type=True, tag="Update artwork")
+
 
     @sp.entry_point
     def set_royalties(self, params):
@@ -427,6 +434,9 @@ class AngryTeenagers(sp.Contract):
             self.data.voting_power[params][sp.level] = last_balance.head.value + 1
         sp.else:
             self.data.voting_power[params][sp.level] = 1
+
+        event = sp.record(sender=sp.sender, receiver=params)
+        sp.emit(event, with_type=True, tag="Mint")
 
 ########################################################################################################################
 # Onchain views

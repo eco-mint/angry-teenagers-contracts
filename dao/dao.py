@@ -91,7 +91,7 @@ class AngryTeenagersDao(sp.Contract):
       metadata_base = {
           "name": "Angry Teenagers DAO"
           ,
-          "version": "1.0.4"
+          "version": "1.0.5"
           , "description": (
               "Angry Teenagers DAO."
           )

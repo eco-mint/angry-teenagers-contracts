@@ -1,6 +1,6 @@
 {
   "name": "Angry Teenagers DAO Majority vote",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Angry Teenagers Majority voting strategy.",
   "interfaces": [ "TZIP-016" ],
   "authors": [ "EcoMint LTD <www.angryteenagers.xyz>" ],
@@ -103,7 +103,7 @@
               { "prim": "CAR" },
               { "prim": "SWAP" },
               { "prim": "GET" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "396" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "402" } ] }, { "prim": "FAILWITH" } ], [] ] }
             ]
           }
         }
@@ -202,7 +202,7 @@
               },
               { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CDR" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "403" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "409" } ] }, { "prim": "FAILWITH" } ], [] ] }
             ]
           }
         }

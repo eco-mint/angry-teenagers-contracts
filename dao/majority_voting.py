@@ -145,7 +145,7 @@ class DaoMajorityVoting(sp.Contract):
       metadata_base = {
           "name": "Angry Teenagers DAO Majority vote"
           ,
-          "version": "1.0.4"
+          "version": "1.0.5"
           , "description": (
               "Angry Teenagers Majority voting strategy."
           )

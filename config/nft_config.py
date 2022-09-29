@@ -3,7 +3,7 @@ import smartpy as sp
 CONTRACT_NAME = "AngryTeenagers"
 ADMINISTRATOR_ADDRESS = "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"
 ROYALTIES_BYTES ='{"decimals": 2, "shares": { "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q": 10}}'
-CONTRACT_METADATA_IPFS_LINK ="ipfs://QmTrdr1QbnDA8MJzECAUGerXY3kWSbKUJi9eWuvRNziVE2"
+CONTRACT_METADATA_IPFS_LINK ="ipfs://QmPWQC52HoApnt2dh4mvNh7Bdm3pb9FLfBf12N2JQBTEt3"
 
 # TODO: This is not a valid generic image and displayUri is missing
 GENERIC_ARTWORK_IPFS_LINK = "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"

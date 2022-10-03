@@ -79,6 +79,7 @@ class TestHelper():
                         creators=CREATORS,
                         project_name=PROJECTNAME
                             )
+        c1.set_initial_balance(sp.mutez(300000000))
         scenario += c1
         scenario.h2("Contracts")
         scenario.p("c1: This FA2 contract to test")
@@ -752,22 +753,19 @@ def unit_fa2_test_mutez_transfer(is_default=True):
         scenario.h2("Test the mutez_transfer entrypoint. (Who: Only for main admin)")
         scenario.p("This entrypoint is called byt the main admin to extract fund on the contract. Normally no funds are supposed to be held in the contract however if something bad happens or somebody makes a mistake transfer, we still want to have the ability to extract the fund.")
 
-        scenario.p("1. Add fund to the contract")
-        c1.set_sale_contract_administrator(bob.address).run(valid=True, sender=admin, amount=sp.mutez(300000000))
-
-        scenario.p("2. Check that only the admin can call this entrypoint")
+        scenario.p("1. Check that only the admin can call this entrypoint")
         c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=False, sender=alice)
         c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=False, sender=bob)
         c1.mutez_transfer(sp.record(destination=admin.address, amount=sp.mutez(200000000))).run(valid=False, sender=john)
 
-        scenario.p("3. Check the function extracts the fund as expected")
+        scenario.p("2. Check the function extracts the fund as expected")
         c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=True, sender=admin)
         c1.mutez_transfer(sp.record(destination=admin.address, amount=sp.mutez(100000000))).run(valid=True, sender=admin)
 
-        scenario.p("4. Check that the function fails when no fund are remaining")
+        scenario.p("3. Check that the function fails when no fund are remaining")
         c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(100000000))).run(valid=False, sender=admin)
 
-        scenario.p("5. Check offchain view count_tokens returns the expected value")
+        scenario.p("4. Check offchain view count_tokens returns the expected value")
         scenario.verify(c1.count_tokens() == 0)
 
 ########################################################################################################################

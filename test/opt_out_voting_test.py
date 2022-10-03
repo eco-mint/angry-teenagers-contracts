@@ -143,35 +143,6 @@ class SimulatedPhase2Voting(sp.Contract):
 
 # Unit tests -------------------------------------------------------------------------------------------------------
 ########################################################################################################################
-# unit_test_mutez_transfer
-########################################################################################################################
-def unit_test_mutez_transfer(is_default=True):
-    @sp.add_test(name="unit_test_mutez_transfer", is_default=is_default)
-    def test():
-        scenario = TestHelper.create_scenario("unit_test_mutez_transfer")
-
-        admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, simulated_poll_leader_contract, simulated_phase2_voting_contract = TestHelper.create_contracts(scenario, admin, john)
-
-        scenario.h2("Test the mutez_transfer entrypoint.  (Who: Only for the admin)")
-        scenario.p("This entrypoint is called byt the admin to extract fund on the contract. Normally no funds are supposed to be held in the contract however if something bad happens or somebody makes a mistake transfer, we still want to have the ability to extract the fund.")
-
-        scenario.p("1. Add fund to the contract")
-        c1.set_poll_leader(simulated_poll_leader_contract.address).run(valid=True, sender=admin, amount=sp.mutez(300000000))
-
-        scenario.p("2. Check that only the admin can call this entrypoint")
-        c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=False, sender=alice)
-        c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=False, sender=bob)
-        c1.mutez_transfer(sp.record(destination=admin.address, amount=sp.mutez(200000000))).run(valid=False, sender=john)
-
-        scenario.p("3. Check the function extracts the fund as expected")
-        c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=True, sender=admin)
-        c1.mutez_transfer(sp.record(destination=admin.address, amount=sp.mutez(100000000))).run(valid=True, sender=admin)
-
-        scenario.p("3. Check no fund are remaining")
-        c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(100000000))).run(valid=False, sender=admin)
-
-########################################################################################################################
 # unit_test_initial_storage
 ########################################################################################################################
 def unit_test_initial_storage(is_default = True):

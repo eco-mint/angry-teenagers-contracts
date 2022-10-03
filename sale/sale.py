@@ -513,17 +513,6 @@ class AngryTeenagersSale(sp.Contract):
         sp.verify(total.value == 100, Error.ErrorMessage.invalid_amount())
 
 ########################################################################################################################
-# set_fa2_administrator
-########################################################################################################################
-    @sp.entry_point
-    def set_fa2_administrator(self, params):
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
-        sp.set_type(params, sp.TAddress)
-        contract_params = sp.contract(sp.TAddress, self.data.fa2, entry_point="set_administrator").open_some()
-        data_to_send = params
-        sp.transfer(data_to_send, sp.mutez(0), contract_params)
-
-########################################################################################################################
 # register_fa2
 ########################################################################################################################
     @sp.entry_point

@@ -128,7 +128,8 @@ class TestHelper():
                                  )
         scenario += c2
         c1.register_fa2(c2.address).run(valid=True, sender=admin)
-        c2.set_administrator(c1.address).run(valid=True, sender=admin)
+        c2.set_next_administrator(c1.address).run(valid=True, sender=admin)
+        c2.validate_new_administrator().run(valid=True, sender=c1.address)
 
         scenario.h2("Contracts:")
         scenario.p("c1: This sale contract to test")
@@ -178,6 +179,7 @@ def unit_test_initial_storage(is_default = True):
 
         scenario.p("1. Read each entry of the storage of the c1 contract and check it is initialized as expected")
         scenario.verify(c1.data.administrator == admin.address)
+        scenario.verify(c1.data.next_administrator == sp.none)
         scenario.verify(c1.data.fa2 == c2.address)
         scenario.verify(c1.data.metadata[""] == sp.utils.bytes_of_string("https://example.com"))
 
@@ -699,32 +701,6 @@ def unit_test_open_pub_sale_with_allowlist(is_default = True):
         scenario.verify(c1.data.public_sale_allowlist_config.minting_rights == False)
 
 ########################################################################################################################
-# unit_test_set_fa2_administrator_function
-########################################################################################################################
-def unit_test_set_fa2_administrator_function(is_default=True):
-    @sp.add_test(name="unit_test_set_fa2_administrator_function", is_default=is_default)
-    def test():
-        scenario = TestHelper.create_scenario("unit_test_set_fa2_administrator_function")
-
-        admin, alice, bob, john = TestHelper.create_account(scenario)
-        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
-
-        scenario.h2("Test the set_fa2_administrator_function entrypoint. (Who: Only for the admin)")
-        scenario.p("This function is used to set the admin of the underlying FA2 contract. A FA2 contract needs to be registered.")
-
-        scenario.p("1. Check initial storage points on the expected admin address")
-        scenario.verify(c2.data.administrator == c1.address)
-
-        scenario.p("2. Check only admin can call this entrypoint")
-        c1.set_fa2_administrator(bob.address).run(valid=False, sender=alice)
-        c1.set_fa2_administrator(bob.address).run(valid=False, sender=bob)
-        c1.set_fa2_administrator(bob.address).run(valid=False, sender=john)
-
-        scenario.p("3. Check administrator of FA2 contract in the FA2 contract storage is as expected after a change")
-        c1.set_fa2_administrator(bob.address).run(valid=True, sender=admin)
-        scenario.verify(c2.data.administrator == bob.address)
-
-########################################################################################################################
 # unit_test_mint_and_give
 ########################################################################################################################
 def unit_test_mint_and_give(is_default=True):
@@ -770,40 +746,73 @@ def unit_test_mint_and_give(is_default=True):
                                     owner=bob.address, token_id_min=84, token_id_max=90)
 
 ########################################################################################################################
-# unit_test_set_administrator
+# unit_test_set_next_administrator
 ########################################################################################################################
-def unit_test_set_administrator(is_default = True):
-    @sp.add_test(name="unit_test_set_administrator", is_default=is_default)
+def unit_test_set_next_administrator(is_default = True):
+    @sp.add_test(name="unit_test_set_next_administrator", is_default=is_default)
     def test():
-        scenario = TestHelper.create_scenario("unit_test_set_administrator")
-
+        scenario = TestHelper.create_scenario("unit_test_set_next_administrator")
         admin, alice, bob, john = TestHelper.create_account(scenario)
         c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
-        scenario.h2("Test the set_administrator entrypoint. (Who: Only for the admin)")
-        scenario.p("This function is used to change the administrator of the contract.")
+        scenario.h2("Test the set_next_administrator entrypoint. (Who: Only for the admin)")
+        scenario.p("This function is used to change the administrator of the contract. This is two steps process. validate_next_admin shall be called after.")
 
         scenario.p("1. Check only admin can call this entrypoint (i.e only the current admin can change the admin)")
-        c1.set_administrator(alice.address).run(valid=False, sender=alice)
-        c1.set_administrator(admin.address).run(valid=False, sender=bob)
-        c1.set_administrator(bob.address).run(valid=False, sender=john)
+        c1.set_next_administrator(alice.address).run(valid=False, sender=alice)
+        c1.set_next_administrator(admin.address).run(valid=False, sender=bob)
+        c1.set_next_administrator(bob.address).run(valid=False, sender=john)
 
-        scenario.p("2. Check admin remains admin if he gives the admin right to himself.")
-        c1.set_administrator(admin.address).run(valid=True, sender=admin)
-        c1.set_administrator(alice.address).run(valid=False, sender=bob)
-        c1.set_administrator(admin.address).run(valid=False, sender=john)
-        c1.set_administrator(bob.address).run(valid=False, sender=alice)
+        scenario.p("2. Check this function does not change the admin but only the next_admin field.")
+        c1.set_next_administrator(alice.address).run(valid=True, sender=admin)
+        scenario.verify(c1.data.administrator == admin.address)
+        scenario.verify(c1.data.next_administrator.open_some() == alice.address)
 
-        scenario.p("3. Check admin is not admin if he gives admin right to Alice. Check Alice is then admin.")
-        c1.set_administrator(alice.address).run(valid=True, sender=admin)
+        scenario.p("3. This function can be called several times but only by the admin.")
+        c1.set_next_administrator(alice.address).run(valid=False, sender=alice)
+        c1.set_next_administrator(admin.address).run(valid=False, sender=bob)
+        c1.set_next_administrator(bob.address).run(valid=False, sender=john)
+        c1.set_next_administrator(bob.address).run(valid=True, sender=admin)
+        scenario.verify(c1.data.administrator == admin.address)
+        scenario.verify(c1.data.next_administrator.open_some() == bob.address)
 
-        scenario.p("4. Check Alice is now admin.")
-        c1.set_administrator(admin.address).run(valid=False, sender=admin)
-        c1.set_administrator(bob.address).run(valid=False, sender=admin)
+########################################################################################################################
+# unit_test_validate_new_administrator
+########################################################################################################################
+def unit_test_validate_new_administrator(is_default = True):
+    @sp.add_test(name="unit_test_validate_new_administrator", is_default=is_default)
+    def test():
+        scenario = TestHelper.create_scenario("unit_test_validate_new_administrator")
+        admin, alice, bob, john = TestHelper.create_account(scenario)
+        c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
-        scenario.p("5. Check Alice can give admin rights to Bob and Bob is then admin.")
-        c1.set_administrator(bob.address).run(valid=True, sender=alice)
+        scenario.h2("Test the unit_test_validate_new_administrator entrypoint.")
+        scenario.p("This function is used to change the administrator of the contract. This is two steps process.")
+
+        scenario.p("1. set_next_administrator shall be called prior to validate_next_administrator")
+        c1.validate_new_administrator().run(valid=False, sender=admin)
+        c1.validate_new_administrator().run(valid=False, sender=alice)
+        c1.validate_new_administrator().run(valid=False, sender=bob)
+
+        scenario.p("2. Call set_next_administrator successfully")
+        c1.set_next_administrator(alice.address).run(valid=True, sender=admin)
+
+        scenario.p("3. Only alice can call validate_next_address")
+        c1.validate_new_administrator().run(valid=False, sender=admin)
+        c1.validate_new_administrator().run(valid=False, sender=bob)
+        c1.validate_new_administrator().run(valid=True, sender=alice)
+        scenario.verify(c1.data.administrator == alice.address)
+        scenario.verify(~c1.data.next_administrator.is_some())
+
+        scenario.p("3. Alice is now admin. She can give the admin right to bob")
+        c1.set_next_administrator(bob.address).run(valid=False, sender=bob)
+        c1.set_next_administrator(bob.address).run(valid=False, sender=admin)
+        c1.set_next_administrator(bob.address).run(valid=True, sender=alice)
+        c1.validate_new_administrator().run(valid=False, sender=admin)
+        c1.validate_new_administrator().run(valid=False, sender=alice)
+        c1.validate_new_administrator().run(valid=True, sender=bob)
         scenario.verify(c1.data.administrator == bob.address)
+        scenario.verify(~c1.data.next_administrator.is_some())
 
 ########################################################################################################################
 # unit_test_set_transfer_addresses
@@ -1162,7 +1171,7 @@ def unit_test_mutez_transfer(is_default=True):
         scenario.p("This entrypoint is called byt the admin to extract fund on the contract. Normally no funds are supposed to be held in the contract however if something bad happens or somebody makes a mistake transfer, we still want to have the ability to extract the fund.")
 
         scenario.p("1. Add fund to the contract")
-        c1.set_fa2_administrator(c2.address).run(valid=True, sender=admin, amount=sp.mutez(300000000))
+        c1.register_fa2(c2.address).run(valid=True, sender=admin, amount=sp.mutez(300000000))
 
         scenario.p("2. Check that only the admin can call this entrypoint")
         c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=False, sender=alice)
@@ -1519,9 +1528,9 @@ unit_test_pay_to_enter_allowlist_pub()
 unit_test_open_pre_sale()
 unit_test_open_pub_sale()
 unit_test_open_pub_sale_with_allowlist()
-unit_test_set_fa2_administrator_function()
 unit_test_mint_and_give()
-unit_test_set_administrator()
+unit_test_set_next_administrator()
+unit_test_validate_new_administrator()
 unit_test_set_transfer_addresses()
 unit_test_register_fa2()
 unit_test_user_mint_during_public_sale()

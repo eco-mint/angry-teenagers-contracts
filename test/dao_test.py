@@ -28,6 +28,7 @@ class TestHelper():
                               metadata=sp.utils.metadata_of_url("https://example.com"),
                               poll_manager=sp.map(l = {0 : sp.record(name="One", address=simulated_voting_strategy_one.address), 1: sp.record(name="Two", address=simulated_voting_strategy_two.address)}))
 
+        c1.set_initial_balance(sp.mutez(300000000))
         scenario += c1
         scenario += simulated_fa2
 
@@ -163,6 +164,7 @@ def unit_test_initial_storage(is_default = True):
 
         scenario.p("1. Read each entry of the storage of the c1 contract and check it is initialized as expected")
         scenario.verify(c1.data.admin == admin.address)
+        scenario.verify(~c1.data.next_admin.is_some())
         scenario.verify(c1.data.state == DAO.NONE)
         scenario.verify(c1.data.next_proposal_id == sp.nat(0))
         scenario.verify(~c1.data.angry_teenager_fa2.is_some())
@@ -173,37 +175,68 @@ def unit_test_initial_storage(is_default = True):
         scenario.verify(~c1.data.outcomes.contains(0))
         scenario.verify(c1.data.metadata[""] == sp.utils.bytes_of_string("https://example.com"))
 
-def unit_test_set_administrator(is_default = True):
-    @sp.add_test(name="unit_test_set_administrator", is_default=is_default)
+def unit_test_set_next_administrator(is_default = True):
+    @sp.add_test(name="unit_test_set_next_administrator", is_default=is_default)
     def test():
-        scenario = TestHelper.create_scenario("unit_test_set_administrator")
+        scenario = TestHelper.create_scenario("unit_test_set_next_administrator")
         admin, alice, bob, john = TestHelper.create_account(scenario)
         c1, simulated_voting_strategy_one, simulated_voting_strategy_two, simulated_fa2 = TestHelper.create_contracts(scenario, admin)
 
-        scenario.h2("Test the set_administrator entrypoint. (Who: Only for the admin)")
-        scenario.p("This function is used to change the administrator of the contract.")
+        scenario.h2("Test the set_next_administrator entrypoint. (Who: Only for the admin)")
+        scenario.p("This function is used to change the administrator of the contract. This is two steps process. validate_next_admin shall be called after.")
 
         scenario.p("1. Check only admin can call this entrypoint (i.e only the current admin can change the admin)")
-        c1.set_administrator(alice.address).run(valid=False, sender=alice)
-        c1.set_administrator(admin.address).run(valid=False, sender=bob)
-        c1.set_administrator(bob.address).run(valid=False, sender=john)
+        c1.set_next_administrator(alice.address).run(valid=False, sender=alice)
+        c1.set_next_administrator(admin.address).run(valid=False, sender=bob)
+        c1.set_next_administrator(bob.address).run(valid=False, sender=john)
 
-        scenario.p("2. Check admin remains admin if he gives the admin right to himself.")
-        c1.set_administrator(admin.address).run(valid=True, sender=admin)
-        c1.set_administrator(alice.address).run(valid=False, sender=bob)
-        c1.set_administrator(admin.address).run(valid=False, sender=john)
-        c1.set_administrator(bob.address).run(valid=False, sender=alice)
+        scenario.p("2. Check this function does not change the admin but only the next_admin field.")
+        c1.set_next_administrator(alice.address).run(valid=True, sender=admin)
+        scenario.verify(c1.data.admin == admin.address)
+        scenario.verify(c1.data.next_admin.open_some() == alice.address)
 
-        scenario.p("3. Check admin is not admin if he gives admin right to Alice. Check Alice is then admin.")
-        c1.set_administrator(alice.address).run(valid=True, sender=admin)
+        scenario.p("3. This function can be called several times but only by the admin.")
+        c1.set_next_administrator(alice.address).run(valid=False, sender=alice)
+        c1.set_next_administrator(admin.address).run(valid=False, sender=bob)
+        c1.set_next_administrator(bob.address).run(valid=False, sender=john)
+        c1.set_next_administrator(bob.address).run(valid=True, sender=admin)
+        scenario.verify(c1.data.admin == admin.address)
+        scenario.verify(c1.data.next_admin.open_some() == bob.address)
 
-        scenario.p("4. Check Alice is now admin.")
-        c1.set_administrator(admin.address).run(valid=False, sender=admin)
-        c1.set_administrator(bob.address).run(valid=False, sender=admin)
+def unit_test_validate_new_administrator(is_default = True):
+    @sp.add_test(name="unit_test_validate_new_administrator", is_default=is_default)
+    def test():
+        scenario = TestHelper.create_scenario("unit_test_validate_new_administrator")
+        admin, alice, bob, john = TestHelper.create_account(scenario)
+        c1, simulated_voting_strategy_one, simulated_voting_strategy_two, simulated_fa2 = TestHelper.create_contracts(scenario, admin)
 
-        scenario.p("5. Check Alice can give admin rights to Bob and Bob is then admin.")
-        c1.set_administrator(bob.address).run(valid=True, sender=alice)
+        scenario.h2("Test the unit_test_validate_new_administrator entrypoint.")
+        scenario.p("This function is used to change the administrator of the contract. This is two steps process.")
+
+        scenario.p("1. set_next_administrator shall be called prior to validate_next_administrator")
+        c1.validate_new_administrator().run(valid=False, sender=admin)
+        c1.validate_new_administrator().run(valid=False, sender=alice)
+        c1.validate_new_administrator().run(valid=False, sender=bob)
+
+        scenario.p("2. Call set_next_administrator successfully")
+        c1.set_next_administrator(alice.address).run(valid=True, sender=admin)
+
+        scenario.p("3. Only alice can call validate_next_address")
+        c1.validate_new_administrator().run(valid=False, sender=admin)
+        c1.validate_new_administrator().run(valid=False, sender=bob)
+        c1.validate_new_administrator().run(valid=True, sender=alice)
+        scenario.verify(c1.data.admin == alice.address)
+        scenario.verify(~c1.data.next_admin.is_some())
+
+        scenario.p("3. Alice is now admin. She can give the admin right to bob")
+        c1.set_next_administrator(bob.address).run(valid=False, sender=bob)
+        c1.set_next_administrator(bob.address).run(valid=False, sender=admin)
+        c1.set_next_administrator(bob.address).run(valid=True, sender=alice)
+        c1.validate_new_administrator().run(valid=False, sender=admin)
+        c1.validate_new_administrator().run(valid=False, sender=alice)
+        c1.validate_new_administrator().run(valid=True, sender=bob)
         scenario.verify(c1.data.admin == bob.address)
+        scenario.verify(~c1.data.next_admin.is_some())
 
 def unit_test_register_angry_teenager_fa2(is_default = True):
     @sp.add_test(name="unit_test_register_angry_teenager_fa2", is_default=is_default)
@@ -237,15 +270,12 @@ def unit_test_mutez_transfer(is_default=True):
         scenario.h2("Test the mutez_transfer entrypoint.  (Who: Only for the DAO)")
         scenario.p("This entrypoint is called byt the admin to extract fund on the contract. Normally no funds are supposed to be held in the contract however if something bad happens or somebody makes a mistake transfer, we still want to have the ability to extract the fund.")
 
-        scenario.p("1. Add fund to the contract")
-        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin, amount=sp.mutez(300000000))
-
-        scenario.p("2. Check that only the DAO can call this entrypoint")
+        scenario.p("1. Check that only the DAO can call this entrypoint")
         c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=False, sender=alice)
         c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=False, sender=admin)
         c1.mutez_transfer(sp.record(destination=admin.address, amount=sp.mutez(200000000))).run(valid=False, sender=john)
 
-        scenario.p("3. Check the function extracts the fund as expected")
+        scenario.p("2. Check the function extracts the fund as expected")
         c1.mutez_transfer(sp.record(destination=alice.address, amount=sp.mutez(200000000))).run(valid=True, sender=c1.address)
         c1.mutez_transfer(sp.record(destination=admin.address, amount=sp.mutez(100000000))).run(valid=True, sender=c1.address)
 
@@ -801,7 +831,8 @@ def unit_test_offchain_views(is_default=True):
 
 
 unit_test_initial_storage()
-unit_test_set_administrator()
+unit_test_set_next_administrator()
+unit_test_validate_new_administrator()
 unit_test_register_angry_teenager_fa2()
 unit_test_mutez_transfer()
 unit_test_set_delegate()

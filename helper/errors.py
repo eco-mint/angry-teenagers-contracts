@@ -9,6 +9,7 @@ class ErrorMessage:
     def insufficient_balance():      return "ANGRY_TEENAGERS_INSUFFICIENT_BALANCE"
     def not_admin_or_operator():     return "ANGRY_TEENAGERS_NOT_ADMIN_OR_OPERATOR"
     def not_admin():                 return "ANGRY_TEENAGERS_NOT_ADMIN"
+    def no_next_admin():             return "ANGRY_TEENAGERS_NO_NEXT_ADMIN"
     def no_land_available():         return "ANGRY_TEENAGERS_NO_LAND_AVAILABLE"
     def balance_inconsistency():     return "ANGRY_TEENAGERS_BALANCE_INCONSISTENCY"
     def sale_event_already_open():   return "ANGRY_TEENAGERS_SALE_EVENT_ALREADY_OPEN"

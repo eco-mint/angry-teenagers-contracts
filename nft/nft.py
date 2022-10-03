@@ -159,6 +159,30 @@ class AngryTeenagers(sp.Contract):
         self.creators = sp.utils.bytes_of_string(creators)
         self.project_name = sp.utils.bytes_of_string(project_name)
 
+        self.init_type(
+            sp.TRecord(
+                ledger=sp.TBigMap(TOKEN_ID, sp.TAddress),
+                operators=sp.TBigMap(OPERATOR_TYPE, sp.TUnit),
+                voting_power=sp.TBigMap(sp.TAddress, BALANCE_RECORD_TYPE),
+                administrator=sp.TAddress,
+                next_administrator=sp.TOption(sp.TAddress),
+                sale_contract_administrator=sp.TAddress,
+                artwork_administrator=sp.TAddress,
+                paused=sp.TBool,
+                minted_tokens=sp.TNat,
+                what3words_file_ipfs=sp.TBytes,
+                total_supply=sp.TNat,
+                token_metadata=sp.TBigMap(TOKEN_ID, sp.TPair(TOKEN_ID, sp.TMap(sp.TString, sp.TBytes))),
+                extra_token_metadata=sp.TBigMap(TOKEN_ID, sp.TRecord(token_id=TOKEN_ID, token_info=sp.TMap(sp.TString, sp.TBytes))),
+                generic_image_ipfs=sp.TBytes,
+                generic_image_ipfs_display=sp.TBytes,
+                generic_image_ipfs_thumbnail=sp.TBytes,
+                project_oracles_stream=sp.TBytes,
+                royalties=sp.TBytes,
+                metadata= sp.TBigMap(sp.TString, sp.TBytes)
+            )
+        )
+
         self.init(
             ledger = sp.big_map(tkey=TOKEN_ID, tvalue=sp.TAddress),
             operators=self.operator_set.make(),
@@ -167,6 +191,7 @@ class AngryTeenagers(sp.Contract):
 
             # Administrator
             administrator=administrator,
+            next_administrator=sp.none,
             sale_contract_administrator=administrator,
             artwork_administrator=administrator,
 
@@ -235,7 +260,7 @@ class AngryTeenagers(sp.Contract):
 ########################################################################################################################
 # FA2 standard interface
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def balance_of(self, params):
         # paused may mean that balances are meaningless:
         sp.verify( ~self.is_paused(), message = Error.ErrorMessage.unauthorized_user())
@@ -259,7 +284,7 @@ class AngryTeenagers(sp.Contract):
         destination = sp.set_type_expr(params.callback, sp.TContract(BALANCE_OF_RESPONSE_TYPE))
         sp.transfer(res.value, sp.mutez(0), destination)
 
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def transfer(self, params):
         sp.verify(~self.is_paused(), message=Error.ErrorMessage.paused())
         sp.set_type(params, TRANSFER_FUNCTION_TYPE)
@@ -285,7 +310,7 @@ class AngryTeenagers(sp.Contract):
                 sp.emit(event, with_type=True, tag="Transfer")
 
 
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def update_operators(self, params):
         sp.set_type(params, sp.TList(
             sp.TVariant(
@@ -318,46 +343,53 @@ class AngryTeenagers(sp.Contract):
 ########################################################################################################################
 # Dedicated entry points
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def mutez_transfer(self, params):
         sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
         sp.set_type(params.destination, sp.TAddress)
         sp.set_type(params.amount, sp.TMutez)
         sp.send(params.destination, params.amount)
 
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_metadata(self, k, v):
         sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
         self.data.metadata[k] = v
 
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_extra_token_metadata(self, tok, k2, v):
         sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
         sp.if ~self.data.extra_token_metadata.contains(tok):
             self.data.extra_token_metadata[tok] = sp.record(token_id=tok, token_info=sp.map(l={}, tkey=sp.TString, tvalue=sp.TBytes))
         self.data.extra_token_metadata[tok].token_info[k2] = v
 
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_pause(self, params):
         sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
         self.data.paused = params
 
-    @sp.entry_point
-    def set_administrator(self, params):
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def set_next_administrator(self, params):
         sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
-        self.data.administrator = params
+        self.data.next_administrator = sp.some(params)
 
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def validate_new_administrator(self):
+        sp.verify(self.data.next_administrator.is_some(), message = Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_administrator.open_some(), message = Error.ErrorMessage.not_admin())
+        self.data.administrator = self.data.next_administrator.open_some()
+        self.data.next_administrator = sp.none
+
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_sale_contract_administrator(self, params):
         sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
         self.data.sale_contract_administrator = params
 
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_artwork_administrator(self, params):
         sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
         self.data.artwork_administrator = params
 
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def update_artwork_data(self, params):
         sp.verify(self.is_artwork_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
         sp.set_type(params, UPDATE_ARTWORK_METADATA_FUNCTION_TYPE)
@@ -389,7 +421,7 @@ class AngryTeenagers(sp.Contract):
             sp.emit(event, with_type=True, tag="Update artwork")
 
 
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_royalties(self, params):
         # Verify type
         sp.set_type(params, sp.TBytes)
@@ -413,7 +445,7 @@ class AngryTeenagers(sp.Contract):
 
             i.value = i.value + 1
 
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def mint(self, params):
         sp.set_type(params, sp.TAddress)
         sp.verify(self.is_sale_contract_administrator(sp.sender), message=Error.ErrorMessage.not_admin())

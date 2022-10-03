@@ -123,6 +123,7 @@ class DaoOptOutVoting(sp.Contract):
             poll_leader=sp.TOption(sp.TAddress),
             phase_2_majority_vote_contract=sp.TOption(sp.TAddress),
             admin=sp.TAddress,
+            next_admin=sp.TOption(sp.TAddress),
             vote_state=sp.TNat,
             poll_descriptor=sp.TOption(MAJORITY_POLL_DATA),
             vote_id=sp.TNat,
@@ -136,6 +137,7 @@ class DaoOptOutVoting(sp.Contract):
         poll_leader=sp.none,
         phase_2_majority_vote_contract=sp.none,
         admin=admin,
+        next_admin=sp.none,
         vote_state=sp.nat(NONE),
         poll_descriptor=sp.none,
         vote_id=sp.nat(0),
@@ -174,23 +176,33 @@ class DaoOptOutVoting(sp.Contract):
 ########################################################################################################################
 # set_metadata
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_metadata(self, k, v):
         sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
         self.data.metadata[k] = v
 
 ########################################################################################################################
-# set_metadata
+# set_next_administrator
 ########################################################################################################################
-    @sp.entry_point
-    def set_administrator(self, params):
-        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
-        self.data.admin = params
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def set_next_administrator(self, params):
+        sp.verify(sp.sender == self.data.admin, message = Error.ErrorMessage.unauthorized_user())
+        self.data.next_admin = sp.some(params)
+
+########################################################################################################################
+# validate_new_administrator
+########################################################################################################################
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def validate_new_administrator(self):
+        sp.verify(self.data.next_admin.is_some(), message = Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_admin.open_some(), message = Error.ErrorMessage.not_admin())
+        self.data.admin = self.data.next_admin.open_some()
+        self.data.next_admin = sp.none
 
 ########################################################################################################################
 # set_poll_leader
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_poll_leader(self, address):
         # Asserts
         sp.verify(~self.data.poll_leader.is_some(), Error.ErrorMessage.dao_already_registered())
@@ -202,7 +214,7 @@ class DaoOptOutVoting(sp.Contract):
 ########################################################################################################################
 # set_phase_2_contract
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_phase_2_contract(self, address):
         # Asserts
         sp.verify(~self.data.phase_2_majority_vote_contract.is_some(), Error.ErrorMessage.dao_already_registered())
@@ -214,7 +226,7 @@ class DaoOptOutVoting(sp.Contract):
 ########################################################################################################################
 # start
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def start(self, total_available_voters):
         # Check type
         sp.set_type(total_available_voters, sp.TNat)
@@ -257,7 +269,7 @@ class DaoOptOutVoting(sp.Contract):
 ########################################################################################################################
 # vote
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def vote(self, params):
         # Check type
         sp.set_type(params, sp.TRecord(votes=sp.TNat, address=sp.TAddress, vote_value=sp.TNat, vote_id=sp.TNat))
@@ -281,7 +293,7 @@ class DaoOptOutVoting(sp.Contract):
 ########################################################################################################################
 # propose_callback
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def propose_callback(self, params):
         # Check type
         sp.set_type(params, PROPOSE_CALLBACK_TYPE)
@@ -304,7 +316,7 @@ class DaoOptOutVoting(sp.Contract):
 ########################################################################################################################
 # end
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def end(self, params):
         # Check type
         sp.set_type(params, sp.TNat)
@@ -328,7 +340,7 @@ class DaoOptOutVoting(sp.Contract):
 ########################################################################################################################
 # end_callback
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def end_callback(self, params):
         # Check type
         sp.set_type(params, sp.TRecord(voting_id=sp.TNat, voting_outcome=sp.TNat))
@@ -352,7 +364,7 @@ class DaoOptOutVoting(sp.Contract):
 ########################################################################################################################
 # mutez_transfer
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def mutez_transfer(self, params):
         # Check type
         sp.set_type(params.destination, sp.TAddress)

@@ -64,6 +64,7 @@ class AngryTeenagersDao(sp.Contract):
               poll_manager = POLL_MANAGER_TYPE,
               next_proposal_id = sp.TNat,
               admin = sp.TAddress,
+              next_admin = sp.TOption(sp.TAddress),
               outcomes = OUTCOMES_TYPE,
               metadata= sp.TBigMap(sp.TString, sp.TBytes)
           )
@@ -76,6 +77,7 @@ class AngryTeenagersDao(sp.Contract):
           poll_manager = poll_manager,
           next_proposal_id = sp.nat(0),
           admin = admin,
+          next_admin = sp.none,
           outcomes = outcomes,
           metadata = metadata
       )
@@ -113,7 +115,7 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
 # delegate
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def delegate(self, baker):
         sp.verify_equal(sp.sender, sp.self_address, Error.ErrorMessage.dao_only_for_dao())
         sp.set_delegate(baker)
@@ -128,23 +130,33 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
 # set_metadata
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_metadata(self, k, v):
         sp.verify(sp.sender == self.data.admin, message = Error.ErrorMessage.unauthorized_user())
         self.data.metadata[k] = v
 
 ########################################################################################################################
-# set_administrator
+# set_next_administrator
 ########################################################################################################################
-    @sp.entry_point
-    def set_administrator(self, params):
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def set_next_administrator(self, params):
         sp.verify(sp.sender == self.data.admin, message = Error.ErrorMessage.unauthorized_user())
-        self.data.admin = params
+        self.data.next_admin = sp.some(params)
+
+########################################################################################################################
+# validate_new_administrator
+########################################################################################################################
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def validate_new_administrator(self):
+        sp.verify(self.data.next_admin.is_some(), message = Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_admin.open_some(), message = Error.ErrorMessage.not_admin())
+        self.data.admin = self.data.next_admin.open_some()
+        self.data.next_admin = sp.none
 
 ########################################################################################################################
 # add_voting_strategy
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def add_voting_strategy(self, params):
         sp.verify(self.data.state == NONE, Error.ErrorMessage.dao_vote_in_progress())
         sp.verify((sp.self_address == sp.sender) | (self.data.admin == sp.sender), Error.ErrorMessage.unauthorized_user())
@@ -155,7 +167,7 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
 # register_angry_teenager_fa2
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def register_angry_teenager_fa2(self, address):
         sp.verify(self.data.admin == sp.sender, Error.ErrorMessage.unauthorized_user())
         sp.verify(~self.data.angry_teenager_fa2.is_some(), Error.ErrorMessage.dao_already_registered())
@@ -164,7 +176,7 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
 # propose: Inject a new proposal
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def propose(self, proposal):
         # Check the type
         sp.set_type(proposal, Proposal.PROPOSAL_TYPE)
@@ -206,7 +218,7 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
 # propose_callback
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def propose_callback(self, params):
         # Check the type
         sp.set_type(params, PROPOSE_CALLBACK_TYPE)
@@ -234,7 +246,7 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
 # vote: Send
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def vote(self, params):
         # Check type
         sp.set_type(params, VoteValue.VOTE_VALUE)
@@ -260,7 +272,7 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
 # end
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def end(self, proposal_id):
         # Check type
         sp.set_type(proposal_id, sp.TNat)
@@ -282,7 +294,7 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
 # end_callback
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def end_callback(self, params):
         # Check type
         sp.set_type(params, sp.TRecord(voting_id=sp.TNat, voting_outcome=sp.TNat))
@@ -313,7 +325,7 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
 # mutez_transfer
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def mutez_transfer(self, params):
         # Check type
         sp.set_type(params.destination, sp.TAddress)

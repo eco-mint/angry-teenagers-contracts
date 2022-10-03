@@ -53,8 +53,33 @@ ADMIN_TRANSFER_ADDRESSES_TYPE = sp.TList(sp.TPair(sp.TAddress, sp.TNat))
 ########################################################################################################################
 class AngryTeenagersSale(sp.Contract):
     def __init__(self, admin, transfer_addresses, metadata):
+        self.init_type(
+            sp.TRecord(
+                administrator=sp.TAddress,
+                next_administrator=sp.TOption(sp.TAddress),
+                transfer_addresses=sp.TList(sp.TPair(sp.TAddress, sp.TNat)),
+                fa2=sp.TAddress,
+                state=sp.TNat,
+                allowlist=sp.TSet(sp.TAddress),
+                pre_allowlist=sp.TSet(sp.TAddress),
+                event_price=sp.TMutez,
+                event_max_supply=sp.TNat,
+                event_max_per_user=sp.TNat,
+                event_deadline=sp.TTimestamp,
+                event_use_deadline=sp.TBool,
+                event_user_balance=sp.TBigMap(sp.TAddress, sp.TNat),
+                public_allowlist_max_space=sp.TNat,
+                public_allowlist_space_taken=sp.TNat,
+                public_sale_allowlist_config=sp.TRecord(used=sp.TBool, discount=sp.TMutez, minting_rights=sp.TBool),
+                token_index=sp.TNat,
+                token_minted_in_event=sp.TNat,
+                metadata=sp.TBigMap(sp.TString, sp.TBytes)
+            )
+        )
+
         self.init(
             administrator=admin,
+            next_administrator=sp.none,
             transfer_addresses=transfer_addresses,
             fa2=sp.address('KT1XmD6SKw6CFoxmGseB3ttws5n8sTXYkKkq'),
 
@@ -453,14 +478,24 @@ class AngryTeenagersSale(sp.Contract):
         sp.emit(event, with_type=True, tag="Mint from admin")
 
 ########################################################################################################################
-# set_administrator
+# set_next_administrator
 ########################################################################################################################
     @sp.entry_point
-    def set_administrator(self, params):
+    def set_next_administrator(self, params):
         """Change admin. Only the admin can change to another admin"""
         sp.set_type(params, sp.TAddress)
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
-        self.data.administrator = params
+        sp.verify(self.is_administrator(), message = Error.ErrorMessage.not_admin())
+        self.data.next_administrator = sp.some(params)
+
+########################################################################################################################
+# validate_new_administrator
+########################################################################################################################
+    @sp.entry_point
+    def validate_new_administrator(self):
+        sp.verify(self.data.next_administrator.is_some(), message = Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_administrator.open_some(), message = Error.ErrorMessage.not_admin())
+        self.data.administrator = self.data.next_administrator.open_some()
+        self.data.next_administrator = sp.none
 
 ########################################################################################################################
 # set_transfer_addresses

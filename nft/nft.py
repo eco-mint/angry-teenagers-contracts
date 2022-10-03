@@ -159,6 +159,30 @@ class AngryTeenagers(sp.Contract):
         self.creators = sp.utils.bytes_of_string(creators)
         self.project_name = sp.utils.bytes_of_string(project_name)
 
+        self.init_type(
+            sp.TRecord(
+                ledger=sp.TBigMap(TOKEN_ID, sp.TAddress),
+                operators=sp.TBigMap(OPERATOR_TYPE, sp.TUnit),
+                voting_power=sp.TBigMap(sp.TAddress, BALANCE_RECORD_TYPE),
+                administrator=sp.TAddress,
+                next_administrator=sp.TOption(sp.TAddress),
+                sale_contract_administrator=sp.TAddress,
+                artwork_administrator=sp.TAddress,
+                paused=sp.TBool,
+                minted_tokens=sp.TNat,
+                what3words_file_ipfs=sp.TBytes,
+                total_supply=sp.TNat,
+                token_metadata=sp.TBigMap(TOKEN_ID, sp.TPair(TOKEN_ID, sp.TMap(sp.TString, sp.TBytes))),
+                extra_token_metadata=sp.TBigMap(TOKEN_ID, sp.TRecord(token_id=TOKEN_ID, token_info=sp.TMap(sp.TString, sp.TBytes))),
+                generic_image_ipfs=sp.TBytes,
+                generic_image_ipfs_display=sp.TBytes,
+                generic_image_ipfs_thumbnail=sp.TBytes,
+                project_oracles_stream=sp.TBytes,
+                royalties=sp.TBytes,
+                metadata= sp.TBigMap(sp.TString, sp.TBytes)
+            )
+        )
+
         self.init(
             ledger = sp.big_map(tkey=TOKEN_ID, tvalue=sp.TAddress),
             operators=self.operator_set.make(),
@@ -167,6 +191,7 @@ class AngryTeenagers(sp.Contract):
 
             # Administrator
             administrator=administrator,
+            next_administrator=sp.none,
             sale_contract_administrator=administrator,
             artwork_administrator=administrator,
 
@@ -343,9 +368,16 @@ class AngryTeenagers(sp.Contract):
         self.data.paused = params
 
     @sp.entry_point
-    def set_administrator(self, params):
+    def set_next_administrator(self, params):
         sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
-        self.data.administrator = params
+        self.data.next_administrator = sp.some(params)
+
+    @sp.entry_point
+    def validate_new_administrator(self):
+        sp.verify(self.data.next_administrator.is_some(), message = Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_administrator.open_some(), message = Error.ErrorMessage.not_admin())
+        self.data.administrator = self.data.next_administrator.open_some()
+        self.data.next_administrator = sp.none
 
     @sp.entry_point
     def set_sale_contract_administrator(self, params):

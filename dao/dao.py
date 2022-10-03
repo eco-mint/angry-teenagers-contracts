@@ -64,6 +64,7 @@ class AngryTeenagersDao(sp.Contract):
               poll_manager = POLL_MANAGER_TYPE,
               next_proposal_id = sp.TNat,
               admin = sp.TAddress,
+              next_admin = sp.TOption(sp.TAddress),
               outcomes = OUTCOMES_TYPE,
               metadata= sp.TBigMap(sp.TString, sp.TBytes)
           )
@@ -76,6 +77,7 @@ class AngryTeenagersDao(sp.Contract):
           poll_manager = poll_manager,
           next_proposal_id = sp.nat(0),
           admin = admin,
+          next_admin = sp.none,
           outcomes = outcomes,
           metadata = metadata
       )
@@ -134,12 +136,22 @@ class AngryTeenagersDao(sp.Contract):
         self.data.metadata[k] = v
 
 ########################################################################################################################
-# set_administrator
+# set_next_administrator
 ########################################################################################################################
     @sp.entry_point
-    def set_administrator(self, params):
+    def set_next_administrator(self, params):
         sp.verify(sp.sender == self.data.admin, message = Error.ErrorMessage.unauthorized_user())
-        self.data.admin = params
+        self.data.next_admin = sp.some(params)
+
+########################################################################################################################
+# validate_new_administrator
+########################################################################################################################
+    @sp.entry_point
+    def validate_new_administrator(self):
+        sp.verify(self.data.next_admin.is_some(), message = Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_admin.open_some(), message = Error.ErrorMessage.not_admin())
+        self.data.admin = self.data.next_admin.open_some()
+        self.data.next_admin = sp.none
 
 ########################################################################################################################
 # add_voting_strategy

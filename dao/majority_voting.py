@@ -115,6 +115,7 @@ class DaoMajorityVoting(sp.Contract):
             current_dynamic_quorum_value = sp.TNat,
             poll_leader=sp.TOption(sp.TAddress),
             admin=sp.TAddress,
+            next_admin=sp.TOption(sp.TAddress),
             vote_state=sp.TNat,
             poll_descriptor=sp.TOption(MAJORITY_POLL_DATA),
             vote_id=sp.TNat,
@@ -128,6 +129,7 @@ class DaoMajorityVoting(sp.Contract):
         current_dynamic_quorum_value=current_dynamic_quorum_value,
         poll_leader=sp.none,
         admin=admin,
+        next_admin=sp.none,
         vote_state=sp.nat(NONE),
         poll_descriptor=sp.none,
         vote_id=sp.nat(0),
@@ -172,12 +174,22 @@ class DaoMajorityVoting(sp.Contract):
         self.data.metadata[k] = v
 
 ########################################################################################################################
-# set_metadata
+# set_next_administrator
 ########################################################################################################################
     @sp.entry_point
-    def set_administrator(self, params):
-        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
-        self.data.admin = params
+    def set_next_administrator(self, params):
+        sp.verify(sp.sender == self.data.admin, message = Error.ErrorMessage.unauthorized_user())
+        self.data.next_admin = sp.some(params)
+
+########################################################################################################################
+# validate_new_administrator
+########################################################################################################################
+    @sp.entry_point
+    def validate_new_administrator(self):
+        sp.verify(self.data.next_admin.is_some(), message = Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_admin.open_some(), message = Error.ErrorMessage.not_admin())
+        self.data.admin = self.data.next_admin.open_some()
+        self.data.next_admin = sp.none
 
 ########################################################################################################################
 # set_poll_leader

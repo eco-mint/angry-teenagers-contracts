@@ -190,7 +190,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # admin_fill_allowlist
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def admin_fill_allowlist(self, params):
         """Admin fill the allowlist"""
         sp.set_type(params, ADMIN_FILL_ALLOWLIST_PARAM_TYPE)
@@ -210,7 +210,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # admin_fill_pre_allowlist
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def admin_fill_pre_allowlist(self, params):
         """Add a set of addresses to the pre_allowlist_entry"""
         sp.set_type(params, ADMIN_FILL_PRE_ALLOWLIST_PARAM_TYPE)
@@ -228,7 +228,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # admin_open_event_private_allowlist
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def open_event_priv_allowlist_reg(self, params):
         # Only for admin
         sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
@@ -271,7 +271,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # open_event_pub_allowlist_reg
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def open_event_pub_allowlist_reg(self, params):
         # Only for admin
         sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
@@ -328,7 +328,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # open_pre_sale
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def open_pre_sale(self, params):
         # Only for admin
         sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
@@ -355,7 +355,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # open_pub_sale
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def open_pub_sale(self, params):
         # Only for admin
         sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
@@ -387,7 +387,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # open_pub_sale_with_allowlist
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def open_pub_sale_with_allowlist(self, params):
         # Only for admin
         sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
@@ -420,7 +420,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # set_metadata
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_metadata(self, k, v):
         sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
         self.data.metadata[k] = v
@@ -451,7 +451,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # close_any_open_event
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def close_any_open_event(self):
         sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
 
@@ -463,7 +463,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # mint_and_give
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def mint_and_give(self, params):
         """Give away some reserved NFTs"""
         sp.set_type(params, sp.TRecord(amount=sp.TNat, address=sp.TAddress))
@@ -480,7 +480,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # set_next_administrator
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_next_administrator(self, params):
         """Change admin. Only the admin can change to another admin"""
         sp.set_type(params, sp.TAddress)
@@ -490,7 +490,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # validate_new_administrator
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def validate_new_administrator(self):
         sp.verify(self.data.next_administrator.is_some(), message = Error.ErrorMessage.no_next_admin())
         sp.verify(sp.sender == self.data.next_administrator.open_some(), message = Error.ErrorMessage.not_admin())
@@ -500,7 +500,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # set_transfer_addresses
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def set_transfer_addresses(self, params):
         """Change the addresses where Tez are transfered. Reserve to Admin"""
         sp.set_type(params, ADMIN_TRANSFER_ADDRESSES_TYPE)
@@ -515,7 +515,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # register_fa2
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def register_fa2(self, params):
         sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
         sp.set_type(params, sp.TAddress)
@@ -524,7 +524,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # clear_allowlist
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def clear_allowlist(self):
         sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
         sp.verify(~self.is_any_event_open(), Error.ErrorMessage.sale_event_already_open())
@@ -538,7 +538,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # admin_process_presale
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def admin_process_presale(self, params):
         sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
         sp.verify(~self.is_any_event_open(), Error.ErrorMessage.sale_event_already_open())
@@ -568,7 +568,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # mutez_transfer
 ########################################################################################################################
-    @sp.entry_point
+    @sp.entry_point(check_no_incoming_transfer=True)
     def mutez_transfer(self, params):
         sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
         sp.set_type(params.destination, sp.TAddress)

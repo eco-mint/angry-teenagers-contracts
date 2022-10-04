@@ -201,17 +201,17 @@ class AngryTeenagersDao(sp.Contract):
         )
 
         # Get the total voting power in the ATs collection at the moment
-        total_available_voters = sp.view("get_total_voting_power",
+        total_available_voters = sp.local('total_available_voters', sp.view("get_total_voting_power",
                                self.data.angry_teenager_fa2.open_some(Error.ErrorMessage.dao_not_registered()),
                                sp.unit,
-                               t=sp.TNat).open_some(Error.ErrorMessage.dao_invalid_token_view())
-        sp.verify(total_available_voters > 0, Error.ErrorMessage.dao_no_voting_power())
+                               t=sp.TNat).open_some(Error.ErrorMessage.dao_invalid_token_view()))
+        sp.verify(total_available_voters.value > 0, Error.ErrorMessage.dao_no_voting_power())
 
         # Change the state of the contract accordingly
         self.data.state = STARTING_VOTE
 
         # Call voting strategy to start the poll
-        self.call_voting_strategy_start(total_available_voters)
+        self.call_voting_strategy_start(total_available_voters.value)
 
         sp.emit(self.data.next_proposal_id, with_type=True, tag="Propose vote")
 
@@ -257,16 +257,16 @@ class AngryTeenagersDao(sp.Contract):
         sp.verify(params.proposal_id == self.data.ongoing_poll.open_some().proposal_id, Error.ErrorMessage.dao_no_invalid_proposal())
 
         # Find the user voting power before sending the votes
-        voting_power = sp.view("get_voting_power",
+        voting_power = sp.local('voting_power', sp.view("get_voting_power",
                                self.data.angry_teenager_fa2.open_some(Error.ErrorMessage.dao_not_registered()),
                                sp.pair(sp.sender, self.data.ongoing_poll.open_some().snapshot_block),
-                               t=sp.TNat).open_some(Error.ErrorMessage.dao_invalid_token_view())
-        sp.verify(voting_power > 0, Error.ErrorMessage.dao_no_voting_power())
+                               t=sp.TNat).open_some(Error.ErrorMessage.dao_invalid_token_view()))
+        sp.verify(voting_power.value > 0, Error.ErrorMessage.dao_no_voting_power())
 
         # Call the appropriate voting strategy
-        self.call_voting_strategy_vote(voting_power, sp.sender, params.vote_value)
+        self.call_voting_strategy_vote(voting_power.value, sp.sender, params.vote_value)
 
-        event = sp.record(address=sp.sender, amount=voting_power, vote=params.vote_value, proposal=params.proposal_id)
+        event = sp.record(address=sp.sender, amount=voting_power.value, vote=params.vote_value, proposal=params.proposal_id)
         sp.emit(event, with_type=True, tag="Send vote")
 
 ########################################################################################################################

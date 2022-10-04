@@ -544,15 +544,15 @@ class AngryTeenagersSale(sp.Contract):
         sp.verify(~self.is_any_event_open(), Error.ErrorMessage.sale_event_already_open())
         sp.set_type(params, sp.TAddress)
 
-        tokens = sp.view("all_tokens", params, sp.unit).open_some(Error.ErrorMessage.invalid_parameter())
+        tokens = sp.local('tokens', sp.view("all_tokens", params, sp.unit).open_some(Error.ErrorMessage.invalid_parameter()))
 
-        sp.for token in tokens:
-            is_burn = sp.view("is_token_burned", params, token).open_some(Error.ErrorMessage.invalid_parameter())
+        sp.for token in tokens.value:
+            is_burn = sp.local('is_burn', sp.view("is_token_burned", params, token).open_some(Error.ErrorMessage.invalid_parameter()))
             burn_list = sp.local("burn_list", sp.list(l={}, t=sp.TNat))
 
-            sp.if ~is_burn:
-                owner = sp.view("get_token_owner", params, token).open_some(Error.ErrorMessage.invalid_parameter())
-                self.mint_internal(amount=1, address=owner)
+            sp.if ~is_burn.value:
+                owner = sp.local('owner', sp.view("get_token_owner", params, token).open_some(Error.ErrorMessage.invalid_parameter()))
+                self.mint_internal(amount=1, address=owner.value)
                 burn_list.value.push(token)
 
             presale_contract_handle = sp.contract(
@@ -617,10 +617,9 @@ class AngryTeenagersSale(sp.Contract):
     def mint_internal(self, amount, address):
         # Mint token(s) and transfer them to user
         minted = sp.local("minted", sp.nat(0))
-        sp.while minted.value < amount:
-            contract_params = sp.contract(FA2_MINT_PARAM_TYPE,
-                                          self.data.fa2, entry_point="mint").open_some()
-            sp.transfer(address, sp.mutez(0), contract_params)
+        sp.while minted.value < amount: 
+            sp.transfer(address, sp.mutez(0), sp.contract(FA2_MINT_PARAM_TYPE,
+                                          self.data.fa2, entry_point="mint").open_some())
             minted.value = minted.value + 1
 
         self.data.token_index = self.data.token_index + amount

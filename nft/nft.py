@@ -292,7 +292,6 @@ class AngryTeenagers(sp.Contract):
             current_from = transfer.from_
             sp.for tx in transfer.txs:
                 sender_verify = (current_from == sp.sender)
-                message = Error.ErrorMessage.not_owner()
                 message = Error.ErrorMessage.not_operator()
                 sender_verify |= (self.operator_set.is_member(self.data.operators,
                                                               current_from,
@@ -396,16 +395,16 @@ class AngryTeenagers(sp.Contract):
         sp.for artwork_metadata in params:
             sp.verify(self.data.ledger.contains(sp.fst(artwork_metadata)), message=Error.ErrorMessage.token_undefined())
             sp.verify(self.data.token_metadata.contains(sp.fst(artwork_metadata)), Error.ErrorMessage.token_undefined())
-            info = sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)])
-            sp.verify(info.contains(REVEALED_METADATA), Error.ErrorMessage.token_undefined())
-            sp.verify(info[REVEALED_METADATA] == sp.utils.bytes_of_string("false"), Error.ErrorMessage.token_revealed())
+            info = sp.local('info', sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]))
+            sp.verify(info.value.contains(REVEALED_METADATA), Error.ErrorMessage.token_undefined())
+            sp.verify(info.value[REVEALED_METADATA] == sp.utils.bytes_of_string("false"), Error.ErrorMessage.token_revealed())
 
-            my_map = sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), REVEALED_METADATA, sp.some(sp.utils.bytes_of_string("true")))
-            my_map = sp.update_map(my_map, ARTIFACTURI_METADATA, sp.some((sp.snd(artwork_metadata)).artifact_uri))
-            my_map = sp.update_map(my_map, DISPLAYURI_METADATA, sp.some((sp.snd(artwork_metadata)).display_uri))
-            my_map = sp.update_map(my_map, THUMBNAILURI_METADATA, sp.some((sp.snd(artwork_metadata)).thumbnail_uri))
-            my_map = sp.update_map(my_map, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributes))
-            my_map = sp.update_map(my_map, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributes))
+            my_map = sp.local('my_map', sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), REVEALED_METADATA, sp.some(sp.utils.bytes_of_string("true"))))
+            my_map.value = sp.update_map(my_map.value, ARTIFACTURI_METADATA, sp.some((sp.snd(artwork_metadata)).artifact_uri))
+            my_map.value = sp.update_map(my_map.value, DISPLAYURI_METADATA, sp.some((sp.snd(artwork_metadata)).display_uri))
+            my_map.value = sp.update_map(my_map.value, THUMBNAILURI_METADATA, sp.some((sp.snd(artwork_metadata)).thumbnail_uri))
+            my_map.value = sp.update_map(my_map.value, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributes))
+            my_map.value = sp.update_map(my_map.value, ATTRIBUTES_METADATA, sp.some((sp.snd(artwork_metadata)).attributes))
 
             formats = sp.local(FORMATS_METADATA, self.create_format_metadata((sp.snd(artwork_metadata)).artifact_uri,
                                                                              (sp.snd(artwork_metadata)).display_uri,
@@ -413,9 +412,9 @@ class AngryTeenagers(sp.Contract):
                                                                              (sp.snd(artwork_metadata)).artifact_size,
                                                                              (sp.snd(artwork_metadata)).display_size,
                                                                              (sp.snd(artwork_metadata)).thumbnail_size))
-            my_map = sp.update_map(my_map, FORMATS_METADATA, sp.some(formats.value))
+            my_map.value = sp.update_map(my_map.value, FORMATS_METADATA, sp.some(formats.value))
 
-            self.data.token_metadata[sp.fst(artwork_metadata)] = sp.pair(sp.fst(artwork_metadata), my_map)
+            self.data.token_metadata[sp.fst(artwork_metadata)] = sp.pair(sp.fst(artwork_metadata), my_map.value)
 
             event = sp.fst(artwork_metadata)
             sp.emit(event, with_type=True, tag="Update artwork")
@@ -437,11 +436,11 @@ class AngryTeenagers(sp.Contract):
         sp.while i.value < self.data.minted_tokens:
             sp.verify(self.data.ledger.contains(i.value), message=Error.ErrorMessage.token_undefined())
             sp.verify(self.data.token_metadata.contains(i.value), message=Error.ErrorMessage.token_undefined())
-            info = sp.snd(self.data.token_metadata[i.value])
-            sp.verify(info.contains(ROYALTIES_METADATA), Error.ErrorMessage.token_undefined())
+            info = sp.local('info', sp.snd(self.data.token_metadata[i.value]))
+            sp.verify(info.value.contains(ROYALTIES_METADATA), Error.ErrorMessage.token_undefined())
 
-            my_map = sp.update_map(sp.snd(self.data.token_metadata[i.value]), ROYALTIES_METADATA, sp.some(params))
-            self.data.token_metadata[i.value] = sp.pair(i.value, my_map)
+            my_map = sp.local('my_map', sp.update_map(sp.snd(self.data.token_metadata[i.value]), ROYALTIES_METADATA, sp.some(params)))
+            self.data.token_metadata[i.value] = sp.pair(i.value, my_map.value)
 
             i.value = i.value + 1
 

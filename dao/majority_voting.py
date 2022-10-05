@@ -80,6 +80,11 @@ OUTCOMES_TYPE = sp.TBigMap(sp.TNat, sp.TRecord(poll_outcome=sp.TNat, poll_data=M
 ################################################################
 ################################################################
 
+# When the dynamic quorum is adjusted, we use 80% of the current quorum and 20% of the current participation
+# to adust the quorum for the next poll
+DYNAMIC_QUORUM_CURRENT_QUORUM_WEIGHT = 80
+DYNAMIC_QUORUM_CURRENT_PARTICIPATION_WEIGHT = 20
+
 # Scale is the precision with which numbers are measured.
 # For instance, a scale of 100 means the number 1.23 is represented
 # as 123.
@@ -349,8 +354,8 @@ class DaoMajorityVoting(sp.Contract):
         sp.transfer(x, sp.mutez(0), c)
 
     def update_quorum(self):
-        last_weight = (self.data.poll_descriptor.open_some().quorum * 80) // SCALE  # 80% weight
-        new_participation = (self.data.poll_descriptor.open_some().total_votes * 20) // SCALE  # 20% weight
+        last_weight = (self.data.poll_descriptor.open_some().quorum * DYNAMIC_QUORUM_CURRENT_QUORUM_WEIGHT) // SCALE
+        new_participation = (self.data.poll_descriptor.open_some().total_votes * DYNAMIC_QUORUM_CURRENT_PARTICIPATION_WEIGHT) // SCALE  # 20% weight
         new_quorum = sp.local('newQuorum', new_participation + last_weight)
 
         # Bound upper and lower quorum.

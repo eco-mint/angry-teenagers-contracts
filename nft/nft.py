@@ -424,7 +424,7 @@ class AngryTeenagers(sp.Contract):
 
 
     @sp.entry_point(check_no_incoming_transfer=True)
-    def set_royalties(self, params):
+    def set_royalties_field(self, params):
         # Verify type
         sp.set_type(params, sp.TBytes)
 
@@ -434,18 +434,23 @@ class AngryTeenagers(sp.Contract):
         # Set the royalties field for NFTs not minted yet
         self.data.royalties = params
 
-        # Change already minted NFTs
-        i = sp.local("i", sp.nat(0))
-        sp.while i.value < self.data.minted_tokens:
-            sp.verify(self.data.ledger.contains(i.value), message=Error.Fa2ErrorMessage.token_undefined())
-            sp.verify(self.data.token_metadata.contains(i.value), message=Error.Fa2ErrorMessage.token_undefined())
-            info = sp.local('info', sp.snd(self.data.token_metadata[i.value]))
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def set_royalties_field_on_minted_tokens(self, params):
+        # Verify type
+        sp.set_type(params, sp.TList(TOKEN_ID))
+
+        # Asserts
+        sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
+
+        # Change NFTs token metadata
+        sp.for token in params:
+            sp.verify(self.data.ledger.contains(token), message=Error.Fa2ErrorMessage.token_undefined())
+            sp.verify(self.data.token_metadata.contains(token), message=Error.Fa2ErrorMessage.token_undefined())
+            info = sp.local('info', sp.snd(self.data.token_metadata[token]))
             sp.verify(info.value.contains(ROYALTIES_METADATA), Error.Fa2ErrorMessage.token_undefined())
 
-            my_map = sp.local('my_map', sp.update_map(sp.snd(self.data.token_metadata[i.value]), ROYALTIES_METADATA, sp.some(params)))
-            self.data.token_metadata[i.value] = sp.pair(i.value, my_map.value)
-
-            i.value = i.value + 1
+            my_map = sp.local('my_map', sp.update_map(sp.snd(self.data.token_metadata[token]), ROYALTIES_METADATA, sp.some(self.data.royalties)))
+            self.data.token_metadata[token] = sp.pair(token, my_map.value)
 
     @sp.entry_point(check_no_incoming_transfer=True)
     def mint(self, params):

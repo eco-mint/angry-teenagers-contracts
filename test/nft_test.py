@@ -313,16 +313,16 @@ def unit_fa2_test_mint_max(is_default=True):
         scenario.verify(c1.data.minted_tokens == sp.nat(128))
 
 ########################################################################################################################
-# unit_fa2_test_set_royalties
+# unit_fa2_test_set_royalties_field
 ########################################################################################################################
-def unit_fa2_test_set_royalties(is_default=True):
-    @sp.add_test(name="unit_fa2_test_set_royalties", is_default=is_default)
+def unit_fa2_test_set_royalties_field(is_default=True):
+    @sp.add_test(name="unit_fa2_test_set_royalties_field", is_default=is_default)
     def test():
         scenario = TestHelper.create_scenario("unit_fa2_test_set_administrator")
         admin, alice, bob, john = TestHelper.create_account(scenario)
         c1 = TestHelper.create_contracts(scenario, admin, john)
 
-        scenario.h2("Test the entrypoint set_royalties. (Who: Only for main admin)")
+        scenario.h2("Test the entrypoint set_royalties_field. (Who: Only for main admin)")
 
         scenario.p("1. Set sale admin to be bob and the artwork admin to be john")
         c1.set_sale_contract_administrator(bob.address).run(valid=True, sender=admin)
@@ -330,15 +330,35 @@ def unit_fa2_test_set_royalties(is_default=True):
 
         scenario.p("2. Check only main admin can call set_royalties")
         first_new_royalties = sp.utils.bytes_of_string('{"decimals": 3, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf6" + '": 20}}')
-        c1.set_royalties(first_new_royalties).run(valid=False, sender=bob)
-        c1.set_royalties(first_new_royalties).run(valid=False, sender=john)
-        c1.set_royalties(first_new_royalties).run(valid=False, sender=alice)
-        c1.set_royalties(first_new_royalties).run(valid=True, sender=admin)
+        c1.set_royalties_field(first_new_royalties).run(valid=False, sender=bob)
+        c1.set_royalties_field(first_new_royalties).run(valid=False, sender=john)
+        c1.set_royalties_field(first_new_royalties).run(valid=False, sender=alice)
+        c1.set_royalties_field(first_new_royalties).run(valid=True, sender=admin)
 
-        scenario.p("3. Verify royalties are changed accordingly in the contract starage after a successful call of set_royalties")
+        scenario.p("3. Verify royalties are changed accordingly in the contract storage after a successful call of set_royalties")
         scenario.verify_equal(c1.data.royalties, first_new_royalties)
 
-        scenario.p("4. Mint NFTs")
+########################################################################################################################
+# unit_fa2_test_set_royalties_field_on_minted_tokens
+########################################################################################################################
+def unit_fa2_test_set_royalties_field_on_minted_tokens(is_default=True):
+    @sp.add_test(name="unit_fa2_test_set_royalties_field_on_minted_tokens", is_default=is_default)
+    def test():
+        scenario = TestHelper.create_scenario("unit_fa2_test_set_administrator")
+        admin, alice, bob, john = TestHelper.create_account(scenario)
+        c1 = TestHelper.create_contracts(scenario, admin, john)
+
+        scenario.h2("Test the entrypoint set_royalties_field_on_minted_tokens. (Who: Only for main admin)")
+
+        scenario.p("1. Set sale admin to be bob and the artwork admin to be john")
+        c1.set_sale_contract_administrator(bob.address).run(valid=True, sender=admin)
+        c1.set_artwork_administrator(john.address).run(valid=True, sender=admin)
+
+        scenario.p("2. Call set_royalties")
+        first_new_royalties = sp.utils.bytes_of_string('{"decimals": 3, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf6" + '": 20}}')
+        c1.set_royalties_field(first_new_royalties).run(valid=True, sender=admin)
+
+        scenario.p("3. Mint NFTs")
         c1.mint(alice.address).run(valid=True, sender=admin)
         c1.mint(alice.address).run(valid=True, sender=admin)
         c1.mint(john.address).run(valid=True, sender=admin)
@@ -360,20 +380,71 @@ def unit_fa2_test_set_royalties(is_default=True):
 
         scenario.p("6. Change again the royalties")
         second_new_royalties = sp.utils.bytes_of_string('{"decimals": 3, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf7" + '": 30}}')
-        c1.set_royalties(second_new_royalties).run(valid=True, sender=admin)
+        c1.set_royalties_field(second_new_royalties).run(valid=True, sender=admin)
 
-        scenario.p("7. Mint another NFTs")
+        scenario.p("7. Mint another other NFTs")
+        c1.mint(alice.address).run(valid=True, sender=admin)
+        c1.mint(bob.address).run(valid=True, sender=admin)
+        c1.mint(john.address).run(valid=True, sender=admin)
+        c1.mint(alice.address).run(valid=True, sender=admin)
         c1.mint(alice.address).run(valid=True, sender=admin)
 
-        scenario.p("8. Verify all NFTs contain the right royalties field")
+        scenario.p("8. Verify only the admin can call set_royalties_on_minted_tokens")
+        c1.set_royalties_field_on_minted_tokens(sp.list(l={4, 6})).run(valid=False, sender=bob)
+        c1.set_royalties_field_on_minted_tokens(sp.list(l={4, 6})).run(valid=False, sender=john)
+        c1.set_royalties_field_on_minted_tokens(sp.list(l={4, 6})).run(valid=False, sender=alice)
+
+        scenario.p("9. Update royalties for a subset of the NFTs")
+        c1.set_royalties_field_on_minted_tokens(sp.list(l={4, 6})).run(valid=True, sender=admin)
+
+        scenario.p("10. Verify all NFTs ")
         scenario.verify(c1.data.token_metadata.contains(4))
         info_4 = sp.snd(c1.data.token_metadata[4])
-        scenario.verify_equal(c1.data.royalties, second_new_royalties)
+        scenario.verify(c1.data.token_metadata.contains(5))
+        info_5 = sp.snd(c1.data.token_metadata[5])
+        scenario.verify(c1.data.token_metadata.contains(6))
+        info_6 = sp.snd(c1.data.token_metadata[6])
+        scenario.verify(c1.data.token_metadata.contains(7))
+        info_7 = sp.snd(c1.data.token_metadata[7])
+        scenario.verify(c1.data.token_metadata.contains(8))
+        info_8 = sp.snd(c1.data.token_metadata[8])
+        scenario.verify(info_0[NFT.ROYALTIES_METADATA] == first_new_royalties)
+        scenario.verify(info_1[NFT.ROYALTIES_METADATA] == first_new_royalties)
+        scenario.verify(info_2[NFT.ROYALTIES_METADATA] == first_new_royalties)
+        scenario.verify(info_3[NFT.ROYALTIES_METADATA] == first_new_royalties)
+        scenario.verify(info_4[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_5[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_6[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_7[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_8[NFT.ROYALTIES_METADATA] == second_new_royalties)
+
+        scenario.p("11. Update royalties one NFTs")
+        c1.set_royalties_field_on_minted_tokens(sp.list(l={2})).run(valid=True, sender=admin)
+
+        scenario.p("12. Verify all NFTs ")
+        scenario.verify(info_0[NFT.ROYALTIES_METADATA] == first_new_royalties)
+        scenario.verify(info_1[NFT.ROYALTIES_METADATA] == first_new_royalties)
+        scenario.verify(info_2[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_3[NFT.ROYALTIES_METADATA] == first_new_royalties)
+        scenario.verify(info_4[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_5[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_6[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_7[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_8[NFT.ROYALTIES_METADATA] == second_new_royalties)
+
+        scenario.p("13. Update royalties for a subset of the NFTs")
+        c1.set_royalties_field_on_minted_tokens(sp.list(l={0, 1, 2, 3, 4, 5, 7, 8})).run(valid=True, sender=admin)
+
+        scenario.p("14. Verify all NFTs ")
         scenario.verify(info_0[NFT.ROYALTIES_METADATA] == second_new_royalties)
         scenario.verify(info_1[NFT.ROYALTIES_METADATA] == second_new_royalties)
         scenario.verify(info_2[NFT.ROYALTIES_METADATA] == second_new_royalties)
         scenario.verify(info_3[NFT.ROYALTIES_METADATA] == second_new_royalties)
         scenario.verify(info_4[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_5[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_6[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_7[NFT.ROYALTIES_METADATA] == second_new_royalties)
+        scenario.verify(info_8[NFT.ROYALTIES_METADATA] == second_new_royalties)
 
 ########################################################################################################################
 # unit_fa2_test_set_next_administrator
@@ -1543,7 +1614,8 @@ unit_fa2_test_set_artwork_administrator()
 unit_fa2_test_set_pause()
 unit_fa2_test_update_artwork_data()
 unit_fa2_test_mutez_transfer()
-unit_fa2_test_set_royalties()
+unit_fa2_test_set_royalties_field()
+unit_fa2_test_set_royalties_field_on_minted_tokens()
 unit_fa2_test_transfer()
 unit_fa2_test_update_operators()
 unit_fa2_test_token_metadata_storage()

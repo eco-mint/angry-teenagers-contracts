@@ -1,13 +1,15 @@
 import smartpy as sp
 
+class Fa2ErrorMessage:
+    def token_undefined():        return "FA2_TOKEN_UNDEFINED"
+    def not_operator():           return "FA2_NOT_OPERATOR"
+    def not_owner():              return "FA2_NOT_OWNER"
+    def insufficient_balance():   return "FA2_INSUFFICIENT_BALANCE"
+
+
 class ErrorMessage:
     def unauthorized_user():         return "ANGRY_TEENAGERS_UNAUTHORISED_USER"
-    def token_undefined():           return "ANGRY_TEENAGERS_TOKEN_UNDEFINED"
     def paused():                    return "ANGRY_TEENAGERS_PAUSED"
-    def not_operator():              return "ANGRY_TEENAGERS_NOT_OPERATOR"
-    def not_owner():                 return "ANGRY_TEENAGERS_NOT_OWNER"
-    def insufficient_balance():      return "ANGRY_TEENAGERS_INSUFFICIENT_BALANCE"
-    def not_admin_or_operator():     return "ANGRY_TEENAGERS_NOT_ADMIN_OR_OPERATOR"
     def not_admin():                 return "ANGRY_TEENAGERS_NOT_ADMIN"
     def no_next_admin():             return "ANGRY_TEENAGERS_NO_NEXT_ADMIN"
     def no_land_available():         return "ANGRY_TEENAGERS_NO_LAND_AVAILABLE"

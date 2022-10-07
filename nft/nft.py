@@ -266,7 +266,7 @@ class AngryTeenagers(sp.Contract):
         sp.verify( ~self.is_paused(), message=Error.ErrorMessage.unauthorized_user())
         sp.set_type(params, BALANCE_OF_FUNCTION_TYPE)
         def f_process_request(req):
-            sp.verify(self.data.ledger.contains(req.token_id), message=Error.ErrorMessage.token_undefined())
+            sp.verify(self.data.ledger.contains(req.token_id), message=Error.Fa2ErrorMessage.token_undefined())
             sp.if self.data.ledger[req.token_id] == req.owner:
                 sp.result(sp.record(
                         request=sp.record(
@@ -292,18 +292,21 @@ class AngryTeenagers(sp.Contract):
             current_from = transfer.from_
             sp.for tx in transfer.txs:
                 sender_verify = (current_from == sp.sender)
-                message = Error.ErrorMessage.not_operator()
+                message = Error.Fa2ErrorMessage.not_operator()
                 sender_verify |= (self.operator_set.is_member(self.data.operators,
                                                               current_from,
                                                               sp.sender,
                                                               tx.token_id))
                 sp.verify(sender_verify, message=message)
-                sp.verify(tx.amount == 1, Error.ErrorMessage.insufficient_balance())
-                sp.verify(self.data.ledger.contains(tx.token_id), Error.ErrorMessage.token_undefined())
-                sp.verify(self.data.ledger[tx.token_id] == current_from, Error.ErrorMessage.not_owner())
-                self.data.ledger[tx.token_id] = tx.to_
+                # Tzip-12 allows transfer of 0 token. In this case nothing happens but the whole transaction doesn't fail.
+                sp.verify(tx.amount <= 1, Error.Fa2ErrorMessage.insufficient_balance())
 
-                self.update_balance(current_from, tx.to_)
+                sp.if tx.amount == 1:
+                    sp.verify(self.data.ledger.contains(tx.token_id), Error.Fa2ErrorMessage.token_undefined())
+                    sp.verify(self.data.ledger[tx.token_id] == current_from, Error.Fa2ErrorMessage.insufficient_balance())
+                    self.data.ledger[tx.token_id] = tx.to_
+
+                    self.update_balance(current_from, tx.to_)
 
                 event = sp.record(from_=current_from, to_=tx.to_, token_id=tx.token_id)
                 sp.emit(event, with_type=True, tag="Transfer")
@@ -323,7 +326,7 @@ class AngryTeenagers(sp.Contract):
                 with arg.match("add_operator") as upd:
                     sp.verify(
                         (upd.owner == sp.sender),
-                        message=Error.ErrorMessage.not_admin_or_operator()
+                        message=Error.Fa2ErrorMessage.not_operator()
                     )
                     self.operator_set.add(self.data.operators,
                                           upd.owner,
@@ -332,7 +335,7 @@ class AngryTeenagers(sp.Contract):
                 with arg.match("remove_operator") as upd:
                     sp.verify(
                         (upd.owner == sp.sender) | self.is_administrator(sp.sender),
-                        message=Error.ErrorMessage.not_admin_or_operator()
+                        message=Error.Fa2ErrorMessage.not_operator()
                     )
                     self.operator_set.remove(self.data.operators,
                                              upd.owner,
@@ -393,10 +396,10 @@ class AngryTeenagers(sp.Contract):
         sp.verify(self.is_artwork_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
         sp.set_type(params, UPDATE_ARTWORK_METADATA_FUNCTION_TYPE)
         sp.for artwork_metadata in params:
-            sp.verify(self.data.ledger.contains(sp.fst(artwork_metadata)), message=Error.ErrorMessage.token_undefined())
-            sp.verify(self.data.token_metadata.contains(sp.fst(artwork_metadata)), message=Error.ErrorMessage.token_undefined())
+            sp.verify(self.data.ledger.contains(sp.fst(artwork_metadata)), message=Error.Fa2ErrorMessage.token_undefined())
+            sp.verify(self.data.token_metadata.contains(sp.fst(artwork_metadata)), message=Error.Fa2ErrorMessage.token_undefined())
             info = sp.local('info', sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]))
-            sp.verify(info.value.contains(REVEALED_METADATA), message=Error.ErrorMessage.token_undefined())
+            sp.verify(info.value.contains(REVEALED_METADATA), message=Error.Fa2ErrorMessage.token_undefined())
             sp.verify(info.value[REVEALED_METADATA] == sp.utils.bytes_of_string("false"), message=Error.ErrorMessage.token_revealed())
 
             my_map = sp.local('my_map', sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), REVEALED_METADATA, sp.some(sp.utils.bytes_of_string("true"))))
@@ -434,10 +437,10 @@ class AngryTeenagers(sp.Contract):
         # Change already minted NFTs
         i = sp.local("i", sp.nat(0))
         sp.while i.value < self.data.minted_tokens:
-            sp.verify(self.data.ledger.contains(i.value), message=Error.ErrorMessage.token_undefined())
-            sp.verify(self.data.token_metadata.contains(i.value), message=Error.ErrorMessage.token_undefined())
+            sp.verify(self.data.ledger.contains(i.value), message=Error.Fa2ErrorMessage.token_undefined())
+            sp.verify(self.data.token_metadata.contains(i.value), message=Error.Fa2ErrorMessage.token_undefined())
             info = sp.local('info', sp.snd(self.data.token_metadata[i.value]))
-            sp.verify(info.value.contains(ROYALTIES_METADATA), Error.ErrorMessage.token_undefined())
+            sp.verify(info.value.contains(ROYALTIES_METADATA), Error.Fa2ErrorMessage.token_undefined())
 
             my_map = sp.local('my_map', sp.update_map(sp.snd(self.data.token_metadata[i.value]), ROYALTIES_METADATA, sp.some(params)))
             self.data.token_metadata[i.value] = sp.pair(i.value, my_map.value)
@@ -495,7 +498,7 @@ class AngryTeenagers(sp.Contract):
 
     @sp.onchain_view()
     def get_total_voting_power(self):
-        """Get how many tokens was in this FA2 contract onchain.
+        """Get how many tokens are in this FA2 contract onchain.
         """
         sp.result(self.data.minted_tokens)
 
@@ -510,7 +513,7 @@ class AngryTeenagers(sp.Contract):
 
     @sp.offchain_view(pure=True)
     def does_token_exist(self, token_id):
-        """Akd whether a token exists.
+        """Aks whether a token exists.
         """
         sp.set_type(token_id, sp.TNat)
         sp.result(self.data.ledger.contains(token_id))
@@ -529,7 +532,7 @@ class AngryTeenagers(sp.Contract):
         token_list = sp.local('token_list', sp.list(l={}, t=TOKEN_ID))
         i = sp.local("i", sp.nat(0))
         sp.while i.value < self.data.minted_tokens:
-            sp.verify(self.data.ledger.contains(i.value), message=Error.ErrorMessage.token_undefined())
+            sp.verify(self.data.ledger.contains(i.value), message=Error.Fa2ErrorMessage.token_undefined())
             sp.if self.data.ledger[i.value] == params:
                 token_list.value.push(i.value)
             i.value = i.value + 1
@@ -542,7 +545,7 @@ class AngryTeenagers(sp.Contract):
         token_list = sp.local('token_list', sp.list(l={}, t=TOKEN_ID))
         i = sp.local("i", sp.nat(0))
         sp.while i.value < self.data.minted_tokens:
-            sp.verify(self.data.token_metadata.contains(i.value), message=Error.ErrorMessage.token_undefined())
+            sp.verify(self.data.token_metadata.contains(i.value), message=Error.Fa2ErrorMessage.token_undefined())
             sp.if (sp.snd(self.data.token_metadata[i.value]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"):
                 token_list.value.push(i.value)
             i.value = i.value + 1
@@ -550,10 +553,13 @@ class AngryTeenagers(sp.Contract):
 
     @sp.offchain_view(pure=True)
     def total_supply(self, token_id):
-        """Get the total supply.
+        """Get the total supply for one token_id.
         """
         sp.set_type(token_id, sp.TNat)
-        sp.result(self.data.total_supply)
+        sp.if self.data.ledger.contains(token_id):
+            sp.result(sp.nat(1))
+        sp.else:
+            sp.result(sp.nat(0))
 
     @sp.offchain_view(pure=True)
     def is_operator(self, query):
@@ -580,7 +586,7 @@ class AngryTeenagers(sp.Contract):
                 owner=sp.TAddress,
                 token_id=sp.TNat
             ).layout(("owner", "token_id")))
-        sp.verify(self.data.ledger.contains(request.token_id), message=Error.ErrorMessage.token_undefined())
+        sp.verify(self.data.ledger.contains(request.token_id), message=Error.Fa2ErrorMessage.token_undefined())
         sp.if self.data.ledger[request.token_id] == request.owner:
             sp.result(sp.nat(1))
         sp.else:
@@ -599,8 +605,8 @@ class AngryTeenagers(sp.Contract):
         """
         sp.set_type(token_id, sp.TNat)
         sp.verify(token_id < self.data.total_supply)
-        sp.verify(self.data.ledger.contains(token_id), message=Error.ErrorMessage.token_undefined())
-        sp.verify(self.data.token_metadata.contains(token_id), message=Error.ErrorMessage.token_undefined())
+        sp.verify(self.data.ledger.contains(token_id), message=Error.Fa2ErrorMessage.token_undefined())
+        sp.verify(self.data.token_metadata.contains(token_id), message=Error.Fa2ErrorMessage.token_undefined())
 
         sp.result(self.data.token_metadata[token_id])
 

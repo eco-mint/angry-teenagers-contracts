@@ -196,12 +196,12 @@ class AngryTeenagersSale(sp.Contract):
         sp.set_type(params, ADMIN_FILL_ALLOWLIST_PARAM_TYPE)
 
         # Only for admin
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
 
         sp.verify((self.data.state == STATE_NO_EVENT_OPEN_0) |
                   (self.data.state == STATE_NO_EVENT_WITH_PRIV_ALLOWLIST_READY_2) |
                   (self.data.state == STATE_NO_EVENT_WITH_PUB_ALLOWLIST_READY_4),
-                  Error.ErrorMessage.sale_event_already_open())
+                  message=Error.ErrorMessage.sale_event_already_open())
 
         sp.for item in params.elements():
             sp.if ~self.data.allowlist.contains(item):
@@ -216,10 +216,10 @@ class AngryTeenagersSale(sp.Contract):
         sp.set_type(params, ADMIN_FILL_PRE_ALLOWLIST_PARAM_TYPE)
 
         # Only for admin
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
 
         # This can be called only in state STATE_NO_EVENT_OPEN_0
-        sp.verify(self.data.state == STATE_NO_EVENT_OPEN_0, Error.ErrorMessage.sale_event_already_open())
+        sp.verify(self.data.state == STATE_NO_EVENT_OPEN_0, message=Error.ErrorMessage.sale_event_already_open())
 
         sp.for item in params.elements():
             sp.if ~self.data.pre_allowlist.contains(item):
@@ -231,15 +231,15 @@ class AngryTeenagersSale(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def open_event_priv_allowlist_reg(self, params):
         # Only for admin
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
 
         # This can be called only in state STATE_NO_EVENT_OPEN_0
-        sp.verify(self.data.state == STATE_NO_EVENT_OPEN_0, Error.ErrorMessage.sale_event_already_open())
+        sp.verify(self.data.state == STATE_NO_EVENT_OPEN_0, message=Error.ErrorMessage.sale_event_already_open())
 
         sp.set_type(params, ADMIN_OPEN_EVENT_PRIVATE_ALLOWLIST_REGISTRATION_PARAM_TYPE)
 
         sp.if params.use_deadline:
-            sp.verify(params.deadline > sp.now, Error.ErrorMessage.sale_invalid_deadline())
+            sp.verify(params.deadline > sp.now, message=Error.ErrorMessage.sale_invalid_deadline())
 
         self.data.event_price=params.price
         self.data.event_use_deadline = params.use_deadline
@@ -257,10 +257,10 @@ class AngryTeenagersSale(sp.Contract):
     def pay_to_enter_allowlist_priv(self):
         self.check_event_duration()
         # Only in state STATE_EVENT_PRIV_ALLOWLIST_REG_1
-        sp.verify(self.data.state == STATE_EVENT_PRIV_ALLOWLIST_REG_1, Error.ErrorMessage.sale_event_already_open())
+        sp.verify(self.data.state == STATE_EVENT_PRIV_ALLOWLIST_REG_1, message=Error.ErrorMessage.sale_event_already_open())
 
         # Must be on the pre_allowlist
-        sp.verify(self.data.pre_allowlist.contains(sp.sender), Error.ErrorMessage.forbidden_operation())
+        sp.verify(self.data.pre_allowlist.contains(sp.sender), message=Error.ErrorMessage.forbidden_operation())
         sp.verify(sp.amount == self.data.event_price)
         self.redirect_fund(sp.amount)
         self.data.pre_allowlist.remove(sp.sender)
@@ -274,13 +274,13 @@ class AngryTeenagersSale(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def open_event_pub_allowlist_reg(self, params):
         # Only for admin
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
 
         # This can be called only in state STATE_NO_EVENT_OPEN_0 or STATE_NO_EVENT_WITH_PRIV_ALLOWLIST_READY_2
         sp.verify((self.data.state == STATE_NO_EVENT_OPEN_0) | (self.data.state == STATE_NO_EVENT_WITH_PRIV_ALLOWLIST_READY_2), Error.ErrorMessage.sale_event_already_open())
-        sp.verify(params.max_space > 0, Error.ErrorMessage.invalid_parameter())
+        sp.verify(params.max_space > 0, message=Error.ErrorMessage.invalid_parameter())
         sp.if params.use_deadline:
-            sp.verify(params.deadline > sp.now, Error.ErrorMessage.sale_invalid_deadline())
+            sp.verify(params.deadline > sp.now, message=Error.ErrorMessage.sale_invalid_deadline())
 
         sp.set_type(params, ADMIN_OPEN_EVENT_PUBLIC_ALLOWLIST_REGISTRATION_PARAM_TYPE)
 
@@ -304,14 +304,14 @@ class AngryTeenagersSale(sp.Contract):
         self.check_event_duration()
 
         # Only in state STATE_EVENT_PUB_ALLOWLIST_REG_3
-        sp.verify(self.data.state == STATE_EVENT_PUB_ALLOWLIST_REG_3, Error.ErrorMessage.sale_event_already_open())
+        sp.verify(self.data.state == STATE_EVENT_PUB_ALLOWLIST_REG_3, message=Error.ErrorMessage.sale_event_already_open())
 
         # Not already in the list
-        sp.verify(~self.data.allowlist.contains(sp.sender), Error.ErrorMessage.forbidden_operation())
+        sp.verify(~self.data.allowlist.contains(sp.sender), message=Error.ErrorMessage.forbidden_operation())
 
         # Enough space remaining
         sp.verify(self.data.public_allowlist_space_taken < self.data.public_allowlist_max_space,
-                  Error.ErrorMessage.sale_no_space_remaining())
+                  message=Error.ErrorMessage.sale_no_space_remaining())
 
         sp.verify(sp.amount == self.data.event_price)
         self.redirect_fund(sp.amount)
@@ -331,19 +331,19 @@ class AngryTeenagersSale(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def open_pre_sale(self, params):
         # Only for admin
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
 
         sp.verify((self.data.state == STATE_NO_EVENT_OPEN_0) |
                   (self.data.state == STATE_NO_EVENT_WITH_PRIV_ALLOWLIST_READY_2) |
-                  (self.data.state == STATE_NO_EVENT_WITH_PUB_ALLOWLIST_READY_4), Error.ErrorMessage.sale_event_already_open())
+                  (self.data.state == STATE_NO_EVENT_WITH_PUB_ALLOWLIST_READY_4), message=Error.ErrorMessage.sale_event_already_open())
 
         # check parameters
         sp.set_type(params, ADMIN_OPEN_PRE_SALE_PARAM_TYPE)
-        sp.verify(params.max_supply > 0, Error.ErrorMessage.invalid_parameter())
-        sp.verify(params.max_per_user > 0, Error.ErrorMessage.invalid_parameter())
-        sp.verify(params.max_supply > params.max_per_user, Error.ErrorMessage.invalid_parameter())
+        sp.verify(params.max_supply > 0, message=Error.ErrorMessage.invalid_parameter())
+        sp.verify(params.max_per_user > 0, message=Error.ErrorMessage.invalid_parameter())
+        sp.verify(params.max_supply > params.max_per_user, message=Error.ErrorMessage.invalid_parameter())
         sp.if params.use_deadline:
-            sp.verify(params.deadline > sp.now, Error.ErrorMessage.sale_invalid_deadline())
+            sp.verify(params.deadline > sp.now, message=Error.ErrorMessage.sale_invalid_deadline())
 
         self.start_sale_init(params.max_supply, params.max_per_user, params.price, params.use_deadline, params.deadline)
 
@@ -358,20 +358,20 @@ class AngryTeenagersSale(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def open_pub_sale(self, params):
         # Only for admin
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
 
         sp.verify((self.data.state == STATE_NO_EVENT_WITH_PUB_ALLOWLIST_READY_4) |
                   (self.data.state == STATE_NO_EVENT_OPEN_0) |
                   (self.data.state == STATE_NO_EVENT_WITH_PRIV_ALLOWLIST_READY_2),
-                  Error.ErrorMessage.sale_event_already_open())
+                  message=Error.ErrorMessage.sale_event_already_open())
 
         # check parameters
         sp.set_type(params, ADMIN_OPEN_PRE_SALE_PARAM_TYPE)
-        sp.verify(params.max_supply > 0, Error.ErrorMessage.invalid_parameter())
-        sp.verify(params.max_per_user > 0, Error.ErrorMessage.invalid_parameter())
-        sp.verify(params.max_supply > params.max_per_user, Error.ErrorMessage.invalid_parameter())
+        sp.verify(params.max_supply > 0, message=Error.ErrorMessage.invalid_parameter())
+        sp.verify(params.max_per_user > 0, message=Error.ErrorMessage.invalid_parameter())
+        sp.verify(params.max_supply > params.max_per_user, message=Error.ErrorMessage.invalid_parameter())
         sp.if params.use_deadline:
-            sp.verify(params.deadline > sp.now, Error.ErrorMessage.sale_invalid_deadline())
+            sp.verify(params.deadline > sp.now, message=Error.ErrorMessage.sale_invalid_deadline())
 
         self.data.public_sale_allowlist_config.used = False
         self.data.public_sale_allowlist_config.discount = sp.mutez(0)
@@ -390,21 +390,21 @@ class AngryTeenagersSale(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def open_pub_sale_with_allowlist(self, params):
         # Only for admin
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
 
         sp.verify((self.data.state == STATE_NO_EVENT_WITH_PUB_ALLOWLIST_READY_4) |
                   (self.data.state == STATE_NO_EVENT_OPEN_0) |
                   (self.data.state == STATE_NO_EVENT_WITH_PRIV_ALLOWLIST_READY_2),
-                  Error.ErrorMessage.sale_event_already_open())
+                  message=Error.ErrorMessage.sale_event_already_open())
 
         # check parameters
         sp.set_type(params, ADMIN_OPEN_PUBLIC_SALE_WITH_ALLOWLIST_PARAM_TYPE)
-        sp.verify(params.max_supply > 0, Error.ErrorMessage.invalid_parameter())
-        sp.verify(params.max_per_user > 0, Error.ErrorMessage.invalid_parameter())
-        sp.verify(params.max_supply > params.max_per_user, Error.ErrorMessage.invalid_parameter())
-        sp.verify(params.price >= params.mint_discount, Error.ErrorMessage.invalid_parameter())
+        sp.verify(params.max_supply > 0, message=Error.ErrorMessage.invalid_parameter())
+        sp.verify(params.max_per_user > 0, message=Error.ErrorMessage.invalid_parameter())
+        sp.verify(params.max_supply > params.max_per_user, message=Error.ErrorMessage.invalid_parameter())
+        sp.verify(params.price >= params.mint_discount, message=Error.ErrorMessage.invalid_parameter())
         sp.if params.use_deadline:
-            sp.verify(params.deadline > sp.now, Error.ErrorMessage.sale_invalid_deadline())
+            sp.verify(params.deadline > sp.now, message=Error.ErrorMessage.sale_invalid_deadline())
 
         self.data.public_sale_allowlist_config.used = True
         self.data.public_sale_allowlist_config.discount = params.mint_discount
@@ -421,9 +421,9 @@ class AngryTeenagersSale(sp.Contract):
 # set_metadata
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
-    def set_metadata(self, k, v):
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
-        self.data.metadata[k] = v
+    def set_metadata(self, key, value):
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
+        self.data.metadata[key] = value
 
 ########################################################################################################################
 # user_mint
@@ -433,8 +433,8 @@ class AngryTeenagersSale(sp.Contract):
         self.check_event_duration()
         sp.set_type(params, sp.TRecord(amount=sp.TNat, address=sp.TAddress))
 
-        sp.verify(params.amount > 0, Error.ErrorMessage.sale_no_token())
-        sp.verify(params.amount <= self.data.event_max_per_user, Error.ErrorMessage.sale_no_token())
+        sp.verify(params.amount > 0, message=Error.ErrorMessage.sale_no_token())
+        sp.verify(params.amount <= self.data.event_max_per_user, message=Error.ErrorMessage.sale_no_token())
 
         sp.if self.data.state == STATE_EVENT_PRESALE_5:
             self.mint_pre_sale(params)
@@ -453,9 +453,9 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def close_any_open_event(self):
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
 
-        sp.verify(self.is_any_event_open(), Error.ErrorMessage.sale_no_event_open())
+        sp.verify(self.is_any_event_open(), message=Error.ErrorMessage.sale_no_event_open())
         self.stop_internal_event()
 
         sp.emit(self.data.state, with_type=True, tag="Close open event")
@@ -467,9 +467,9 @@ class AngryTeenagersSale(sp.Contract):
     def mint_and_give(self, params):
         """Give away some reserved NFTs"""
         sp.set_type(params, sp.TRecord(amount=sp.TNat, address=sp.TAddress))
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
         # All events must be closed
-        sp.verify(~self.is_any_event_open(), Error.ErrorMessage.sale_event_already_open())
+        sp.verify(~self.is_any_event_open(), message=Error.ErrorMessage.sale_event_already_open())
 
         # Mint token(s) and transfer them to user
         self.mint_internal(amount=params.amount, address=params.address)
@@ -484,7 +484,7 @@ class AngryTeenagersSale(sp.Contract):
     def set_next_administrator(self, params):
         """Change admin. Only the admin can change to another admin"""
         sp.set_type(params, sp.TAddress)
-        sp.verify(self.is_administrator(), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.not_admin())
         self.data.next_administrator = sp.some(params)
 
 ########################################################################################################################
@@ -492,8 +492,8 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def validate_new_administrator(self):
-        sp.verify(self.data.next_administrator.is_some(), message = Error.ErrorMessage.no_next_admin())
-        sp.verify(sp.sender == self.data.next_administrator.open_some(), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.data.next_administrator.is_some(), message=Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_administrator.open_some(), message=Error.ErrorMessage.not_admin())
         self.data.administrator = self.data.next_administrator.open_some()
         self.data.next_administrator = sp.none
 
@@ -504,20 +504,20 @@ class AngryTeenagersSale(sp.Contract):
     def set_transfer_addresses(self, params):
         """Change the addresses where Tez are transfered. Reserve to Admin"""
         sp.set_type(params, ADMIN_TRANSFER_ADDRESSES_TYPE)
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
         total = sp.local("total", sp.nat(0))
         self.data.transfer_addresses = params
         sp.for address in params:
-            sp.verify(sp.snd(address) > 0, Error.ErrorMessage.invalid_amount())
+            sp.verify(sp.snd(address) > 0, message=Error.ErrorMessage.invalid_amount())
             total.value = total.value + sp.snd(address)
-        sp.verify(total.value == 100, Error.ErrorMessage.invalid_amount())
+        sp.verify(total.value == 100, message=Error.ErrorMessage.invalid_amount())
 
 ########################################################################################################################
 # register_fa2
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def register_fa2(self, params):
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
         sp.set_type(params, sp.TAddress)
         self.data.fa2 = params
 
@@ -526,8 +526,8 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def clear_allowlist(self):
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
-        sp.verify(~self.is_any_event_open(), Error.ErrorMessage.sale_event_already_open())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
+        sp.verify(~self.is_any_event_open(), message=Error.ErrorMessage.sale_event_already_open())
         self.clear_storage()
         self.data.state = STATE_NO_EVENT_OPEN_0
         self.data.allowlist = sp.set(l={}, t=sp.TAddress)
@@ -540,18 +540,18 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def admin_process_presale(self, params):
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
-        sp.verify(~self.is_any_event_open(), Error.ErrorMessage.sale_event_already_open())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
+        sp.verify(~self.is_any_event_open(), message=Error.ErrorMessage.sale_event_already_open())
         sp.set_type(params, sp.TAddress)
 
-        tokens = sp.local('tokens', sp.view("all_tokens", params, sp.unit).open_some(Error.ErrorMessage.invalid_parameter()))
+        tokens = sp.local('tokens', sp.view("all_tokens", params, sp.unit).open_some(message=Error.ErrorMessage.invalid_parameter()))
 
         sp.for token in tokens.value:
-            is_burn = sp.local('is_burn', sp.view("is_token_burned", params, token).open_some(Error.ErrorMessage.invalid_parameter()))
+            is_burn = sp.local('is_burn', sp.view("is_token_burned", params, token).open_some(message=Error.ErrorMessage.invalid_parameter()))
             burn_list = sp.local("burn_list", sp.list(l={}, t=sp.TNat))
 
             sp.if ~is_burn.value:
-                owner = sp.local('owner', sp.view("get_token_owner", params, token).open_some(Error.ErrorMessage.invalid_parameter()))
+                owner = sp.local('owner', sp.view("get_token_owner", params, token).open_some(message=Error.ErrorMessage.invalid_parameter()))
                 self.mint_internal(amount=1, address=owner.value)
                 burn_list.value.push(token)
 
@@ -570,7 +570,7 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def mutez_transfer(self, params):
-        sp.verify(self.is_administrator(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
         sp.set_type(params.destination, sp.TAddress)
         sp.set_type(params.amount, sp.TMutez)
         sp.send(params.destination, params.amount)
@@ -578,8 +578,8 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
 # Helpers
 ########################################################################################################################
-    def call(self, c, x):
-        sp.transfer(x, sp.mutez(0), c)
+    def call(self, destination, arg):
+        sp.transfer(arg, sp.mutez(0), destination)
 
     def is_administrator(self):
         return sp.sender == self.data.administrator
@@ -641,22 +641,22 @@ class AngryTeenagersSale(sp.Contract):
 
     def check_amount_and_transfer_tez(self, amount_requested, token_price):
         sp.verify(sp.amount == sp.mul(amount_requested, token_price)
-                  , Error.ErrorMessage.invalid_amount())
+                  , message=Error.ErrorMessage.invalid_amount())
         # Transfer Tez received from user
         self.redirect_fund(sp.amount)
 
     def mint_pre_sale(self, params):
         # Pre-sale. Must be on the allow list
-        sp.verify(self.data.allowlist.contains(params.address), Error.ErrorMessage.forbidden_operation())
+        sp.verify(self.data.allowlist.contains(params.address), message=Error.ErrorMessage.forbidden_operation())
 
         # Enough supply
         sp.verify(self.data.token_minted_in_event + params.amount <= self.data.event_max_supply,
-                  Error.ErrorMessage.sale_no_token())
+                  message=Error.ErrorMessage.sale_no_token())
 
         # User minted his token already ?
         sp.if self.data.event_user_balance.contains(params.address):
             sp.verify(self.data.event_user_balance[params.address] + params.amount <= self.data.event_max_per_user,
-                      Error.ErrorMessage.sale_no_token())
+                      message=Error.ErrorMessage.sale_no_token())
 
         # User gave the right amount of Tez. If yes transfer these Tez to the transfer address
         self.check_amount_and_transfer_tez(params.amount, self.data.event_price)
@@ -672,13 +672,13 @@ class AngryTeenagersSale(sp.Contract):
     def mint_public_sale(self, params):
         sp.if ~(self.data.allowlist.contains(params.address) & self.data.public_sale_allowlist_config.minting_rights):
             sp.verify(self.data.token_minted_in_event + params.amount <= self.data.event_max_supply,
-                      Error.ErrorMessage.sale_no_token())
+                      message=Error.ErrorMessage.sale_no_token())
             self.data.token_minted_in_event = self.data.token_minted_in_event + params.amount
 
         # User minted his token already ?
         sp.if self.data.event_user_balance.contains(params.address):
             sp.verify(self.data.event_user_balance[params.address] + params.amount <= self.data.event_max_per_user,
-                      Error.ErrorMessage.forbidden_operation())
+                      message=Error.ErrorMessage.forbidden_operation())
 
         # User gave the right amount of Tez. If yes transfer these Tez to the transfer address
         sp.if self.data.allowlist.contains(params.address):

@@ -58,28 +58,28 @@ class AngryTeenagersDao(sp.Contract):
                  outcomes=sp.big_map(l={}, tkey=sp.TNat, tvalue=PollOutcome.HISTORICAL_OUTCOME_TYPE)):
       self.init_type(
           sp.TRecord(
-              state = sp.TNat,
-              ongoing_poll = sp.TOption(PollType.POLL_TYPE),
-              angry_teenager_fa2 = sp.TOption(sp.TAddress),
-              poll_manager = POLL_MANAGER_TYPE,
-              next_proposal_id = sp.TNat,
-              admin = sp.TAddress,
-              next_admin = sp.TOption(sp.TAddress),
-              outcomes = OUTCOMES_TYPE,
-              metadata= sp.TBigMap(sp.TString, sp.TBytes)
+              state=sp.TNat,
+              ongoing_poll=sp.TOption(PollType.POLL_TYPE),
+              angry_teenager_fa2=sp.TOption(sp.TAddress),
+              poll_manager=POLL_MANAGER_TYPE,
+              next_proposal_id=sp.TNat,
+              admin=sp.TAddress,
+              next_admin=sp.TOption(sp.TAddress),
+              outcomes=OUTCOMES_TYPE,
+              metadata=sp.TBigMap(sp.TString, sp.TBytes)
           )
       )
 
       self.init(
-          state = sp.nat(NONE),
-          ongoing_poll = sp.none,
-          angry_teenager_fa2 = sp.none,
-          poll_manager = poll_manager,
-          next_proposal_id = sp.nat(0),
-          admin = admin,
-          next_admin = sp.none,
-          outcomes = outcomes,
-          metadata = metadata
+          state=sp.nat(NONE),
+          ongoing_poll=sp.none,
+          angry_teenager_fa2=sp.none,
+          poll_manager=poll_manager,
+          next_proposal_id=sp.nat(0),
+          admin=admin,
+          next_admin=sp.none,
+          outcomes=outcomes,
+          metadata=metadata
       )
 
       list_of_views = [
@@ -117,7 +117,7 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def delegate(self, baker):
-        sp.verify_equal(sp.sender, sp.self_address, Error.ErrorMessage.dao_only_for_dao())
+        sp.verify_equal(sp.sender, sp.self_address, message=Error.ErrorMessage.dao_only_for_dao())
         sp.set_delegate(baker)
 
 ########################################################################################################################
@@ -131,16 +131,16 @@ class AngryTeenagersDao(sp.Contract):
 # set_metadata
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
-    def set_metadata(self, k, v):
-        sp.verify(sp.sender == self.data.admin, message = Error.ErrorMessage.unauthorized_user())
-        self.data.metadata[k] = v
+    def set_metadata(self, key, value):
+        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
+        self.data.metadata[key] = value
 
 ########################################################################################################################
 # set_next_administrator
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_next_administrator(self, params):
-        sp.verify(sp.sender == self.data.admin, message = Error.ErrorMessage.unauthorized_user())
+        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
         self.data.next_admin = sp.some(params)
 
 ########################################################################################################################
@@ -148,8 +148,8 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def validate_new_administrator(self):
-        sp.verify(self.data.next_admin.is_some(), message = Error.ErrorMessage.no_next_admin())
-        sp.verify(sp.sender == self.data.next_admin.open_some(), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.data.next_admin.is_some(), message=Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_admin.open_some(), message=Error.ErrorMessage.not_admin())
         self.data.admin = self.data.next_admin.open_some()
         self.data.next_admin = sp.none
 
@@ -158,10 +158,10 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def add_voting_strategy(self, params):
-        sp.verify(self.data.state == NONE, Error.ErrorMessage.dao_vote_in_progress())
-        sp.verify((sp.self_address == sp.sender) | (self.data.admin == sp.sender), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.data.state == NONE, message=Error.ErrorMessage.dao_vote_in_progress())
+        sp.verify((sp.self_address == sp.sender) | (self.data.admin == sp.sender), message=Error.ErrorMessage.unauthorized_user())
         sp.set_type(params, sp.TRecord(id=sp.TNat, name=sp.TString, address=sp.TAddress))
-        sp.verify(~self.data.poll_manager.contains(params.id), Error.ErrorMessage.dao_already_registered())
+        sp.verify(~self.data.poll_manager.contains(params.id), message=Error.ErrorMessage.dao_already_registered())
         self.data.poll_manager[params.id] = sp.record(name=params.name, address=params.address)
 
 ########################################################################################################################
@@ -169,8 +169,8 @@ class AngryTeenagersDao(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def register_angry_teenager_fa2(self, address):
-        sp.verify(self.data.admin == sp.sender, Error.ErrorMessage.unauthorized_user())
-        sp.verify(~self.data.angry_teenager_fa2.is_some(), Error.ErrorMessage.dao_already_registered())
+        sp.verify(self.data.admin == sp.sender, message=Error.ErrorMessage.unauthorized_user())
+        sp.verify(~self.data.angry_teenager_fa2.is_some(), message=Error.ErrorMessage.dao_already_registered())
         self.data.angry_teenager_fa2 = sp.some(address)
 
 ########################################################################################################################
@@ -182,11 +182,11 @@ class AngryTeenagersDao(sp.Contract):
         sp.set_type(proposal, Proposal.PROPOSAL_TYPE)
 
         # Asserts
-        sp.verify(sp.sender == self.data.admin, Error.ErrorMessage.unauthorized_user())
-        sp.verify(self.data.state == NONE, Error.ErrorMessage.dao_vote_in_progress())
-        sp.verify(self.data.angry_teenager_fa2.is_some(), Error.ErrorMessage.dao_not_registered())
-        sp.verify(~self.data.ongoing_poll.is_some(), Error.ErrorMessage.dao_vote_in_progress())
-        sp.verify(self.data.poll_manager.contains(proposal.voting_strategy), Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.data.state == NONE, message=Error.ErrorMessage.dao_vote_in_progress())
+        sp.verify(self.data.angry_teenager_fa2.is_some(), message=Error.ErrorMessage.dao_not_registered())
+        sp.verify(~self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_vote_in_progress())
+        sp.verify(self.data.poll_manager.contains(proposal.voting_strategy), message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Create the poll with the proposal
         self.data.ongoing_poll = sp.some(
@@ -205,7 +205,7 @@ class AngryTeenagersDao(sp.Contract):
                                self.data.angry_teenager_fa2.open_some(Error.ErrorMessage.dao_not_registered()),
                                sp.unit,
                                t=sp.TNat).open_some(Error.ErrorMessage.dao_invalid_token_view()))
-        sp.verify(total_available_voters.value > 0, Error.ErrorMessage.dao_no_voting_power())
+        sp.verify(total_available_voters.value > 0, message=Error.ErrorMessage.dao_no_voting_power())
 
         # Change the state of the contract accordingly
         self.data.state = STARTING_VOTE
@@ -224,9 +224,9 @@ class AngryTeenagersDao(sp.Contract):
         sp.set_type(params, PROPOSE_CALLBACK_TYPE)
 
         # Asserts
-        sp.verify(self.data.state == STARTING_VOTE, Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.ongoing_poll.is_some(), Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.ongoing_poll.open_some().voting_strategy_address == sp.sender, Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(self.data.state == STARTING_VOTE, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.open_some().voting_strategy_address == sp.sender, message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Update the poll data
         self.data.ongoing_poll = sp.some(
@@ -252,16 +252,16 @@ class AngryTeenagersDao(sp.Contract):
         sp.set_type(params, VoteValue.VOTE_VALUE)
 
         # Asserts
-        sp.verify(self.data.state == VOTE_ONGOING, Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.ongoing_poll.is_some(), Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(params.proposal_id == self.data.ongoing_poll.open_some().proposal_id, Error.ErrorMessage.dao_no_invalid_proposal())
+        sp.verify(self.data.state == VOTE_ONGOING, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(params.proposal_id == self.data.ongoing_poll.open_some().proposal_id, message=Error.ErrorMessage.dao_no_invalid_proposal())
 
         # Find the user voting power before sending the votes
         voting_power = sp.local('voting_power', sp.view("get_voting_power",
                                self.data.angry_teenager_fa2.open_some(Error.ErrorMessage.dao_not_registered()),
                                sp.pair(sp.sender, self.data.ongoing_poll.open_some().snapshot_block),
                                t=sp.TNat).open_some(Error.ErrorMessage.dao_invalid_token_view()))
-        sp.verify(voting_power.value > 0, Error.ErrorMessage.dao_no_voting_power())
+        sp.verify(voting_power.value > 0, message=Error.ErrorMessage.dao_no_voting_power())
 
         # Call the appropriate voting strategy
         self.call_voting_strategy_vote(voting_power.value, sp.sender, params.vote_value)
@@ -279,9 +279,9 @@ class AngryTeenagersDao(sp.Contract):
 
         # Asserts
         # Everybody can call this function to avoid a vote been blocked by the admin or anybody else
-        sp.verify(self.data.state == VOTE_ONGOING, Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.ongoing_poll.is_some(), Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.ongoing_poll.open_some().proposal_id == proposal_id, Error.ErrorMessage.dao_no_invalid_proposal())
+        sp.verify(self.data.state == VOTE_ONGOING, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.open_some().proposal_id == proposal_id, message=Error.ErrorMessage.dao_no_invalid_proposal())
 
         # Change the state of contract
         self.data.state = ENDING_VOTE
@@ -300,11 +300,11 @@ class AngryTeenagersDao(sp.Contract):
         sp.set_type(params, sp.TRecord(voting_id=sp.TNat, voting_outcome=sp.TNat))
 
         # Asserts
-        sp.verify(self.data.state == ENDING_VOTE, Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.ongoing_poll.is_some(), Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.ongoing_poll.open_some().voting_strategy_address == sp.sender, Error.ErrorMessage.dao_invalid_voting_strat())
-        sp.verify(~self.data.outcomes.contains(self.data.next_proposal_id), Error.ErrorMessage.dao_invalid_voting_strat())
-        sp.verify(params.voting_id == self.data.ongoing_poll.open_some().voting_id, Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(self.data.state == ENDING_VOTE, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.open_some().voting_strategy_address == sp.sender, message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(~self.data.outcomes.contains(self.data.next_proposal_id), message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(params.voting_id == self.data.ongoing_poll.open_some().voting_id, message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Execute the lambda if the vote is passed and the lambda exists
         sp.if (params.voting_outcome == PollOutcome.POLL_OUTCOME_PASSED) & (self.data.ongoing_poll.open_some().proposal.proposal_lambda.is_some()):
@@ -316,7 +316,7 @@ class AngryTeenagersDao(sp.Contract):
         self.data.state = NONE
 
         # Record the result of the vote
-        self.data.outcomes[self.data.next_proposal_id] = sp.record(outcome = params.voting_outcome, poll_data = self.data.ongoing_poll.open_some())
+        self.data.outcomes[self.data.next_proposal_id] = sp.record(outcome=params.voting_outcome, poll_data=self.data.ongoing_poll.open_some())
 
         # Close the vote
         self.data.ongoing_poll = sp.none
@@ -332,7 +332,7 @@ class AngryTeenagersDao(sp.Contract):
         sp.set_type(params.amount, sp.TMutez)
 
         # Asserts
-        sp.verify_equal(sp.sender, sp.self_address, Error.ErrorMessage.dao_only_for_dao())
+        sp.verify_equal(sp.sender, sp.self_address, message=Error.ErrorMessage.dao_only_for_dao())
 
         # Send mutez
         sp.send(params.destination, params.amount)
@@ -342,8 +342,8 @@ class AngryTeenagersDao(sp.Contract):
 # Helper functions
 ################################################################
 ################################################################
-    def call(self, c, x):
-        sp.transfer(x, sp.mutez(0), c)
+    def call(self, destination, arg):
+        sp.transfer(arg, sp.mutez(0), destination)
 
     def call_voting_strategy_start(self, total_available_voters):
         voteContractHandle = sp.contract(
@@ -389,11 +389,11 @@ class AngryTeenagersDao(sp.Contract):
         sp.result(self.data.next_proposal_id)
 
     @sp.offchain_view(pure=True)
-    def get_historical_outcome_data(self, id):
+    def get_historical_outcome_data(self, outcome_id):
         """Get all historical outcomes ids.
         """
-        sp.verify(self.data.outcomes.contains(id), Error.ErrorMessage.dao_invalid_outcome_id())
-        sp.result(self.data.outcomes[id])
+        sp.verify(self.data.outcomes.contains(outcome_id), message=Error.ErrorMessage.dao_invalid_outcome_id())
+        sp.result(self.data.outcomes[outcome_id])
 
     @sp.offchain_view(pure=True)
     def is_poll_in_progress(self):
@@ -405,7 +405,7 @@ class AngryTeenagersDao(sp.Contract):
     def get_current_poll_data(self):
         """Get all current poll data if it exists.
         """
-        sp.verify(self.data.ongoing_poll.is_some(), Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
         sp.result(self.data.ongoing_poll.open_some())
 
     @sp.offchain_view(pure=True)

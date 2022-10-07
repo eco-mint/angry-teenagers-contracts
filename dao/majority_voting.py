@@ -15,9 +15,9 @@ PollOutcome = sp.io.import_script_from_url("file:dao/helper/dao_poll_outcome.py"
 # - level: Tezos block when the vote is sent
 # - votes: Number of votes for this voter
 VOTE_RECORD_TYPE = sp.TRecord(
-  vote_value = sp.TNat,
-  level = sp.TNat,
-  votes = sp.TNat,
+  vote_value=sp.TNat,
+  level=sp.TNat,
+  votes=sp.TNat,
 ).layout(("vote_value", ("level", "votes")))
 
 # MAJORITY_POLL_DATA
@@ -39,16 +39,16 @@ MAJORITY_POLL_DATA = sp.TRecord(
     voting_start_block=sp.TNat,
     voting_end_block=sp.TNat,
     vote_id=sp.TNat,
-    quorum = sp.TNat,
-    voters = sp.TMap(sp.TAddress, VOTE_RECORD_TYPE)
+    quorum=sp.TNat,
+    voters=sp.TMap(sp.TAddress, VOTE_RECORD_TYPE)
 ).layout(("vote_yay", ("vote_nay", ("vote_abstain", ("total_votes", ("voting_start_block", ("voting_end_block", ("vote_id", ("quorum", "voters")))))))))
 
 # QUORUM_CAP_TYPE
 # - lower: Lowest possible value of the quorum percentage
 # - upper: Biggest possible value of the quorum percentage
 QUORUM_CAP_TYPE = sp.TRecord(
-    lower = sp.TNat,
-    upper = sp.TNat
+    lower=sp.TNat,
+    upper=sp.TNat
 )
 
 # GOVERNANCE_PARAMETERS_TYPE
@@ -61,12 +61,12 @@ QUORUM_CAP_TYPE = sp.TRecord(
 # - fixed_quorum: Define whether the quorum is fixed or not
 # - quorum_cap: See QUORUM_CAP_TYPE
 GOVERNANCE_PARAMETERS_TYPE = sp.TRecord(
-  vote_delay_blocks = sp.TNat,
-  vote_length_blocks = sp.TNat,
-  percentage_for_supermajority = sp.TNat,
-  fixed_quorum_percentage = sp.TNat,
-  fixed_quorum = sp.TBool,
-  quorum_cap = QUORUM_CAP_TYPE
+  vote_delay_blocks=sp.TNat,
+  vote_length_blocks=sp.TNat,
+  percentage_for_supermajority=sp.TNat,
+  fixed_quorum_percentage=sp.TNat,
+  fixed_quorum=sp.TBool,
+  quorum_cap=QUORUM_CAP_TYPE
 ).layout(("vote_delay_blocks", ("vote_length_blocks", ("percentage_for_supermajority", ("fixed_quorum_percentage", ("fixed_quorum", "quorum_cap"))))))
 
 # OUTCOMES_TYPE
@@ -117,7 +117,7 @@ class DaoMajorityVoting(sp.Contract):
       self.init_type(
         sp.TRecord(
             governance_parameters=GOVERNANCE_PARAMETERS_TYPE,
-            current_dynamic_quorum_value = sp.TNat,
+            current_dynamic_quorum_value=sp.TNat,
             poll_leader=sp.TOption(sp.TAddress),
             admin=sp.TAddress,
             next_admin=sp.TOption(sp.TAddress),
@@ -174,16 +174,16 @@ class DaoMajorityVoting(sp.Contract):
 # set_metadata
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
-    def set_metadata(self, k, v):
+    def set_metadata(self, key, value):
         sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
-        self.data.metadata[k] = v
+        self.data.metadata[key] = value
 
 ########################################################################################################################
 # set_next_administrator
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_next_administrator(self, params):
-        sp.verify(sp.sender == self.data.admin, message = Error.ErrorMessage.unauthorized_user())
+        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
         self.data.next_admin = sp.some(params)
 
 ########################################################################################################################
@@ -191,8 +191,8 @@ class DaoMajorityVoting(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def validate_new_administrator(self):
-        sp.verify(self.data.next_admin.is_some(), message = Error.ErrorMessage.no_next_admin())
-        sp.verify(sp.sender == self.data.next_admin.open_some(), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.data.next_admin.is_some(), message=Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_admin.open_some(), message=Error.ErrorMessage.not_admin())
         self.data.admin = self.data.next_admin.open_some()
         self.data.next_admin = sp.none
 
@@ -202,8 +202,8 @@ class DaoMajorityVoting(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_poll_leader(self, address):
         # Asserts
-        sp.verify(~self.data.poll_leader.is_some(), Error.ErrorMessage.dao_already_registered())
-        sp.verify(sp.sender == self.data.admin, Error.ErrorMessage.unauthorized_user())
+        sp.verify(~self.data.poll_leader.is_some(), message=Error.ErrorMessage.dao_already_registered())
+        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
 
         # Set the poll leader contract address
         self.data.poll_leader = sp.some(address)
@@ -217,8 +217,8 @@ class DaoMajorityVoting(sp.Contract):
         sp.set_type(total_available_voters, sp.TNat)
 
         # Asserts
-        sp.verify(self.data.vote_state == NONE, Error.ErrorMessage.dao_vote_in_progress())
-        sp.verify(sp.sender == self.data.poll_leader.open_some(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.data.vote_state == NONE, message=Error.ErrorMessage.dao_vote_in_progress())
+        sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
 
         # Define the quorum depending on how it is configured in the governance parameters
         new_quorum = sp.local('', self.data.current_dynamic_quorum_value)
@@ -232,14 +232,14 @@ class DaoMajorityVoting(sp.Contract):
         # Create the poll data for this vote
         self.data.poll_descriptor = sp.some(
             sp.record(
-                vote_nay = sp.nat(0),
-                vote_yay = sp.nat(0),
-                vote_abstain = sp.nat(0),
-                total_votes = sp.nat(0),
-                voting_start_block = start_block,
-                voting_end_block = end_block,
-                vote_id = self.data.vote_id,
-                quorum = new_quorum.value,
+                vote_nay=sp.nat(0),
+                vote_yay=sp.nat(0),
+                vote_abstain=sp.nat(0),
+                total_votes=sp.nat(0),
+                voting_start_block=start_block,
+                voting_end_block=end_block,
+                vote_id=self.data.vote_id,
+                quorum=new_quorum.value,
                 voters=sp.map(l={}, tkey=sp.TAddress, tvalue=VOTE_RECORD_TYPE)
         ))
 
@@ -260,13 +260,13 @@ class DaoMajorityVoting(sp.Contract):
         sp.set_type(params, sp.TRecord(votes=sp.TNat, address=sp.TAddress, vote_value=sp.TNat, vote_id=sp.TNat))
 
         # Asserts
-        sp.verify(sp.sender == self.data.poll_leader.open_some(), Error.ErrorMessage.unauthorized_user())
-        sp.verify(self.data.vote_state == IN_PROGRESS, Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.poll_descriptor.is_some(), Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(~self.data.poll_descriptor.open_some().voters.contains(params.address), Error.ErrorMessage.dao_vote_already_received())
-        sp.verify(self.data.poll_descriptor.open_some().vote_id == params.vote_id, Error.ErrorMessage.dao_invalid_vote_id())
-        sp.verify(sp.level >= self.data.poll_descriptor.open_some().voting_start_block, Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(sp.level <= self.data.poll_descriptor.open_some().voting_end_block, Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.data.vote_state == IN_PROGRESS, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(~self.data.poll_descriptor.open_some().voters.contains(params.address), message=Error.ErrorMessage.dao_vote_already_received())
+        sp.verify(self.data.poll_descriptor.open_some().vote_id == params.vote_id, message=Error.ErrorMessage.dao_invalid_vote_id())
+        sp.verify(sp.level >= self.data.poll_descriptor.open_some().voting_start_block, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(sp.level <= self.data.poll_descriptor.open_some().voting_end_block, message=Error.ErrorMessage.dao_no_vote_open())
 
         # Register new vote
         new_poll = sp.local('new_poll', self.data.poll_descriptor.open_some())
@@ -297,11 +297,11 @@ class DaoMajorityVoting(sp.Contract):
         sp.set_type(params, sp.TNat)
 
         # Asserts
-        sp.verify(self.data.vote_state == IN_PROGRESS, Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(sp.sender == self.data.poll_leader.open_some(), Error.ErrorMessage.unauthorized_user())
-        sp.verify(self.data.poll_descriptor.is_some(), Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(params == self.data.poll_descriptor.open_some().vote_id, Error.ErrorMessage.dao_invalid_vote_id())
-        sp.verify(sp.level > self.data.poll_descriptor.open_some().voting_end_block, Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.vote_state == IN_PROGRESS, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(params == self.data.poll_descriptor.open_some().vote_id, message=Error.ErrorMessage.dao_invalid_vote_id())
+        sp.verify(sp.level > self.data.poll_descriptor.open_some().voting_end_block, message=Error.ErrorMessage.dao_no_vote_open())
 
         # Calculate whether voting thresholds were met.
         total_opinionated_votes = self.data.poll_descriptor.open_some().vote_yay + self.data.poll_descriptor.open_some().vote_nay
@@ -340,7 +340,7 @@ class DaoMajorityVoting(sp.Contract):
         sp.set_type(params.amount, sp.TMutez)
 
         # Asserts
-        sp.verify(self.data.admin == sp.sender, Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.data.admin == sp.sender, message=Error.ErrorMessage.unauthorized_user())
 
         # Send mutez
         sp.send(params.destination, params.amount)
@@ -350,8 +350,8 @@ class DaoMajorityVoting(sp.Contract):
 # Helper functions
 ################################################################
 ################################################################
-    def call(self, c, x):
-        sp.transfer(x, sp.mutez(0), c)
+    def call(self, destination, arg):
+        sp.transfer(arg, sp.mutez(0), destination)
 
     def update_quorum(self):
         last_weight = (self.data.poll_descriptor.open_some().quorum * DYNAMIC_QUORUM_CURRENT_QUORUM_WEIGHT) // SCALE
@@ -412,17 +412,17 @@ class DaoMajorityVoting(sp.Contract):
         sp.result(self.data.vote_id)
 
     @sp.offchain_view(pure=True)
-    def get_historical_outcome_data(self, id):
+    def get_historical_outcome_data(self, outcome_id):
         """Get all historical outcomes ids.
         """
-        sp.verify(self.data.outcomes.contains(id), Error.ErrorMessage.dao_invalid_outcome_id())
-        sp.result(self.data.outcomes[id])
+        sp.verify(self.data.outcomes.contains(outcome_id), message=Error.ErrorMessage.dao_invalid_outcome_id())
+        sp.result(self.data.outcomes[outcome_id])
 
     @sp.offchain_view(pure=True)
     def get_current_poll_data(self):
         """Get all current poll data if it exists.
         """
-        sp.verify(self.data.poll_descriptor.is_some(), Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
         sp.result(self.data.poll_descriptor.open_some())
 
     @sp.offchain_view(pure=True)

@@ -16,9 +16,9 @@ PollOutcome = sp.io.import_script_from_url("file:dao/helper/dao_poll_outcome.py"
 # - level (nat): The block level the vote was cast on.
 # - votes (nat): The number of tokens voted with.
 VOTE_RECORD_TYPE = sp.TRecord(
-  vote_value = sp.TNat,
-  level = sp.TNat,
-  votes = sp.TNat,
+  vote_value=sp.TNat,
+  level=sp.TNat,
+  votes=sp.TNat,
 ).layout(("vote_value",
           ("level", "votes")))
 
@@ -34,16 +34,16 @@ VOTE_RECORD_TYPE = sp.TRecord(
 # - phase_2_voting_start_block: Tezos start block of the phase 2
 # - phase_1_voters: Record of the voters data in phase 1 (phase 2 is recorded in the majority contract)
 MAJORITY_POLL_DATA = sp.TRecord(
-    phase_1_vote_objection = sp.TNat,
-    phase_1_voting_start_block = sp.TNat,
-    phase_1_voting_end_block = sp.TNat,
-    vote_id = sp.TNat,
-    total_voters = sp.TNat,
+    phase_1_vote_objection=sp.TNat,
+    phase_1_voting_start_block=sp.TNat,
+    phase_1_voting_end_block=sp.TNat,
+    vote_id=sp.TNat,
+    total_voters=sp.TNat,
     phase_1_objection_threshold=sp.TNat,
-    phase_2_needed = sp.TBool,
-    phase_2_vote_id = sp.TNat,
-    phase_2_voting_start_block = sp.TNat,
-    phase_1_voters = sp.TMap(sp.TAddress, VOTE_RECORD_TYPE)
+    phase_2_needed=sp.TBool,
+    phase_2_vote_id=sp.TNat,
+    phase_2_voting_start_block=sp.TNat,
+    phase_1_voters=sp.TMap(sp.TAddress, VOTE_RECORD_TYPE)
 ).layout(("phase_1_vote_objection",
           ("phase_1_voting_start_block",
            ("phase_1_voting_end_block",
@@ -61,9 +61,9 @@ MAJORITY_POLL_DATA = sp.TRecord(
 # - vote_length_blocks: Length of the vote in blocks
 # - percentage_for_objection: Percentage that needs to be reached to reject the proposal in phase 1 and go to phase 2
 GOVERNANCE_PARAMETERS_TYPE = sp.TRecord(
-  vote_delay_blocks = sp.TNat,
-  vote_length_blocks = sp.TNat,
-  percentage_for_objection = sp.TNat
+  vote_delay_blocks=sp.TNat,
+  vote_length_blocks=sp.TNat,
+  percentage_for_objection=sp.TNat
 ).layout(("vote_delay_blocks",
           ("vote_length_blocks", "percentage_for_objection")))
 
@@ -177,16 +177,16 @@ class DaoOptOutVoting(sp.Contract):
 # set_metadata
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
-    def set_metadata(self, k, v):
+    def set_metadata(self, key, value):
         sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
-        self.data.metadata[k] = v
+        self.data.metadata[key] = value
 
 ########################################################################################################################
 # set_next_administrator
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_next_administrator(self, params):
-        sp.verify(sp.sender == self.data.admin, message = Error.ErrorMessage.unauthorized_user())
+        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
         self.data.next_admin = sp.some(params)
 
 ########################################################################################################################
@@ -194,8 +194,8 @@ class DaoOptOutVoting(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def validate_new_administrator(self):
-        sp.verify(self.data.next_admin.is_some(), message = Error.ErrorMessage.no_next_admin())
-        sp.verify(sp.sender == self.data.next_admin.open_some(), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.data.next_admin.is_some(), message=Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_admin.open_some(), message=Error.ErrorMessage.not_admin())
         self.data.admin = self.data.next_admin.open_some()
         self.data.next_admin = sp.none
 
@@ -205,8 +205,8 @@ class DaoOptOutVoting(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_poll_leader(self, address):
         # Asserts
-        sp.verify(~self.data.poll_leader.is_some(), Error.ErrorMessage.dao_already_registered())
-        sp.verify(sp.sender == self.data.admin, Error.ErrorMessage.unauthorized_user())
+        sp.verify(~self.data.poll_leader.is_some(), message=Error.ErrorMessage.dao_already_registered())
+        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
 
         # Set address
         self.data.poll_leader = sp.some(address)
@@ -217,8 +217,8 @@ class DaoOptOutVoting(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_phase_2_contract(self, address):
         # Asserts
-        sp.verify(~self.data.phase_2_majority_vote_contract.is_some(), Error.ErrorMessage.dao_already_registered())
-        sp.verify(sp.sender == self.data.admin, Error.ErrorMessage.unauthorized_user())
+        sp.verify(~self.data.phase_2_majority_vote_contract.is_some(), message=Error.ErrorMessage.dao_already_registered())
+        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
 
         # Set address
         self.data.phase_2_majority_vote_contract = sp.some(address)
@@ -232,9 +232,9 @@ class DaoOptOutVoting(sp.Contract):
         sp.set_type(total_available_voters, sp.TNat)
 
         # Asserts
-        sp.verify(self.data.phase_2_majority_vote_contract.is_some(), Error.ErrorMessage.dao_vote_in_progress())
-        sp.verify(self.data.vote_state == NONE, Error.ErrorMessage.dao_vote_in_progress())
-        sp.verify(sp.sender == self.data.poll_leader.open_some(), Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.data.phase_2_majority_vote_contract.is_some(), message=Error.ErrorMessage.dao_vote_in_progress())
+        sp.verify(self.data.vote_state == NONE, message=Error.ErrorMessage.dao_vote_in_progress())
+        sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
 
         # Compute the objection threshold using the percentage and the number of possible voters
         objection_threshold = (total_available_voters * self.data.governance_parameters.percentage_for_objection) // SCALE
@@ -246,12 +246,12 @@ class DaoOptOutVoting(sp.Contract):
         # Create the vote data
         self.data.poll_descriptor = sp.some(
             sp.record(
-                phase_1_vote_objection = sp.nat(0),
-                phase_1_voting_start_block = start_block,
-                phase_1_voting_end_block = end_block,
-                vote_id = self.data.vote_id,
-                total_voters = total_available_voters,
-                phase_1_objection_threshold = objection_threshold,
+                phase_1_vote_objection=sp.nat(0),
+                phase_1_voting_start_block=start_block,
+                phase_1_voting_end_block=end_block,
+                vote_id=self.data.vote_id,
+                total_voters=total_available_voters,
+                phase_1_objection_threshold=objection_threshold,
                 phase_2_needed=sp.bool(False),
                 phase_2_vote_id=sp.nat(0),
                 phase_2_voting_start_block=sp.nat(0),
@@ -275,9 +275,9 @@ class DaoOptOutVoting(sp.Contract):
         sp.set_type(params, sp.TRecord(votes=sp.TNat, address=sp.TAddress, vote_value=sp.TNat, vote_id=sp.TNat))
 
         # Asserts
-        sp.verify(sp.sender == self.data.poll_leader.open_some(), Error.ErrorMessage.unauthorized_user())
-        sp.verify(self.data.poll_descriptor.is_some(), Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.poll_descriptor.open_some().vote_id == params.vote_id, Error.ErrorMessage.dao_invalid_vote_id())
+        sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.poll_descriptor.open_some().vote_id == params.vote_id, message=Error.ErrorMessage.dao_invalid_vote_id())
 
         # Call the right voting function depending of the current phase
         sp.if self.data.vote_state == PHASE_1_OPT_OUT:
@@ -299,10 +299,10 @@ class DaoOptOutVoting(sp.Contract):
         sp.set_type(params, PROPOSE_CALLBACK_TYPE)
 
         # Asserts
-        sp.verify(self.data.vote_state == STARTING_PHASE_2, Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.poll_descriptor.is_some(), Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.vote_state == STARTING_PHASE_2, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
         sp.verify(self.data.phase_2_majority_vote_contract.open_some() == sp.sender,
-                  Error.ErrorMessage.dao_invalid_voting_strat())
+                  message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Update the poll data
         new_poll = sp.local('new_poll', self.data.poll_descriptor.open_some())
@@ -322,9 +322,9 @@ class DaoOptOutVoting(sp.Contract):
         sp.set_type(params, sp.TNat)
 
         # Asserts
-        sp.verify(sp.sender == self.data.poll_leader.open_some(), Error.ErrorMessage.unauthorized_user())
-        sp.verify(self.data.poll_descriptor.is_some(), Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(params == self.data.poll_descriptor.open_some().vote_id, Error.ErrorMessage.dao_invalid_vote_id())
+        sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(params == self.data.poll_descriptor.open_some().vote_id, message=Error.ErrorMessage.dao_invalid_vote_id())
 
         # Call the right end vote function depending on the phase of the vote
         sp.if self.data.vote_state == PHASE_1_OPT_OUT:
@@ -346,12 +346,12 @@ class DaoOptOutVoting(sp.Contract):
         sp.set_type(params, sp.TRecord(voting_id=sp.TNat, voting_outcome=sp.TNat))
 
         # Asserts
-        sp.verify(self.data.vote_state == ENDING_PHASE_2, Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.poll_descriptor.is_some(), Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.vote_state == ENDING_PHASE_2, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
         sp.verify(self.data.phase_2_majority_vote_contract.open_some() == sp.sender,
-                  Error.ErrorMessage.dao_invalid_voting_strat())
-        sp.verify(~self.data.outcomes.contains(self.data.vote_id), Error.ErrorMessage.dao_invalid_voting_strat())
-        sp.verify(params.voting_id == self.data.poll_descriptor.open_some().phase_2_vote_id, Error.ErrorMessage.dao_invalid_voting_strat())
+                  message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(~self.data.outcomes.contains(self.data.vote_id), message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(params.voting_id == self.data.poll_descriptor.open_some().phase_2_vote_id, message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Record the vote outcome
         self.data.outcomes[self.data.poll_descriptor.open_some().vote_id] = sp.record(
@@ -371,7 +371,7 @@ class DaoOptOutVoting(sp.Contract):
         sp.set_type(params.amount, sp.TMutez)
 
         # Asserts
-        sp.verify(self.data.admin == sp.sender, Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.data.admin == sp.sender, message=Error.ErrorMessage.unauthorized_user())
 
         # Send mutez
         sp.send(params.destination, params.amount)
@@ -382,8 +382,8 @@ class DaoOptOutVoting(sp.Contract):
 # Helper functions
 ################################################################
 ################################################################
-    def call(self, c, x):
-        sp.transfer(x, sp.mutez(0), c)
+    def call(self, destination, arg):
+        sp.transfer(arg, sp.mutez(0), destination)
 
     def callback_leader_start(self):
         leaderContractHandle = sp.contract(
@@ -441,9 +441,9 @@ class DaoOptOutVoting(sp.Contract):
 
     def phase_1_vote(self, params):
         # Asserts
-        sp.verify(~self.data.poll_descriptor.open_some().phase_1_voters.contains(params.address), Error.ErrorMessage.dao_vote_already_received())
-        sp.verify(sp.level >= self.data.poll_descriptor.open_some().phase_1_voting_start_block, Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(sp.level <= self.data.poll_descriptor.open_some().phase_1_voting_end_block, Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(~self.data.poll_descriptor.open_some().phase_1_voters.contains(params.address), message=Error.ErrorMessage.dao_vote_already_received())
+        sp.verify(sp.level >= self.data.poll_descriptor.open_some().phase_1_voting_start_block, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(sp.level <= self.data.poll_descriptor.open_some().phase_1_voting_end_block, message=Error.ErrorMessage.dao_no_vote_open())
 
         # Record the vote in phase 1
         new_poll = sp.local('new_poll', self.data.poll_descriptor.open_some())
@@ -458,20 +458,20 @@ class DaoOptOutVoting(sp.Contract):
 
     def phase_2_vote(self, params):
         # Asserts
-        sp.verify(self.data.phase_2_majority_vote_contract.is_some(), Error.ErrorMessage.dao_not_registered())
+        sp.verify(self.data.phase_2_majority_vote_contract.is_some(), message=Error.ErrorMessage.dao_not_registered())
 
         # It is phase 2 so call the vote function of the majority contract
         self.call_voting_strategy_vote(params.votes, params.address, params.vote_value)
 
     def phase_1_end(self):
         # Asserts
-        sp.verify(sp.level > self.data.poll_descriptor.open_some().phase_1_voting_end_block, Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(sp.level > self.data.poll_descriptor.open_some().phase_1_voting_end_block, message=Error.ErrorMessage.dao_no_vote_open())
 
         # Compute the outcome of the vote in phase 1
         # If the proposal is rejected, go to phase 2. If not, record the vote and close.
         sp.if self.data.poll_descriptor.open_some().phase_1_vote_objection >= self.data.poll_descriptor.open_some().phase_1_objection_threshold:
             self.data.vote_state = STARTING_PHASE_2
-            sp.verify(self.data.phase_2_majority_vote_contract.is_some(), Error.ErrorMessage.dao_not_registered())
+            sp.verify(self.data.phase_2_majority_vote_contract.is_some(), message=Error.ErrorMessage.dao_not_registered())
             new_poll = sp.local('new_poll', self.data.poll_descriptor.open_some())
             new_poll.value.phase_2_needed = sp.bool(True)
             self.data.poll_descriptor = sp.some(new_poll.value)
@@ -486,7 +486,7 @@ class DaoOptOutVoting(sp.Contract):
 
     def phase_2_end(self):
         # Asserts
-        sp.verify(self.data.phase_2_majority_vote_contract.is_some(), Error.ErrorMessage.dao_not_registered())
+        sp.verify(self.data.phase_2_majority_vote_contract.is_some(), message=Error.ErrorMessage.dao_not_registered())
 
         # Change the state of the contract
         self.data.vote_state = ENDING_PHASE_2
@@ -524,17 +524,17 @@ class DaoOptOutVoting(sp.Contract):
         sp.result(self.data.vote_id)
 
     @sp.offchain_view(pure=True)
-    def get_historical_outcome_data(self, id):
+    def get_historical_outcome_data(self, outcome_id):
         """Get all historical outcomes ids.
         """
-        sp.verify(self.data.outcomes.contains(id), Error.ErrorMessage.dao_invalid_outcome_id())
-        sp.result(self.data.outcomes[id])
+        sp.verify(self.data.outcomes.contains(outcome_id), message=Error.ErrorMessage.dao_invalid_outcome_id())
+        sp.result(self.data.outcomes[outcome_id])
 
     @sp.offchain_view(pure=True)
     def get_current_poll_data(self):
         """Get all current poll data if it exists.
         """
-        sp.verify(self.data.poll_descriptor.is_some(), Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
         sp.result(self.data.poll_descriptor.open_some())
 
     @sp.offchain_view(pure=True)

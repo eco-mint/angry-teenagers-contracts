@@ -82,7 +82,7 @@ FORMAT_MIMETYPE = sp.utils.bytes_of_string('"mimeType":')
 ## values are all `Unit`.
 class Operator_set:
     def make(self):
-        return sp.big_map(tkey=OPERATOR_TYPE, tvalue = sp.TUnit)
+        return sp.big_map(tkey=OPERATOR_TYPE, tvalue=sp.TUnit)
 
     def make_key(self, owner, operator, token_id):
         metakey = sp.record(owner=owner,
@@ -184,10 +184,10 @@ class AngryTeenagers(sp.Contract):
         )
 
         self.init(
-            ledger = sp.big_map(tkey=TOKEN_ID, tvalue=sp.TAddress),
+            ledger=sp.big_map(tkey=TOKEN_ID, tvalue=sp.TAddress),
             operators=self.operator_set.make(),
 
-            voting_power = sp.big_map(tkey=sp.TAddress, tvalue=BALANCE_RECORD_TYPE),
+            voting_power=sp.big_map(tkey=sp.TAddress, tvalue=BALANCE_RECORD_TYPE),
 
             # Administrator
             administrator=administrator,
@@ -199,7 +199,7 @@ class AngryTeenagers(sp.Contract):
             paused=sp.bool(False),
 
             # Minted tokens
-            minted_tokens = sp.nat(0),
+            minted_tokens=sp.nat(0),
 
             # What3words set file in ipfs
             what3words_file_ipfs=what3words_file_ipfs,
@@ -208,18 +208,18 @@ class AngryTeenagers(sp.Contract):
             total_supply=total_supply,
 
             # Token metadata
-            token_metadata = sp.big_map(l={}, tkey=TOKEN_ID, tvalue=sp.TPair(TOKEN_ID, sp.TMap(sp.TString, sp.TBytes))),
-            extra_token_metadata = sp.big_map(l={}, tkey=TOKEN_ID, tvalue=sp.TRecord(token_id =TOKEN_ID, token_info = sp.TMap(sp.TString, sp.TBytes))),
+            token_metadata=sp.big_map(l={}, tkey=TOKEN_ID, tvalue=sp.TPair(TOKEN_ID, sp.TMap(sp.TString, sp.TBytes))),
+            extra_token_metadata=sp.big_map(l={}, tkey=TOKEN_ID, tvalue=sp.TRecord(token_id =TOKEN_ID, token_info = sp.TMap(sp.TString, sp.TBytes))),
 
-            generic_image_ipfs = generic_image_ipfs,
-            generic_image_ipfs_display = generic_image_ipfs_display,
-            generic_image_ipfs_thumbnail = generic_image_ipfs_thumbnail,
+            generic_image_ipfs=generic_image_ipfs,
+            generic_image_ipfs_display=generic_image_ipfs_display,
+            generic_image_ipfs_thumbnail=generic_image_ipfs_thumbnail,
 
-            project_oracles_stream = project_oracles_stream,
+            project_oracles_stream=project_oracles_stream,
 
-            royalties = royalties_bytes,
+            royalties=royalties_bytes,
 
-            metadata = metadata
+            metadata=metadata
         )
 
         list_of_views = [
@@ -263,16 +263,16 @@ class AngryTeenagers(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def balance_of(self, params):
         # paused may mean that balances are meaningless:
-        sp.verify( ~self.is_paused(), message = Error.ErrorMessage.unauthorized_user())
+        sp.verify( ~self.is_paused(), message=Error.ErrorMessage.unauthorized_user())
         sp.set_type(params, BALANCE_OF_FUNCTION_TYPE)
         def f_process_request(req):
             sp.verify(self.data.ledger.contains(req.token_id), message=Error.ErrorMessage.token_undefined())
             sp.if self.data.ledger[req.token_id] == req.owner:
                 sp.result(sp.record(
-                        request = sp.record(
-                            owner = sp.set_type_expr(req.owner, sp.TAddress),
-                            token_id = sp.set_type_expr(req.token_id, sp.TNat)),
-                        balance = 1))
+                        request=sp.record(
+                        owner=sp.set_type_expr(req.owner, sp.TAddress),
+                        token_id=sp.set_type_expr(req.token_id, sp.TNat)),
+                        balance=1))
             sp.else:
                 sp.result(sp.record(
                     request=sp.record(
@@ -344,60 +344,60 @@ class AngryTeenagers(sp.Contract):
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
     def mutez_transfer(self, params):
-        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
         sp.set_type(params.destination, sp.TAddress)
         sp.set_type(params.amount, sp.TMutez)
         sp.send(params.destination, params.amount)
 
     @sp.entry_point(check_no_incoming_transfer=True)
-    def set_metadata(self, k, v):
-        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
-        self.data.metadata[k] = v
+    def set_metadata(self, key, value):
+        sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
+        self.data.metadata[key] = value
 
     @sp.entry_point(check_no_incoming_transfer=True)
-    def set_extra_token_metadata(self, tok, k2, v):
-        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
-        sp.if ~self.data.extra_token_metadata.contains(tok):
-            self.data.extra_token_metadata[tok] = sp.record(token_id=tok, token_info=sp.map(l={}, tkey=sp.TString, tvalue=sp.TBytes))
-        self.data.extra_token_metadata[tok].token_info[k2] = v
+    def set_extra_token_metadata(self, tokend_id, key, value):
+        sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
+        sp.if ~self.data.extra_token_metadata.contains(tokend_id):
+            self.data.extra_token_metadata[tokend_id] = sp.record(token_id=tokend_id, token_info=sp.map(l={}, tkey=sp.TString, tvalue=sp.TBytes))
+        self.data.extra_token_metadata[tokend_id].token_info[key] = value
 
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_pause(self, params):
-        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
         self.data.paused = params
 
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_next_administrator(self, params):
-        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
         self.data.next_administrator = sp.some(params)
 
     @sp.entry_point(check_no_incoming_transfer=True)
     def validate_new_administrator(self):
-        sp.verify(self.data.next_administrator.is_some(), message = Error.ErrorMessage.no_next_admin())
-        sp.verify(sp.sender == self.data.next_administrator.open_some(), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.data.next_administrator.is_some(), message=Error.ErrorMessage.no_next_admin())
+        sp.verify(sp.sender == self.data.next_administrator.open_some(), message=Error.ErrorMessage.not_admin())
         self.data.administrator = self.data.next_administrator.open_some()
         self.data.next_administrator = sp.none
 
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_sale_contract_administrator(self, params):
-        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
         self.data.sale_contract_administrator = params
 
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_artwork_administrator(self, params):
-        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
         self.data.artwork_administrator = params
 
     @sp.entry_point(check_no_incoming_transfer=True)
     def update_artwork_data(self, params):
-        sp.verify(self.is_artwork_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.is_artwork_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
         sp.set_type(params, UPDATE_ARTWORK_METADATA_FUNCTION_TYPE)
         sp.for artwork_metadata in params:
             sp.verify(self.data.ledger.contains(sp.fst(artwork_metadata)), message=Error.ErrorMessage.token_undefined())
-            sp.verify(self.data.token_metadata.contains(sp.fst(artwork_metadata)), Error.ErrorMessage.token_undefined())
+            sp.verify(self.data.token_metadata.contains(sp.fst(artwork_metadata)), message=Error.ErrorMessage.token_undefined())
             info = sp.local('info', sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]))
-            sp.verify(info.value.contains(REVEALED_METADATA), Error.ErrorMessage.token_undefined())
-            sp.verify(info.value[REVEALED_METADATA] == sp.utils.bytes_of_string("false"), Error.ErrorMessage.token_revealed())
+            sp.verify(info.value.contains(REVEALED_METADATA), message=Error.ErrorMessage.token_undefined())
+            sp.verify(info.value[REVEALED_METADATA] == sp.utils.bytes_of_string("false"), message=Error.ErrorMessage.token_revealed())
 
             my_map = sp.local('my_map', sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), REVEALED_METADATA, sp.some(sp.utils.bytes_of_string("true"))))
             my_map.value = sp.update_map(my_map.value, ARTIFACTURI_METADATA, sp.some((sp.snd(artwork_metadata)).artifact_uri))
@@ -426,7 +426,7 @@ class AngryTeenagers(sp.Contract):
         sp.set_type(params, sp.TBytes)
 
         # Asserts
-        sp.verify(self.is_administrator(sp.sender), message = Error.ErrorMessage.not_admin())
+        sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
 
         # Set the royalties field for NFTs not minted yet
         self.data.royalties = params
@@ -509,11 +509,11 @@ class AngryTeenagers(sp.Contract):
         sp.result(self.data.minted_tokens)
 
     @sp.offchain_view(pure=True)
-    def does_token_exist(self, tok):
+    def does_token_exist(self, token_id):
         """Akd whether a token exists.
         """
-        sp.set_type(tok, sp.TNat)
-        sp.result(self.data.ledger.contains(tok))
+        sp.set_type(token_id, sp.TNat)
+        sp.result(self.data.ledger.contains(token_id))
 
     @sp.offchain_view(pure=True)
     def all_tokens(self):
@@ -549,10 +549,10 @@ class AngryTeenagers(sp.Contract):
         sp.result(token_list.value)
 
     @sp.offchain_view(pure=True)
-    def total_supply(self, tok):
+    def total_supply(self, token_id):
         """Get the total supply.
         """
-        sp.set_type(tok, sp.TNat)
+        sp.set_type(token_id, sp.TNat)
         sp.result(self.data.total_supply)
 
     @sp.offchain_view(pure=True)
@@ -572,16 +572,16 @@ class AngryTeenagers(sp.Contract):
         )
 
     @sp.offchain_view(pure=True)
-    def get_balance(self, req):
+    def get_balance(self, request):
         """Get balance as defined in TZIP-012.
         """
         sp.set_type(
-            req, sp.TRecord(
+            request, sp.TRecord(
                 owner=sp.TAddress,
                 token_id=sp.TNat
             ).layout(("owner", "token_id")))
-        sp.verify(self.data.ledger.contains(req.token_id), message=Error.ErrorMessage.token_undefined())
-        sp.if self.data.ledger[req.token_id] == req.owner:
+        sp.verify(self.data.ledger.contains(request.token_id), message=Error.ErrorMessage.token_undefined())
+        sp.if self.data.ledger[request.token_id] == request.owner:
             sp.result(sp.nat(1))
         sp.else:
             sp.result(sp.nat(0))
@@ -594,15 +594,15 @@ class AngryTeenagers(sp.Contract):
         sp.result(self.data.project_oracles_stream)
 
     @sp.offchain_view(pure=True)
-    def token_metadata(self, tok):
+    def token_metadata(self, token_id):
         """Get token metadata
         """
-        sp.set_type(tok, sp.TNat)
-        sp.verify(tok < self.data.total_supply)
-        sp.verify(self.data.ledger.contains(tok), message=Error.ErrorMessage.token_undefined())
-        sp.verify(self.data.token_metadata.contains(tok), message=Error.ErrorMessage.token_undefined())
+        sp.set_type(token_id, sp.TNat)
+        sp.verify(token_id < self.data.total_supply)
+        sp.verify(self.data.ledger.contains(token_id), message=Error.ErrorMessage.token_undefined())
+        sp.verify(self.data.token_metadata.contains(token_id), message=Error.ErrorMessage.token_undefined())
 
-        sp.result(self.data.token_metadata[tok])
+        sp.result(self.data.token_metadata[token_id])
 
 ########################################################################################################################
 # Internal functions
@@ -658,12 +658,12 @@ class AngryTeenagers(sp.Contract):
                                                           sp.nat(7): sp.bytes('0x37'),
                                                           sp.nat(8): sp.bytes('0x38'),
                                                           sp.nat(9): sp.bytes('0x39')}, tkey=sp.TNat,
-                                                       tvalue=sp.TBytes));
+                                                       tvalue=sp.TBytes))
 
         x = sp.local('x', token_id)
         token_id_string = sp.local('token_id_string', sp.bytes('0x'))
         sp.if x.value == 0:
-            token_id_string.value = sp.concat([token_id_string.value, nat_to_bytes.value[0]]);
+            token_id_string.value = sp.concat([token_id_string.value, nat_to_bytes.value[0]])
         sp.else:
             sp.while 0 < x.value:
                 token_id_string.value = sp.concat([nat_to_bytes.value[x.value % 10], token_id_string.value])

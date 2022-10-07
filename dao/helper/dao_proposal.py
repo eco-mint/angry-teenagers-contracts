@@ -13,9 +13,9 @@ PROPOSAL_LAMBDA_TYPE = sp.TOption(sp.TLambda(sp.TUnit, sp.TList(sp.TOperation)))
 # - proposal (PROPOSAL_LAMBDA_TYPE): The code to execute.
 # - Voting type: Right it is either a majority vote or a opt out vote
 PROPOSAL_TYPE = sp.TRecord(
-  title = sp.TString,
-  description_link = sp.TString,
-  description_hash = sp.TString,
-  proposal_lambda = PROPOSAL_LAMBDA_TYPE,
-  voting_strategy = sp.TNat
+  title=sp.TString,
+  description_link=sp.TString,
+  description_hash=sp.TString,
+  proposal_lambda=PROPOSAL_LAMBDA_TYPE,
+  voting_strategy=sp.TNat
 ).layout(("title", ("description_link", ("description_hash", ("proposal_lambda", "voting_strategy")))))

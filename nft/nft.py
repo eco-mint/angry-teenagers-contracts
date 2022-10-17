@@ -566,10 +566,10 @@ class AngryTeenagers(sp.Contract):
         """Get the total supply for one token_id.
         """
         sp.set_type(token_id, sp.TNat)
-        sp.if self.data.ledger.contains(token_id):
+        sp.if token_id < self.data.minted_tokens:
             sp.result(sp.nat(1))
         sp.else:
-            sp.result(sp.nat(0))
+            sp.failwith(message=Error.Fa2ErrorMessage.insufficient_balance())
 
     @sp.offchain_view(pure=True)
     def is_operator(self, query):

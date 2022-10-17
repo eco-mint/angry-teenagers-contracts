@@ -525,10 +525,9 @@ class DaoOptOutVoting(sp.Contract):
 
     @sp.offchain_view(pure=True)
     def get_historical_outcome_data(self, outcome_id):
-        """Get all historical outcomes ids.
+        """Get historical data per outcome id.
         """
-        sp.verify(self.data.outcomes.contains(outcome_id), message=Error.ErrorMessage.dao_invalid_outcome_id())
-        sp.result(self.data.outcomes[outcome_id])
+        sp.result(self.data.outcomes.get(outcome_id, message=Error.ErrorMessage.dao_invalid_outcome_id()))
 
     @sp.offchain_view(pure=True)
     def get_current_poll_data(self):

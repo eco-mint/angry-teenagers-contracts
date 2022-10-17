@@ -91,7 +91,7 @@ class SimulatedLeaderPoll(sp.Contract):
     def propose_callback(self, params):
         sp.set_type(params, sp.TNat)
         self.data.propose_callback_called_times = self.data.propose_callback_called_times + 1
-        self.data.propose_callback_id = params.id
+        self.data.propose_callback_id = params
 
     @sp.entry_point()
     def end_callback(self, params):
@@ -230,24 +230,24 @@ def unit_test_start_with_dynamic_quorum(is_default = True):
 
         scenario.h2("Test the start function with a dynamic quorum.")
 
+        snapshot_block = sp.nat(1213)
         total_available_voters = sp.nat(100)
 
         scenario.p("1. Cannot start if not poll leader contract are registered")
-        c1.start(total_available_voters).run(valid=False, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=total_available_voters, level=snapshot_block)).run(valid=False, sender=simulated_poll_leader_contract.address)
 
         scenario.p("2. Register poll_leader contract")
         c1.set_poll_leader(simulated_poll_leader_contract.address).run(valid=True, sender=admin)
 
         scenario.p("3. Only poll_leader can start the polling")
-        c1.start(total_available_voters).run(valid=False, sender=alice)
+        c1.start(sp.record(total_available_voters=total_available_voters, level=snapshot_block)).run(valid=False, sender=alice)
 
         scenario.p("3. Finally start")
         scenario.verify(~c1.data.poll_descriptor.is_some())
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_id == 100)
-        scenario.verify(simulated_poll_leader_contract.data.propose_callback_snapshot_block == 100)
         scenario.verify(c1.data.vote_state == DAO.NONE)
-        c1.start(total_available_voters).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=total_available_voters, level=snapshot_block)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("4. Check it is started")
         scenario.verify(c1.data.poll_descriptor.is_some())
@@ -255,6 +255,7 @@ def unit_test_start_with_dynamic_quorum(is_default = True):
         scenario.verify(c1.data.poll_descriptor.open_some().vote_yay == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().vote_abstain == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().total_votes == 0)
+        scenario.verify(c1.data.poll_descriptor.open_some().snapshot_block == 1213)
         scenario.verify(c1.data.poll_descriptor.open_some().vote_id == 0)
         scenario.verify(sp.len(c1.data.poll_descriptor.open_some().voters) == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().quorum == c1.data.current_dynamic_quorum_value)
@@ -267,7 +268,6 @@ def unit_test_start_with_dynamic_quorum(is_default = True):
         scenario.verify(simulated_poll_leader_contract.data.end_callback_called_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 1)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_id == 0)
-        scenario.verify(simulated_poll_leader_contract.data.propose_callback_snapshot_block == start_block)
 
 # Description: Test the start function.
 def unit_test_start_with_fixed_quorum(is_default = True):
@@ -279,6 +279,7 @@ def unit_test_start_with_fixed_quorum(is_default = True):
 
         scenario.h2("Test the start function with a fixed quorum.")
 
+        snapshot_block = sp.nat(1213)
         total_available_voters = sp.nat(100)
 
         scenario.p("1. Register poll_leader contract")
@@ -288,9 +289,8 @@ def unit_test_start_with_fixed_quorum(is_default = True):
         scenario.verify(~c1.data.poll_descriptor.is_some())
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_id == 100)
-        scenario.verify(simulated_poll_leader_contract.data.propose_callback_snapshot_block == 100)
         scenario.verify(c1.data.vote_state == DAO.NONE)
-        c1.start(total_available_voters).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=total_available_voters, level=snapshot_block)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Check it is started")
         scenario.verify(c1.data.poll_descriptor.is_some())
@@ -298,6 +298,7 @@ def unit_test_start_with_fixed_quorum(is_default = True):
         scenario.verify(c1.data.poll_descriptor.open_some().vote_yay == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().vote_abstain == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().total_votes == 0)
+        scenario.verify(c1.data.poll_descriptor.open_some().snapshot_block == 1213)
         scenario.verify(c1.data.poll_descriptor.open_some().vote_id == 0)
         scenario.verify(sp.len(c1.data.poll_descriptor.open_some().voters) == 0)
         fixed_quorum = (total_available_voters * c1.data.governance_parameters.fixed_quorum_percentage) // DAO.SCALE
@@ -311,7 +312,6 @@ def unit_test_start_with_fixed_quorum(is_default = True):
         scenario.verify(simulated_poll_leader_contract.data.end_callback_called_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 1)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_id == 0)
-        scenario.verify(simulated_poll_leader_contract.data.propose_callback_snapshot_block == start_block)
 
 # Description: Test the vote function.
 def unit_test_vote(is_default = True):
@@ -331,7 +331,7 @@ def unit_test_vote(is_default = True):
         c1.vote(alice_vote_param_valid_yay).run(valid=False, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Start poll")
-        c1.start(100).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=100, level=1213)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("4. Only poll leader can send the vote")
         c1.vote(alice_vote_param_valid_yay).run(valid=False, sender=john.address)
@@ -390,6 +390,7 @@ def unit_test_vote(is_default = True):
         scenario.verify_equal(c1.data.poll_descriptor.open_some().vote_yay, 46)
         scenario.verify_equal(c1.data.poll_descriptor.open_some().vote_abstain, 362)
         scenario.verify_equal(c1.data.poll_descriptor.open_some().total_votes, 538)
+        scenario.verify_equal(c1.data.poll_descriptor.open_some().snapshot_block, 1213)
         scenario.verify(c1.data.poll_descriptor.open_some().vote_id == 0)
         scenario.verify(sp.len(c1.data.poll_descriptor.open_some().voters) == 6)
 
@@ -412,7 +413,7 @@ def unit_test_end_valid_call(is_default = True):
         c1.end(0).run(valid=False, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Start poll")
-        c1.start(100).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=100, level=1213)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("2. Poll is started but start block is not reached. Cannot close")
         c1.end(0).run(valid=False, sender=simulated_poll_leader_contract.address, level=sp.level + 30)
@@ -443,7 +444,7 @@ def unit_test_end_valid_call(is_default = True):
         scenario.verify(c1.data.vote_id == 1)
         scenario.verify(c1.data.vote_state == DAO.NONE)
         scenario.verify(~c1.data.poll_descriptor.is_some())
-        c1.start(1000).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=1000, level=1213)).run(valid=True, sender=simulated_poll_leader_contract.address)
         scenario.verify(c1.data.vote_state == DAO.IN_PROGRESS)
         scenario.verify(c1.data.poll_descriptor.is_some())
         scenario.verify(c1.data.poll_descriptor.open_some().vote_id == 1)
@@ -461,7 +462,7 @@ def unit_test_end_passed_but_quorum_not_reached_with_fixed_quorum(is_default = T
         c1.set_poll_leader(simulated_poll_leader_contract.address).run(valid=True, sender=admin)
 
         scenario.p("2. Start poll")
-        c1.start(1000).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=1000, level=1213)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Add votes")
         chris_vote_param_valid_yay = sp.record(votes=sp.nat(238), address=chris.address, vote_value=DAO.VoteValue.YAY, vote_id=sp.nat(0))
@@ -489,6 +490,7 @@ def unit_test_end_passed_but_quorum_not_reached_with_fixed_quorum(is_default = T
         scenario.verify(c1.data.outcomes[0].poll_data.vote_nay == 1)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_abstain == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.total_votes == 249)
+        scenario.verify(c1.data.outcomes[0].poll_data.snapshot_block == 1213)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_start_block == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
@@ -508,7 +510,7 @@ def unit_test_end_passed_1_with_quorum_reached_with_fixed_quorum(is_default = Tr
         c1.set_poll_leader(simulated_poll_leader_contract.address).run(valid=True, sender=admin)
 
         scenario.p("2. Start poll")
-        c1.start(1000).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=1000, level=1213)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Add votes")
         chris_vote_param_valid_yay = sp.record(votes=sp.nat(239), address=chris.address, vote_value=DAO.VoteValue.YAY, vote_id=sp.nat(0))
@@ -535,6 +537,7 @@ def unit_test_end_passed_1_with_quorum_reached_with_fixed_quorum(is_default = Tr
         scenario.verify(c1.data.outcomes[0].poll_data.vote_nay == 1)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_abstain == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.total_votes == 250)
+        scenario.verify(c1.data.outcomes[0].poll_data.snapshot_block == 1213)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_start_block == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
@@ -554,7 +557,7 @@ def unit_test_end_passed_2_with_quorum_reached_with_fixed_quorum(is_default = Tr
         c1.set_poll_leader(simulated_poll_leader_contract.address).run(valid=True, sender=admin)
 
         scenario.p("2. Start poll")
-        c1.start(100).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=100, level=1213)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Add votes")
         chris_vote_param_valid_yay = sp.record(votes=sp.nat(85), address=chris.address, vote_value=DAO.VoteValue.YAY, vote_id=sp.nat(0))
@@ -581,6 +584,7 @@ def unit_test_end_passed_2_with_quorum_reached_with_fixed_quorum(is_default = Tr
         scenario.verify(c1.data.outcomes[0].poll_data.vote_nay == 15)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_abstain == 0)
         scenario.verify(c1.data.outcomes[0].poll_data.total_votes == 100)
+        scenario.verify(c1.data.outcomes[0].poll_data.snapshot_block == 1213)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_start_block == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
@@ -600,7 +604,7 @@ def unit_test_end_passed_3_with_quorum_reached_with_fixed_quorum(is_default = Tr
         c1.set_poll_leader(simulated_poll_leader_contract.address).run(valid=True, sender=admin)
 
         scenario.p("2. Start poll")
-        c1.start(5992).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=5992, level=222)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Add votes")
         chris_vote_param_valid_yay = sp.record(votes=sp.nat(3648), address=chris.address, vote_value=DAO.VoteValue.YAY, vote_id=sp.nat(0))
@@ -627,6 +631,7 @@ def unit_test_end_passed_3_with_quorum_reached_with_fixed_quorum(is_default = Tr
         scenario.verify(c1.data.outcomes[0].poll_data.vote_nay == 644)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_abstain == 1556)
         scenario.verify(c1.data.outcomes[0].poll_data.total_votes == 5848)
+        scenario.verify(c1.data.outcomes[0].poll_data.snapshot_block == 222)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_start_block == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
@@ -646,7 +651,7 @@ def unit_test_end_not_passed_1_with_quorum_reached_with_fixed_quorum(is_default 
         c1.set_poll_leader(simulated_poll_leader_contract.address).run(valid=True, sender=admin)
 
         scenario.p("2. Start poll")
-        c1.start(1000).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=1000, level=890)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Add votes")
         chris_vote_param_valid_yay = sp.record(votes=sp.nat(1), address=chris.address, vote_value=DAO.VoteValue.YAY, vote_id=sp.nat(0))
@@ -673,6 +678,7 @@ def unit_test_end_not_passed_1_with_quorum_reached_with_fixed_quorum(is_default 
         scenario.verify(c1.data.outcomes[0].poll_data.vote_nay == 239)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_abstain == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.total_votes == 250)
+        scenario.verify(c1.data.outcomes[0].poll_data.snapshot_block == 890)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_start_block == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
@@ -692,7 +698,7 @@ def unit_test_end_not_passed_2_with_quorum_reached_with_fixed_quorum(is_default 
         c1.set_poll_leader(simulated_poll_leader_contract.address).run(valid=True, sender=admin)
 
         scenario.p("2. Start poll")
-        c1.start(100).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=100, level=1213)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Add votes")
         chris_vote_param_valid_yay = sp.record(votes=sp.nat(84), address=chris.address, vote_value=DAO.VoteValue.YAY, vote_id=sp.nat(0))
@@ -719,6 +725,7 @@ def unit_test_end_not_passed_2_with_quorum_reached_with_fixed_quorum(is_default 
         scenario.verify(c1.data.outcomes[0].poll_data.vote_nay == 16)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_abstain == 0)
         scenario.verify(c1.data.outcomes[0].poll_data.total_votes == 100)
+        scenario.verify(c1.data.outcomes[0].poll_data.snapshot_block == 1213)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_start_block == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
@@ -738,7 +745,7 @@ def unit_test_end_not_passed_3_with_quorum_reached_with_fixed_quorum(is_default 
         c1.set_poll_leader(simulated_poll_leader_contract.address).run(valid=True, sender=admin)
 
         scenario.p("2. Start poll")
-        c1.start(5992).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=5992, level=100)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Add votes")
         chris_vote_param_valid_yay = sp.record(votes=sp.nat(3647), address=chris.address, vote_value=DAO.VoteValue.YAY, vote_id=sp.nat(0))
@@ -765,6 +772,7 @@ def unit_test_end_not_passed_3_with_quorum_reached_with_fixed_quorum(is_default 
         scenario.verify(c1.data.outcomes[0].poll_data.vote_nay == 645)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_abstain == 1556)
         scenario.verify(c1.data.outcomes[0].poll_data.total_votes == 5848)
+        scenario.verify(c1.data.outcomes[0].poll_data.snapshot_block == 100)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_start_block == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
@@ -787,7 +795,7 @@ def unit_test_end_dynamic_quorum(is_default = True):
         scenario.verify(c1.data.current_dynamic_quorum_value == sp.nat(2000))
 
         scenario.p("3. Start poll")
-        c1.start(10000).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=10000, level=200)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("4. Add votes")
         chris_vote_param_valid_yay = sp.record(votes=sp.nat(3000), address=chris.address, vote_value=DAO.VoteValue.YAY, vote_id=sp.nat(0))
@@ -814,6 +822,7 @@ def unit_test_end_dynamic_quorum(is_default = True):
         scenario.verify(c1.data.outcomes[0].poll_data.vote_nay == 400)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_abstain == 1000)
         scenario.verify(c1.data.outcomes[0].poll_data.total_votes == 4400)
+        scenario.verify(c1.data.outcomes[0].poll_data.snapshot_block == 200)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_start_block == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
@@ -825,7 +834,7 @@ def unit_test_end_dynamic_quorum(is_default = True):
         scenario.verify(c1.data.current_dynamic_quorum_value == new_quorum)
 
         scenario.p("9. Start another poll")
-        c1.start(10000).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=10000, level=300)).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("10. Add votes")
         chris_vote_param_valid_yay_2 = sp.record(votes=sp.nat(2000), address=chris.address, vote_value=DAO.VoteValue.YAY, vote_id=sp.nat(1))
@@ -852,6 +861,7 @@ def unit_test_end_dynamic_quorum(is_default = True):
         scenario.verify(c1.data.outcomes[0].poll_data.vote_nay == 400)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_abstain == 1000)
         scenario.verify(c1.data.outcomes[0].poll_data.total_votes == 4400)
+        scenario.verify(c1.data.outcomes[0].poll_data.snapshot_block == 200)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_start_block == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
@@ -863,6 +873,7 @@ def unit_test_end_dynamic_quorum(is_default = True):
         scenario.verify(c1.data.outcomes[1].poll_data.vote_nay == 2500)
         scenario.verify(c1.data.outcomes[1].poll_data.vote_abstain == 500)
         scenario.verify(c1.data.outcomes[1].poll_data.total_votes == 5000)
+        scenario.verify(c1.data.outcomes[1].poll_data.snapshot_block == 300)
         scenario.verify(c1.data.outcomes[1].poll_data.voting_start_block == 201)
         scenario.verify(c1.data.outcomes[1].poll_data.voting_end_block == 381)
         scenario.verify(c1.data.outcomes[1].poll_data.vote_id == 1)
@@ -887,7 +898,7 @@ def unit_test_offchain_views(is_default = True):
         c1.set_poll_leader(simulated_poll_leader_contract.address).run(valid=True, sender=admin)
 
         scenario.p("2. Start poll")
-        c1.start(10000).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=10000, level=1213)).run(valid=True, sender=simulated_poll_leader_contract.address)
         scenario.verify(c1.get_contract_state() == DAO.IN_PROGRESS)
 
         scenario.p("3. Add votes")
@@ -904,6 +915,7 @@ def unit_test_offchain_views(is_default = True):
         scenario.verify(poll_data_0.vote_nay == 400)
         scenario.verify(poll_data_0.vote_abstain == 1000)
         scenario.verify(poll_data_0.total_votes == 4400)
+        scenario.verify(poll_data_0.snapshot_block == 1213)
         scenario.verify(poll_data_0.voting_start_block == 10)
         scenario.verify(poll_data_0.voting_end_block == 190)
         scenario.verify(poll_data_0.vote_id == 0)
@@ -925,6 +937,7 @@ def unit_test_offchain_views(is_default = True):
         scenario.verify(outcome_0.poll_data.vote_nay == 400)
         scenario.verify(outcome_0.poll_data.vote_abstain == 1000)
         scenario.verify(outcome_0.poll_data.total_votes == 4400)
+        scenario.verify(outcome_0.poll_data.snapshot_block == 1213)
         scenario.verify(outcome_0.poll_data.voting_start_block == 10)
         scenario.verify(outcome_0.poll_data.voting_end_block == 190)
         scenario.verify(outcome_0.poll_data.vote_id == 0)
@@ -933,7 +946,7 @@ def unit_test_offchain_views(is_default = True):
         scenario.verify(c1.get_contract_state() == DAO.NONE)
 
         scenario.p("7. Start another poll")
-        c1.start(10000).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(sp.record(total_available_voters=10000, level=800)).run(valid=True, sender=simulated_poll_leader_contract.address)
         scenario.verify(c1.get_contract_state() == DAO.IN_PROGRESS)
 
         scenario.p("8. Add votes")
@@ -958,6 +971,7 @@ def unit_test_offchain_views(is_default = True):
         scenario.verify(outcome_1.poll_data.vote_nay == 2500)
         scenario.verify(outcome_1.poll_data.vote_abstain == 500)
         scenario.verify(outcome_1.poll_data.total_votes == 5000)
+        scenario.verify(outcome_1.poll_data.snapshot_block == 800)
         scenario.verify(outcome_1.poll_data.voting_start_block == 201)
         scenario.verify(outcome_1.poll_data.voting_end_block == 381)
         scenario.verify(outcome_1.poll_data.vote_id == 1)

@@ -229,9 +229,9 @@ class DaoOptOutVoting(sp.Contract):
 # start
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
-    def start(self, total_available_voters, snapshot_block):
+    def start(self, params):
         # Check type
-        sp.set_type(total_available_voters, sp.TNat)
+        sp.set_type(total_available_voters, sp.TRecord(total_available_voters=sp.TNat, level=sp.TNat))
 
         # Asserts
         sp.verify(self.data.phase_2_majority_vote_contract.is_some(), message=Error.ErrorMessage.dao_vote_in_progress())
@@ -239,10 +239,10 @@ class DaoOptOutVoting(sp.Contract):
         sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
 
         # Compute the objection threshold using the percentage and the number of possible voters
-        objection_threshold = (total_available_voters * self.data.governance_parameters.percentage_for_objection) // SCALE
+        objection_threshold = (params.total_available_voters * self.data.governance_parameters.percentage_for_objection) // SCALE
 
         # Compute the start and end block of the vote
-        start_block = sp.level + self.data.governance_parameters.vote_delay_blocks
+        start_block = params.level + self.data.governance_parameters.vote_delay_blocks
         end_block = start_block + self.data.governance_parameters.vote_length_blocks
 
         # Create the vote data
@@ -252,9 +252,9 @@ class DaoOptOutVoting(sp.Contract):
                 phase_1_voting_start_block=start_block,
                 phase_1_voting_end_block=end_block,
                 vote_id=self.data.vote_id,
-                total_voters=total_available_voters,
+                total_voters=params.total_available_voters,
                 phase_1_objection_threshold=objection_threshold,
-                phase_2_snapshot_block=snapshot_block,
+                phase_2_snapshot_block=params.level,
                 phase_2_needed=sp.bool(False),
                 phase_2_vote_id=sp.nat(0),
                 phase_2_voting_start_block=sp.nat(0),

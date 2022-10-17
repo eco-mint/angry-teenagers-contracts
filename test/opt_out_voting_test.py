@@ -67,7 +67,6 @@ class SimulatedLeaderPoll(sp.Contract):
         self.init(
             propose_callback_called_times = sp.nat(0),
             propose_callback_id = sp.nat(100),
-            propose_callback_snapshot_block = sp.nat(100),
             end_callback_called_times = sp.nat(0),
             end_callback_voting_id = sp.nat(100),
             end_callback_voting_outcome = sp.nat(100)
@@ -76,10 +75,9 @@ class SimulatedLeaderPoll(sp.Contract):
 
     @sp.entry_point()
     def propose_callback(self, params):
-        sp.set_type(params, sp.TRecord(id=sp.TNat, snapshot_block=sp.TNat))
+        sp.set_type(params, sp.TNat)
         self.data.propose_callback_called_times = self.data.propose_callback_called_times + 1
         self.data.propose_callback_id = params.id
-        self.data.propose_callback_snapshot_block = params.snapshot_block
 
     @sp.entry_point()
     def end_callback(self, params):
@@ -108,6 +106,7 @@ class SimulatedPhase2Voting(sp.Contract):
         self.init(
             start_called_times = sp.nat(0),
             total_available_voters = sp.nat(100),
+            snapshot_block = sp.nat(100),
             vote_called_times = sp.nat(0),
             last_votes = sp.nat(0),
             last_address = sp.none,
@@ -121,9 +120,10 @@ class SimulatedPhase2Voting(sp.Contract):
 
     @sp.entry_point()
     def start(self, params):
-        sp.set_type(params, sp.TRecord(total_available_voters=sp.TNat))
+        sp.set_type(params, sp.TRecord(total_available_voters=sp.TNat, snapshot_block=sp.TNat))
         self.data.start_called_times = self.data.start_called_times + 1
         self.data.total_available_voters = params.total_available_voters
+        self.data.snapshot_block = params.snapshot_block
 
     @sp.entry_point()
     def vote(self, params):

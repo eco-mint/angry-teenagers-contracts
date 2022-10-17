@@ -346,7 +346,7 @@ class AngryTeenagersDao(sp.Contract):
 
     def call_voting_strategy_start(self, total_available_voters):
         voteContractHandle = sp.contract(
-            sp.TRecord (total_available_voters=sp.TNat, level=sp.TNat),
+            sp.TRecord(total_available_voters=sp.TNat, level=sp.TNat),
             self.data.ongoing_poll.open_some().voting_strategy_address,
             "start"
         ).open_some("Interface mismatch")

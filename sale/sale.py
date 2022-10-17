@@ -44,7 +44,6 @@ ADMIN_OPEN_PRE_SALE_PARAM_TYPE=sp.TRecord(max_supply=sp.TNat, max_per_user=sp.TN
 ADMIN_OPEN_PUBLIC_SALE_PARAM_TYPE=sp.TRecord(max_supply=sp.TNat, max_per_user=sp.TNat, price=sp.TMutez, use_deadline=sp.TBool, deadline=sp.TTimestamp)
 ADMIN_OPEN_PUBLIC_SALE_WITH_ALLOWLIST_PARAM_TYPE=sp.TRecord(max_supply=sp.TNat, max_per_user=sp.TNat, price=sp.TMutez, use_deadline=sp.TBool, deadline=sp.TTimestamp, mint_right=sp.TBool, mint_discount=sp.TMutez)
 ADMIN_UPDATE_TOKEN_METADATA_PARAM_TYPE = sp.TList(FA2_UPDATE_TOKEN_METADATA_PARAM_TYPE)
-ADMIN_TRANSFER_ADDRESSES_TYPE = sp.TList(sp.TPair(sp.TAddress, sp.TNat))
 
 ########################################################################################################################
 ########################################################################################################################
@@ -52,12 +51,12 @@ ADMIN_TRANSFER_ADDRESSES_TYPE = sp.TList(sp.TPair(sp.TAddress, sp.TNat))
 ########################################################################################################################
 ########################################################################################################################
 class AngryTeenagersSale(sp.Contract):
-    def __init__(self, admin, transfer_addresses, metadata):
+    def __init__(self, admin, multisig_fund_address, metadata):
         self.init_type(
             sp.TRecord(
                 administrator=sp.TAddress,
                 next_administrator=sp.TOption(sp.TAddress),
-                transfer_addresses=sp.TList(sp.TPair(sp.TAddress, sp.TNat)),
+                multisig_fund_address=sp.TAddress,
                 fa2=sp.TAddress,
                 state=sp.TNat,
                 allowlist=sp.TSet(sp.TAddress),
@@ -80,7 +79,7 @@ class AngryTeenagersSale(sp.Contract):
         self.init(
             administrator=admin,
             next_administrator=sp.none,
-            transfer_addresses=transfer_addresses,
+            multisig_fund_address=multisig_fund_address,
             fa2=sp.address('KT1XmD6SKw6CFoxmGseB3ttws5n8sTXYkKkq'),
 
             state=sp.nat(STATE_NO_EVENT_OPEN_0),
@@ -498,19 +497,15 @@ class AngryTeenagersSale(sp.Contract):
         self.data.next_administrator = sp.none
 
 ########################################################################################################################
-# set_transfer_addresses
+# set_multisig_fund_address
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
-    def set_transfer_addresses(self, params):
+    def set_multisig_fund_address(self, params):
         """Change the addresses where Tez are transfered. Reserve to Admin"""
-        sp.set_type(params, ADMIN_TRANSFER_ADDRESSES_TYPE)
+        sp.set_type(params, sp.TAddress)
         sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
         total = sp.local("total", sp.nat(0))
-        self.data.transfer_addresses = params
-        sp.for address in params:
-            sp.verify(sp.snd(address) > 0, message=Error.ErrorMessage.invalid_amount())
-            total.value = total.value + sp.snd(address)
-        sp.verify(total.value == 100, message=Error.ErrorMessage.invalid_amount())
+        self.data.multisig_fund_address = params
 
 ########################################################################################################################
 # register_fa2
@@ -695,7 +690,4 @@ class AngryTeenagersSale(sp.Contract):
             self.data.event_user_balance[params.address] = params.amount
 
     def redirect_fund(self, amount):
-        sp.for item in self.data.transfer_addresses:
-            (address, percent) = sp.match_pair(item)
-            (quotient, remainder) = sp.match_pair(sp.ediv(sp.mul(amount, percent), 100).open_some())
-            sp.send(address, quotient)
+        sp.send(self.data.multisig_fund_address, amount)

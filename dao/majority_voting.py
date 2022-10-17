@@ -36,12 +36,13 @@ MAJORITY_POLL_DATA = sp.TRecord(
     vote_nay=sp.TNat,
     vote_abstain=sp.TNat,
     total_votes=sp.TNat,
+    snapshot_block=sp.TNat,
     voting_start_block=sp.TNat,
     voting_end_block=sp.TNat,
     vote_id=sp.TNat,
     quorum=sp.TNat,
     voters=sp.TMap(sp.TAddress, VOTE_RECORD_TYPE)
-).layout(("vote_yay", ("vote_nay", ("vote_abstain", ("total_votes", ("voting_start_block", ("voting_end_block", ("vote_id", ("quorum", "voters")))))))))
+).layout(("vote_yay", ("vote_nay", ("vote_abstain", ("total_votes", ("snapshot_block", ("voting_start_block", ("voting_end_block", ("vote_id", ("quorum", "voters"))))))))))
 
 # QUORUM_CAP_TYPE
 # - lower: Lowest possible value of the quorum percentage
@@ -212,7 +213,7 @@ class DaoMajorityVoting(sp.Contract):
 # start
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
-    def start(self, total_available_voters):
+    def start(self, total_available_voters, snapshot_block):
         # Check type
         sp.set_type(total_available_voters, sp.TNat)
 
@@ -236,6 +237,7 @@ class DaoMajorityVoting(sp.Contract):
                 vote_yay=sp.nat(0),
                 vote_abstain=sp.nat(0),
                 total_votes=sp.nat(0),
+                snapshot_block=snapshot_block,
                 voting_start_block=start_block,
                 voting_end_block=end_block,
                 vote_id=self.data.vote_id,
@@ -369,19 +371,12 @@ class DaoMajorityVoting(sp.Contract):
         self.data.current_dynamic_quorum_value = new_quorum.value
 
     def callback_leader_start(self):
-        leaderContractHandle = sp.contract(
-            sp.TRecord(
-                id=sp.TNat,
-                snapshot_block=sp.TNat
-            ),
+        leaderContractHandle = sp.contract(sp.TNat,
             self.data.poll_leader.open_some(),
             "propose_callback"
         ).open_some("Interface mismatch")
 
-        leaderContractArg = sp.record(
-            id=self.data.poll_descriptor.open_some().vote_id,
-            snapshot_block=self.data.poll_descriptor.open_some().voting_start_block
-        )
+        leaderContractArg = self.data.poll_descriptor.open_some().vote_id
         self.call(leaderContractHandle, leaderContractArg)
 
     def callback_leader_end(self, result):

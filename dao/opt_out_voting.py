@@ -40,6 +40,7 @@ MAJORITY_POLL_DATA = sp.TRecord(
     vote_id=sp.TNat,
     total_voters=sp.TNat,
     phase_1_objection_threshold=sp.TNat,
+    phase_2_snapshot_block=sp.TNat,
     phase_2_needed=sp.TBool,
     phase_2_vote_id=sp.TNat,
     phase_2_voting_start_block=sp.TNat,
@@ -50,9 +51,10 @@ MAJORITY_POLL_DATA = sp.TRecord(
             ("vote_id",
              ("total_voters",
               ("phase_1_objection_threshold",
+               ("phase_2_snapshot_block",
                 ("phase_2_needed",
                  ("phase_2_vote_id",
-                  ("phase_2_voting_start_block", "phase_1_voters"))))))))))
+                  ("phase_2_voting_start_block", "phase_1_voters")))))))))))
 
 # GOVERNANCE_PARAMETERS_TYPE
 # Governance parameters are defined when the contract is deployed and can only be changed
@@ -227,7 +229,7 @@ class DaoOptOutVoting(sp.Contract):
 # start
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
-    def start(self, total_available_voters):
+    def start(self, total_available_voters, snapshot_block):
         # Check type
         sp.set_type(total_available_voters, sp.TNat)
 
@@ -252,6 +254,7 @@ class DaoOptOutVoting(sp.Contract):
                 vote_id=self.data.vote_id,
                 total_voters=total_available_voters,
                 phase_1_objection_threshold=objection_threshold,
+                phase_2_snapshot_block=snapshot_block,
                 phase_2_needed=sp.bool(False),
                 phase_2_vote_id=sp.nat(0),
                 phase_2_voting_start_block=sp.nat(0),
@@ -387,18 +390,12 @@ class DaoOptOutVoting(sp.Contract):
 
     def callback_leader_start(self):
         leaderContractHandle = sp.contract(
-            sp.TRecord(
-                id=sp.TNat,
-                snapshot_block=sp.TNat
-            ),
+            sp.TNat,
             self.data.poll_leader.open_some(),
             "propose_callback"
         ).open_some("Interface mismatch")
 
-        leaderContractArg = sp.record(
-            id=self.data.poll_descriptor.open_some().vote_id,
-            snapshot_block=self.data.poll_descriptor.open_some().phase_1_voting_start_block
-        )
+        leaderContractArg = self.data.poll_descriptor.open_some().vote_id
         self.call(leaderContractHandle, leaderContractArg)
 
     def callback_leader_end(self, result):
@@ -429,14 +426,14 @@ class DaoOptOutVoting(sp.Contract):
             )
         self.call(voteContractHandle, voteContractArg)
 
-    def call_voting_strategy_start(self, total_available_voters):
+    def call_voting_strategy_start(self, total_available_voters, snapshot_block):
         voteContractHandle = sp.contract(
-            sp.TRecord (total_available_voters=sp.TNat),
+            sp.TRecord (total_available_voters=sp.TNat, level=sp.TNat),
             self.data.phase_2_majority_vote_contract.open_some(),
             "start"
         ).open_some("Interface mismatch")
 
-        voteContractArg = sp.record(total_available_voters=total_available_voters)
+        voteContractArg = sp.record(total_available_voters=total_available_voters, level=snapshot_block)
         self.call(voteContractHandle, voteContractArg)
 
     def phase_1_vote(self, params):
@@ -477,7 +474,7 @@ class DaoOptOutVoting(sp.Contract):
             self.data.poll_descriptor = sp.some(new_poll.value)
 
             # Call voting strategy to start the poll
-            self.call_voting_strategy_start(self.data.poll_descriptor.open_some().total_voters)
+            self.call_voting_strategy_start(self.data.poll_descriptor.open_some().total_voters, self.data.poll_descriptor.open_some().phase_2_snapshot_block)
         sp.else:
             self.data.outcomes[self.data.poll_descriptor.open_some().vote_id] = sp.record(
                 poll_outcome=PollOutcome.POLL_OUTCOME_PASSED,

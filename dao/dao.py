@@ -12,7 +12,6 @@ PollType = sp.io.import_script_from_url("file:dao/helper/dao_poll_type.py")
 ################################################################
 ################################################################
 
-PROPOSE_CALLBACK_TYPE = sp.TRecord(id=sp.TNat, snapshot_block=sp.TNat)
 POLL_MANAGER_TYPE = sp.TMap(sp.TNat, sp.TRecord(name=sp.TString, address=sp.TAddress))
 OUTCOMES_TYPE = sp.TBigMap(sp.TNat, PollOutcome.HISTORICAL_OUTCOME_TYPE)
 
@@ -196,7 +195,7 @@ class AngryTeenagersDao(sp.Contract):
                 author=sp.sender,
                 voting_strategy_address=self.data.poll_manager[proposal.voting_strategy].address,
                 voting_id=sp.nat(0),
-                snapshot_block=sp.nat(0)
+                snapshot_block=sp.level
             )
         )
 
@@ -221,7 +220,7 @@ class AngryTeenagersDao(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def propose_callback(self, params):
         # Check the type
-        sp.set_type(params, PROPOSE_CALLBACK_TYPE)
+        sp.set_type(params, sp.TNat)
 
         # Asserts
         sp.verify(self.data.state == STARTING_VOTE, message=Error.ErrorMessage.dao_no_vote_open())
@@ -235,8 +234,8 @@ class AngryTeenagersDao(sp.Contract):
                 proposal_id=self.data.ongoing_poll.open_some().proposal_id,
                 author=self.data.ongoing_poll.open_some().author,
                 voting_strategy_address=self.data.ongoing_poll.open_some().voting_strategy_address,
-                voting_id=params.id,
-                snapshot_block=params.snapshot_block
+                voting_id=params,
+                snapshot_block=self.data.ongoing_poll.open_some().snapshot_block
             )
         )
 
@@ -347,12 +346,12 @@ class AngryTeenagersDao(sp.Contract):
 
     def call_voting_strategy_start(self, total_available_voters):
         voteContractHandle = sp.contract(
-            sp.TRecord (total_available_voters=sp.TNat),
+            sp.TRecord (total_available_voters=sp.TNat, level=sp.TNat),
             self.data.ongoing_poll.open_some().voting_strategy_address,
             "start"
         ).open_some("Interface mismatch")
 
-        voteContractArg = sp.record(total_available_voters=total_available_voters)
+        voteContractArg = sp.record(total_available_voters=total_available_voters, level=sp.level)
         self.call(voteContractHandle, voteContractArg)
 
     def call_voting_strategy_vote(self, votes, address, vote_value):

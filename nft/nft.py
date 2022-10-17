@@ -19,7 +19,7 @@ OPERATOR_TYPE = sp.TRecord(owner=sp.TAddress, operator=sp.TAddress, token_id=TOK
 ARTWORKS_CONTAINER_FUNCTION_TYPE = sp.TRecord(artifact_uri=sp.TBytes, artifact_size=sp.TBytes, display_uri=sp.TBytes, display_size=sp.TBytes, thumbnail_uri=sp.TBytes, thumbnail_size=sp.TBytes, attributes=sp.TBytes)
 UPDATE_ARTWORK_METADATA_FUNCTION_TYPE = sp.TList(sp.TPair(TOKEN_ID, ARTWORKS_CONTAINER_FUNCTION_TYPE))
 
-BALANCE_RECORD_TYPE = sp.TMap(sp.TNat, sp.TNat)
+BALANCE_RECORD_TYPE = sp.TList(sp.TRecord(level=sp.TNat, value=sp.TNat))
 
 ########################################################################################################################
 ########################################################################################################################
@@ -464,15 +464,20 @@ class AngryTeenagers(sp.Contract):
 
         self.data.minted_tokens = self.data.minted_tokens + 1
 
-        sp.if ~self.data.voting_power.contains(params):
-            self.data.voting_power[params] = sp.map(l={}, tkey=sp.TNat, tvalue=sp.TNat)
 
-        with sp.match_cons(self.data.voting_power[params].items().rev()) as last_balance:
-            sp.verify(((sp.level == last_balance.head.key) |
-                   (sp.level > last_balance.head.key)), message=Error.ErrorMessage.balance_inconsistency())
-            self.data.voting_power[params][sp.level] = last_balance.head.value + 1
+        sp.if ~self.data.voting_power.contains(params):
+            self.data.voting_power[params] = sp.list(l={}, t=sp.TRecord(level=sp.TNat, value=sp.TNat))
+
+        with sp.match_cons(self.data.voting_power[params]) as last_balance:
+            sp.if sp.level == last_balance.head.level:
+                self.data.voting_power[params] = sp.cons(sp.record(level=sp.level, value=last_balance.head.value + 1), last_balance.tail)
+            sp.else:
+                sp.if sp.level > last_balance.head.level:
+                    self.data.voting_power[params] = sp.cons(sp.record(level=sp.level, value=last_balance.head.value + 1), self.data.voting_power[params])
+                sp.else:
+                    sp.failwith(message=Error.ErrorMessage.balance_inconsistency())
         sp.else:
-            self.data.voting_power[params][sp.level] = 1
+            self.data.voting_power[params] = sp.cons(sp.record(level=sp.level, value=1), self.data.voting_power[params])
 
         event = sp.record(sender=sp.sender, receiver=params)
         sp.emit(event, with_type=True, tag="Mint")
@@ -490,8 +495,8 @@ class AngryTeenagers(sp.Contract):
             sp.verify(sp.len(self.data.voting_power[address]) > 0, message=Error.ErrorMessage.balance_inconsistency())
             found = sp.local('found', sp.bool(False))
             result = sp.local('result', sp.nat(0))
-            sp.for elem in self.data.voting_power[address].items().rev():
-                sp.if (~(found.value)) & (elem.key <= level):
+            sp.for elem in self.data.voting_power[address]:
+                sp.if (~(found.value)) & (elem.level <= level):
                     result.value = elem.value
                     found.value = True
 
@@ -634,23 +639,35 @@ class AngryTeenagers(sp.Contract):
         sp.verify(self.data.voting_power.contains(sender), message=Error.ErrorMessage.balance_inconsistency())
         sp.verify(sp.len(self.data.voting_power[sender]) > 0,
                   message=Error.ErrorMessage.balance_inconsistency())
-        with sp.match_cons(self.data.voting_power[sender].items().rev()) as last_balance:
-            sp.verify(((sp.level == last_balance.head.key) |
-                       (sp.level > last_balance.head.key)), message=Error.ErrorMessage.balance_inconsistency())
+
+        # Update sender balances
+        with sp.match_cons(self.data.voting_power[sender]) as last_balance:
             sp.verify(last_balance.head.value > 0, message=Error.ErrorMessage.balance_inconsistency())
-            self.data.voting_power[sender][sp.level] = sp.is_nat(last_balance.head.value - 1).open_some()
+
+            sp.if sp.level == last_balance.head.level:
+                self.data.voting_power[sender] = sp.cons(sp.record(level=sp.level, value=sp.is_nat(last_balance.head.value - 1).open_some()), last_balance.tail)
+            sp.else:
+                sp.if sp.level > last_balance.head.level:
+                    self.data.voting_power[sender] = sp.cons(sp.record(level=sp.level, value=sp.is_nat(last_balance.head.value - 1).open_some()), self.data.voting_power[sender])
+                sp.else:
+                    sp.failwith(message=Error.ErrorMessage.balance_inconsistency())
         sp.else:
             sp.failwith(Error.ErrorMessage.balance_inconsistency())
 
+        # Update receiver balances
         sp.if ~self.data.voting_power.contains(receiver):
-            self.data.voting_power[receiver] = sp.map(l={}, tkey=sp.TNat, tvalue=sp.TNat)
+            self.data.voting_power[receiver] = sp.list(l={}, t = sp.TRecord(level=sp.TNat, value=sp.TNat))
 
-        with sp.match_cons(self.data.voting_power[receiver].items().rev()) as last_balance:
-            sp.verify(((sp.level == last_balance.head.key) |
-                   (sp.level > last_balance.head.key)), message=Error.ErrorMessage.balance_inconsistency())
-            self.data.voting_power[receiver][sp.level] = last_balance.head.value + 1
+        with sp.match_cons(self.data.voting_power[receiver]) as last_balance:
+            sp.if sp.level == last_balance.head.level:
+                self.data.voting_power[receiver] = sp.cons(sp.record(level=sp.level, value=last_balance.head.value + 1), last_balance.tail)
+            sp.else:
+                sp.if sp.level > last_balance.head.level:
+                    self.data.voting_power[receiver] = sp.cons(sp.record(level=sp.level, value=last_balance.head.value + 1), self.data.voting_power[receiver])
+                sp.else:
+                    sp.failwith(message=Error.ErrorMessage.balance_inconsistency())
         sp.else:
-            self.data.voting_power[receiver][sp.level] = 1
+            self.data.voting_power[receiver] = sp.cons(sp.record(level=sp.level, value=1), self.data.voting_power[receiver])
 
     def build_token_metadata(self, token_id):
         # set type

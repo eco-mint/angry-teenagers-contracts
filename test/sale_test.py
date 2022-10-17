@@ -62,7 +62,7 @@ class TestHelper():
         return scenario
 
     def create_contracts(scenario, admin, john, with_balance=False):
-        c1 = Sale.AngryTeenagersSale(admin.address, sp.list([sp.pair(admin.address, sp.nat(85)), sp.pair(john.address, sp.nat(15))]), sp.utils.metadata_of_url("https://example.com"))
+        c1 = Sale.AngryTeenagersSale(admin.address, admin.address, sp.utils.metadata_of_url("https://example.com"))
         if with_balance:
             c1.set_initial_balance(sp.mutez(300000000))
         scenario += c1
@@ -202,6 +202,7 @@ def unit_test_initial_storage(is_default = True):
 
         scenario.verify(c1.data.token_index == sp.nat(0))
         scenario.verify(c1.data.token_minted_in_event == sp.nat(0))
+        scenario.verify(c1.data.multisig_fund_address == admin.address)
 
 ########################################################################################################################
 # unit_test_admin_fill_allowlist
@@ -817,33 +818,28 @@ def unit_test_validate_new_administrator(is_default = True):
         scenario.verify(~c1.data.next_administrator.is_some())
 
 ########################################################################################################################
-# unit_test_set_transfer_addresses
+# unit_test_set_multisig_fund_address
 ########################################################################################################################
-def unit_test_set_transfer_addresses(is_default=True):
-    @sp.add_test(name="unit_test_set_transfer_addresses", is_default=is_default)
+def unit_test_set_multisig_fund_address(is_default=True):
+    @sp.add_test(name="unit_test_set_multisig_fund_address", is_default=is_default)
     def test():
-        scenario = TestHelper.create_scenario("unit_test_set_transfer_addresses")
+        scenario = TestHelper.create_scenario("unit_test_set_multisig_fund_address")
 
         admin, alice, bob, john = TestHelper.create_account(scenario)
         c1, c2, simulated_presale_contract = TestHelper.create_contracts(scenario, admin, john)
 
-        scenario.h2("Test the set_transfer_addresses entrypoint. (Who: Only for the admin)")
-        scenario.p("The transfer addresses are used to redirect the fund received when a user mints a NFTs to wallet.")
+        scenario.h2("Test the set_multisig_fund_address entrypoint. (Who: Only for the admin)")
+        scenario.p("The multisig_fund address is used to redirect the fund received when a user mints a NFTs to wallet.")
 
         scenario.p("1. Check that only the admin can call this entrypoint")
-        correct_param = sp.list([sp.pair(alice.address, 10), sp.pair(john.address, 90)])
-        c1.set_transfer_addresses(correct_param).run(valid=False, sender=john)
-        c1.set_transfer_addresses(correct_param).run(valid=False, sender=bob)
-        c1.set_transfer_addresses(correct_param).run(valid=False, sender=alice)
+        correct_param = alice.address
+        c1.set_multisig_fund_address(correct_param).run(valid=False, sender=john)
+        c1.set_multisig_fund_address(correct_param).run(valid=False, sender=bob)
+        c1.set_multisig_fund_address(correct_param).run(valid=False, sender=alice)
 
-        scenario.p("2. Check some invalid calls")
-        c1.set_transfer_addresses(sp.list([sp.pair(alice.address, 15), sp.pair(john.address, 90)])).run(valid=False, sender=admin)
-        c1.set_transfer_addresses(sp.list([sp.pair(alice.address, 99)])).run(valid=False, sender=admin)
-        c1.set_transfer_addresses(sp.list([sp.pair(alice.address, 2), sp.pair(john.address, 19), sp.pair(bob.address, 80)])).run(valid=False, sender=admin)
-
-        scenario.p("3. Change successfully the transfer address to Alice account and verify the storage is updated accordingly")
-        c1.set_transfer_addresses(correct_param).run(valid=True, sender=admin)
-        c1.set_transfer_addresses(sp.list([sp.pair(alice.address, 1), sp.pair(john.address, 19), sp.pair(bob.address, 80)])).run(valid=True, sender=admin)
+        scenario.p("2. Change successfully the transfer address to Alice account and verify the storage is updated accordingly")
+        c1.set_multisig_fund_address(correct_param).run(valid=True, sender=admin)
+        scenario.verify(c1.data.multisig_fund_address == alice.address)
 
 ########################################################################################################################
 # unit_test_register_fa2
@@ -1530,7 +1526,7 @@ unit_test_open_pub_sale_with_allowlist()
 unit_test_mint_and_give()
 unit_test_set_next_administrator()
 unit_test_validate_new_administrator()
-unit_test_set_transfer_addresses()
+unit_test_set_multisig_fund_address()
 unit_test_register_fa2()
 unit_test_user_mint_during_public_sale()
 unit_test_user_mint_during_pre_sale()

@@ -192,8 +192,7 @@ def unit_test_initial_storage(is_default = True):
         scenario.verify(c1.data.event_price == sp.mutez(0))
         scenario.verify(c1.data.event_max_supply == sp.nat(0))
         scenario.verify(c1.data.event_max_per_user == sp.nat(0))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
 
         scenario.verify(c1.data.public_allowlist_max_space == sp.nat(0))
         scenario.verify(c1.data.public_allowlist_space_taken == sp.nat(0))
@@ -315,24 +314,22 @@ def unit_test_open_event_priv_allowlist_reg(is_default = True):
 
         scenario.p(
             "2. Try to call the entrypoint with non-admin users. Verify it fails and the state of the contract stays unchanged.")
-        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=bob)
-        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=alice)
-        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=john)
+        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=bob)
+        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=alice)
+        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=john)
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_NO_EVENT_OPEN_0))
 
         scenario.p("3. Open successfully the event with the admin. Check the state of the contract is as expected.")
-        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=True, sender=admin)
+        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(10), deadline=sp.none)).run(valid=True, sender=admin)
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_EVENT_PRIV_ALLOWLIST_REG_1))
         scenario.verify(c1.data.event_price == sp.tez(10))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
 
         scenario.p("4. Check event can be closed and then the state of the contract returns to the expected state.")
         c1.close_any_open_event().run(valid=True, sender=admin)
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_NO_EVENT_WITH_PRIV_ALLOWLIST_READY_2))
         scenario.verify(c1.data.event_price == sp.tez(0))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
 
 ########################################################################################################################
 # unit_test_pay_to_enter_allowlist_priv
@@ -353,7 +350,7 @@ def unit_test_pay_to_enter_allowlist_priv(is_default = True):
 
         scenario.p("2. Verify the state of the contract")
         scenario.verify(sp.len(c1.data.allowlist) == 0)
-        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=True, sender=admin)
+        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(10), deadline=sp.none)).run(valid=True, sender=admin)
 
         scenario.p("3. Open the event to register into the allowlist for users in the pre-allowlist")
         scenario.p("4. Verify that:")
@@ -397,29 +394,28 @@ def unit_test_open_event_pub_allowlist_reg(is_default = True):
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_NO_EVENT_OPEN_0))
 
         scenario.p("2. Check only the admin can open this event")
-        c1.open_event_pub_allowlist_reg(sp.record(max_space=10, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(
+        c1.open_event_pub_allowlist_reg(sp.record(max_space=10, price=sp.tez(10), deadline=sp.none)).run(
             valid=False, sender=bob)
-        c1.open_event_pub_allowlist_reg(sp.record(max_space=10, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(
+        c1.open_event_pub_allowlist_reg(sp.record(max_space=10, price=sp.tez(10), deadline=sp.none)).run(
             valid=False, sender=alice)
-        c1.open_event_pub_allowlist_reg(sp.record(max_space=10, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(
+        c1.open_event_pub_allowlist_reg(sp.record(max_space=10, price=sp.tez(10), deadline=sp.none)).run(
             valid=False, sender=john)
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_NO_EVENT_OPEN_0))
 
         scenario.p("3. Check this entrypoint fails if the number of space allowed is 0")
-        c1.open_event_pub_allowlist_reg(sp.record(max_space=0, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(
+        c1.open_event_pub_allowlist_reg(sp.record(max_space=0, price=sp.tez(10), deadline=sp.none)).run(
             valid=False, sender=admin)
 
         scenario.p("4. Open the event successfully and:")
         scenario.p("4.1. Check the state of the contract is as expected")
         scenario.p("4.2. Check the event is configured as expected")
-        c1.open_event_pub_allowlist_reg(sp.record(max_space=10,price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(
+        c1.open_event_pub_allowlist_reg(sp.record(max_space=10,price=sp.tez(10), deadline=sp.none)).run(
             valid=True, sender=admin)
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_EVENT_PUB_ALLOWLIST_REG_3))
         scenario.verify(c1.data.public_allowlist_max_space == 10)
         scenario.verify(c1.data.public_allowlist_space_taken == 0)
         scenario.verify(c1.data.event_price == sp.tez(10))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
 
         scenario.p("5. Close the event and:")
         scenario.p("5.1. Check the state of the contract is as expected")
@@ -429,8 +425,7 @@ def unit_test_open_event_pub_allowlist_reg(is_default = True):
         scenario.verify(c1.data.public_allowlist_max_space == 0)
         scenario.verify(c1.data.public_allowlist_space_taken == 0)
         scenario.verify(c1.data.event_price == sp.tez(0))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
 
 ########################################################################################################################
 # unit_test_pay_to_enter_allowlist_pub
@@ -450,7 +445,7 @@ def unit_test_pay_to_enter_allowlist_pub(is_default = True):
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_NO_EVENT_OPEN_0))
 
         scenario.p("2. Open the public allowlist registration event")
-        c1.open_event_pub_allowlist_reg(sp.record(max_space=2,price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(
+        c1.open_event_pub_allowlist_reg(sp.record(max_space=2,price=sp.tez(10), deadline=sp.none)).run(
             valid=True, sender=admin)
 
         scenario.p("3. Check the state of the contract is as expected")
@@ -489,8 +484,7 @@ def unit_test_pay_to_enter_allowlist_pub(is_default = True):
         scenario.verify(c1.data.public_allowlist_max_space == 0)
         scenario.verify(c1.data.public_allowlist_space_taken == 0)
         scenario.verify(c1.data.event_price == sp.tez(0))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
 
         # Only 2 spots
         c1.pay_to_enter_allowlist_pub().run(valid=False, amount=sp.tez(10), sender=john)
@@ -522,25 +516,24 @@ def unit_test_open_pre_sale(is_default = True):
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_NO_EVENT_OPEN_0))
 
         scenario.p("2. Check that only admin can open a pre-sale")
-        c1.open_pre_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=bob)
-        c1.open_pre_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=alice)
+        c1.open_pre_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=bob)
+        c1.open_pre_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=alice)
 
         scenario.p("3. Check pre-sale can only be opened with consistent parameters")
-        c1.open_pre_sale(sp.record(max_supply=0, max_per_user=2, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=admin)
-        c1.open_pre_sale(sp.record(max_supply=6, max_per_user=0, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=admin)
-        c1.open_pre_sale(sp.record(max_supply=2, max_per_user=6, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=admin)
+        c1.open_pre_sale(sp.record(max_supply=0, max_per_user=2, price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=admin)
+        c1.open_pre_sale(sp.record(max_supply=6, max_per_user=0, price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=admin)
+        c1.open_pre_sale(sp.record(max_supply=2, max_per_user=6, price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=admin)
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_NO_EVENT_OPEN_0))
 
         scenario.p("4. Open the event successfully and:")
         scenario.p("4.1. Check the state of the contract is as expected")
         scenario.p("4.2. Check the event is configured as expected")
-        c1.open_pre_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=True, sender=admin)
+        c1.open_pre_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), deadline=sp.none)).run(valid=True, sender=admin)
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_EVENT_PRESALE_5))
         scenario.verify(c1.data.event_max_supply == 6)
         scenario.verify(c1.data.event_max_per_user == 2)
         scenario.verify(c1.data.event_price == sp.tez(10))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
 
         scenario.p("5. Close the event and:")
         scenario.p("5.1. Check the state of the contract is as expected")
@@ -550,8 +543,7 @@ def unit_test_open_pre_sale(is_default = True):
         scenario.verify(c1.data.event_max_supply == 0)
         scenario.verify(c1.data.event_max_per_user == 0)
         scenario.verify(c1.data.event_price == sp.tez(0))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
 
 ########################################################################################################################
 # unit_test_open_pub_sale
@@ -571,25 +563,24 @@ def unit_test_open_pub_sale(is_default = True):
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_NO_EVENT_OPEN_0))
 
         scenario.p("2. Check that only admin can open a public-sale")
-        c1.open_pub_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=bob)
-        c1.open_pub_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=alice)
+        c1.open_pub_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=bob)
+        c1.open_pub_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=alice)
 
         scenario.p("3. Check public-sale can only be opened with consistent parameters")
-        c1.open_pub_sale(sp.record(max_supply=0, max_per_user=2, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=admin)
-        c1.open_pub_sale(sp.record(max_supply=6, max_per_user=0, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=admin)
-        c1.open_pub_sale(sp.record(max_supply=2, max_per_user=6, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=admin)
+        c1.open_pub_sale(sp.record(max_supply=0, max_per_user=2, price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=admin)
+        c1.open_pub_sale(sp.record(max_supply=6, max_per_user=0, price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=admin)
+        c1.open_pub_sale(sp.record(max_supply=2, max_per_user=6, price=sp.tez(10), deadline=sp.none)).run(valid=False, sender=admin)
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_NO_EVENT_OPEN_0))
 
         scenario.p("4. Open the event successfully and:")
         scenario.p("4.1. Check the state of the contract is as expected")
         scenario.p("4.2. Check the event is configured as expected")
-        c1.open_pub_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=True, sender=admin)
+        c1.open_pub_sale(sp.record(max_supply=6, max_per_user=2, price=sp.tez(10), deadline=sp.none)).run(valid=True, sender=admin)
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_EVENT_PUBLIC_SALE_6))
         scenario.verify(c1.data.event_max_supply == 6)
         scenario.verify(c1.data.event_max_per_user == 2)
         scenario.verify(c1.data.event_price == sp.tez(10))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
         scenario.verify(c1.data.public_sale_allowlist_config.used == False)
         scenario.verify(c1.data.public_sale_allowlist_config.discount == sp.tez(0))
         scenario.verify(c1.data.public_sale_allowlist_config.minting_rights == False)
@@ -602,8 +593,7 @@ def unit_test_open_pub_sale(is_default = True):
         scenario.verify(c1.data.event_max_supply == 0)
         scenario.verify(c1.data.event_max_per_user == 0)
         scenario.verify(c1.data.event_price == sp.tez(0))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
 
 ########################################################################################################################
 # unit_test_open_pub_sale_with_allowlist
@@ -626,15 +616,13 @@ def unit_test_open_pub_sale_with_allowlist(is_default = True):
         c1.open_pub_sale_with_allowlist(sp.record(max_supply=6,
                                                            max_per_user=2,
                                                            price=sp.tez(10),
-                                                           use_deadline=False,
-                                                           deadline=sp.timestamp(0),
+                                                           deadline=sp.none,
                                                            mint_right=False,
                                                            mint_discount=sp.tez(0))).run(valid=False, sender=bob)
         c1.open_pub_sale_with_allowlist(sp.record(max_supply=6,
                                                            max_per_user=2,
                                                            price=sp.tez(10),
-                                                           use_deadline=False,
-                                                           deadline=sp.timestamp(0),
+                                                           deadline=sp.none,
                                                            mint_right=False,
                                                            mint_discount=sp.tez(0))).run(valid=False, sender=alice)
 
@@ -642,29 +630,25 @@ def unit_test_open_pub_sale_with_allowlist(is_default = True):
         c1.open_pub_sale_with_allowlist(sp.record(max_supply=0,
                                                            max_per_user=2,
                                                            price=sp.tez(10),
-                                                           use_deadline=False,
-                                                           deadline=sp.timestamp(0),
+                                                           deadline=sp.none,
                                                            mint_right=False,
                                                            mint_discount=sp.tez(0))).run(valid=False, sender=admin)
         c1.open_pub_sale_with_allowlist(sp.record(max_supply=6,
                                                            max_per_user=0,
                                                            price=sp.tez(10),
-                                                           use_deadline=False,
-                                                           deadline=sp.timestamp(0),
+                                                           deadline=sp.none,
                                                            mint_right=False,
                                                            mint_discount=sp.tez(0))).run(valid=False, sender=admin)
         c1.open_pub_sale_with_allowlist(sp.record(max_supply=2,
                                                            max_per_user=6,
                                                            price=sp.tez(10),
-                                                           use_deadline=False,
-                                                           deadline=sp.timestamp(0),
+                                                           deadline=sp.none,
                                                            mint_right=False,
                                                            mint_discount=sp.tez(0))).run(valid=False, sender=admin)
         c1.open_pub_sale_with_allowlist(sp.record(max_supply=2,
                                                            max_per_user=6,
                                                            price=sp.tez(10),
-                                                           use_deadline=False,
-                                                           deadline=sp.timestamp(0),
+                                                           deadline=sp.none,
                                                            mint_right=False,
                                                            mint_discount=sp.tez(11))).run(valid=False, sender=admin)
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_NO_EVENT_OPEN_0))
@@ -675,16 +659,14 @@ def unit_test_open_pub_sale_with_allowlist(is_default = True):
         c1.open_pub_sale_with_allowlist(sp.record(max_supply=6,
                                                            max_per_user=2,
                                                            price=sp.tez(10),
-                                                           use_deadline=False,
-                                                           deadline=sp.timestamp(0),
+                                                           deadline=sp.none,
                                                            mint_right=True,
                                                            mint_discount=sp.tez(5))).run(valid=True, sender=admin)
         scenario.verify(c1.data.state == sp.nat(Sale.STATE_EVENT_PUBLIC_SALE_6))
         scenario.verify(c1.data.event_max_supply == 6)
         scenario.verify(c1.data.event_max_per_user == 2)
         scenario.verify(c1.data.event_price == sp.tez(10))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
         scenario.verify(c1.data.public_sale_allowlist_config.used == True)
         scenario.verify(c1.data.public_sale_allowlist_config.discount == sp.tez(5))
         scenario.verify(c1.data.public_sale_allowlist_config.minting_rights == True)
@@ -697,8 +679,7 @@ def unit_test_open_pub_sale_with_allowlist(is_default = True):
         scenario.verify(c1.data.event_max_supply == 0)
         scenario.verify(c1.data.event_max_per_user == 0)
         scenario.verify(c1.data.event_price == sp.tez(0))
-        scenario.verify(c1.data.event_deadline == sp.timestamp(0))
-        scenario.verify(c1.data.event_use_deadline == False)
+        scenario.verify(c1.data.event_deadline == sp.none)
         scenario.verify(c1.data.public_sale_allowlist_config.used == False)
         scenario.verify(c1.data.public_sale_allowlist_config.discount == sp.tez(0))
         scenario.verify(c1.data.public_sale_allowlist_config.minting_rights == False)
@@ -725,7 +706,7 @@ def unit_test_mint_and_give(is_default=True):
         c1.open_pub_sale(sp.record(max_supply=100,
                                                            max_per_user=80,
                                                            price=sp.tez(10),
-                                                           use_deadline=False, deadline=sp.timestamp(0))).run(valid=True, sender=admin)
+                                                           deadline=sp.none)).run(valid=True, sender=admin)
 
         scenario.p("3. Check this entrypoint cannot be called when a sale is opened")
         c1.mint_and_give(sp.record(amount=2, address=bob.address)).run(valid=False, sender=admin)
@@ -890,7 +871,7 @@ def unit_test_user_mint_during_public_sale(is_default=True):
         c1.open_pub_sale(sp.record(max_supply=50,
                                             max_per_user=23,
                                             price=sp.tez(10),
-                                            use_deadline=False, deadline=sp.timestamp(0))).run(valid=True, sender=admin)
+                                            deadline=sp.none)).run(valid=True, sender=admin)
 
         scenario.p("3. Verify a users cannot mint more than allowed")
         c1.user_mint(sp.record(amount=24, address=alice.address)).run(valid=False, amount=sp.tez(240), sender=alice)
@@ -966,7 +947,7 @@ def unit_test_user_mint_during_pre_sale(is_default=True):
         c1.user_mint(sp.record(amount=8, address=alice.address)).run(valid=False, sender=alice)
 
         scenario.p("3. Start the pre-sale event")
-        c1.open_pre_sale(sp.record(max_supply=50, max_per_user=23, price=sp.tez(10), use_deadline=False, deadline=sp.timestamp(0))).run(valid=True,
+        c1.open_pre_sale(sp.record(max_supply=50, max_per_user=23, price=sp.tez(10), deadline=sp.none)).run(valid=True,
                                                                                                           sender=admin)
 
         scenario.p("4. Verify users cannot mint more than the number of defined NFT per users")
@@ -1049,8 +1030,7 @@ def unit_test_user_mint_during_public_sale_with_allowlist_discount(is_default=Tr
         c1.open_pub_sale_with_allowlist(sp.record(max_supply=50,
                                             max_per_user=23,
                                             price=sp.tez(10),
-                                            use_deadline=False,
-                                            deadline=sp.timestamp(0),
+                                            deadline=sp.none,
                                             mint_right=False,
                                             mint_discount=sp.tez(5),
                                             )).run(valid=True, sender=admin)
@@ -1133,8 +1113,7 @@ def unit_test_user_mint_during_public_sale_with_allowlist_mint_rights(is_default
         c1.open_pub_sale_with_allowlist(sp.record(max_supply=100,
                                             max_per_user=30,
                                             price=sp.tez(10),
-                                            use_deadline=False,
-                                            deadline=sp.timestamp(0),
+                                            deadline=sp.none,
                                             mint_right=True,
                                             mint_discount=sp.tez(0),
                                             )).run(valid=True, sender=admin)
@@ -1257,10 +1236,10 @@ def module_test_pre_sale_public_sale_with_allowlist(is_default=True):
         c1.admin_fill_pre_allowlist(sp.set(l=[bob.address, nat.address, gaston.address], t=sp.TAddress)).run(valid=True, sender=admin)
 
         scenario.p("3. Verify non admin accounts cannot open the private allowlist registration event")
-        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(3), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=bob)
+        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(3), deadline=sp.none)).run(valid=False, sender=bob)
 
         scenario.p("4. Open a private allowlist registration event")
-        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(3), use_deadline=False, deadline=sp.timestamp(0))).run(valid=True, sender=admin)
+        c1.open_event_priv_allowlist_reg(sp.record(price=sp.tez(3), deadline=sp.none)).run(valid=True, sender=admin)
 
         scenario.p("5. pay_to_enter_allowlist_pub cannot be called when private allowlist registration event is opened")
         c1.pay_to_enter_allowlist_pub().run(valid=False, amount=sp.tez(3), sender=bob)
@@ -1295,10 +1274,10 @@ def module_test_pre_sale_public_sale_with_allowlist(is_default=True):
         c1.pay_to_enter_allowlist_priv().run(valid=False, amount=sp.tez(3), sender=gaston)
 
         scenario.p("14. Verify only admin can open the public allowlist registration")
-        c1.open_event_pub_allowlist_reg(sp.record(max_space=2, price=sp.tez(5), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=bob)
+        c1.open_event_pub_allowlist_reg(sp.record(max_space=2, price=sp.tez(5), deadline=sp.none)).run(valid=False, sender=bob)
 
         scenario.p("15. Open the public allowlist registration event")
-        c1.open_event_pub_allowlist_reg(sp.record(max_space=2, price=sp.tez(5), use_deadline=False, deadline=sp.timestamp(0))).run(valid=True, sender=admin)
+        c1.open_event_pub_allowlist_reg(sp.record(max_space=2, price=sp.tez(5), deadline=sp.none)).run(valid=True, sender=admin)
         c1.pay_to_enter_allowlist_priv().run(valid=False, amount=sp.tez(5), sender=gaston)
 
 
@@ -1328,11 +1307,11 @@ def module_test_pre_sale_public_sale_with_allowlist(is_default=True):
         c1.close_any_open_event().run(valid=False, sender=admin)
 
         scenario.p("22. Verify only the admin can open a pre-sale event")
-        c1.open_pre_sale(sp.record(max_supply=50, max_per_user=15, price=sp.tez(100), use_deadline=False, deadline=sp.timestamp(0))).run(
+        c1.open_pre_sale(sp.record(max_supply=50, max_per_user=15, price=sp.tez(100), deadline=sp.none)).run(
             valid=False, sender=john)
 
         scenario.p("23. Successfully open a pre-sale event")
-        c1.open_pre_sale(sp.record(max_supply=50, max_per_user=15, price=sp.tez(100), use_deadline=False, deadline=sp.timestamp(0))).run(
+        c1.open_pre_sale(sp.record(max_supply=50, max_per_user=15, price=sp.tez(100), deadline=sp.none)).run(
             valid=True, sender=admin)
 
         scenario.p("24. Check the offchain view get_mint_token_available returns the expected result")
@@ -1378,8 +1357,7 @@ def module_test_pre_sale_public_sale_with_allowlist(is_default=True):
             max_supply=50,
             max_per_user=10,
             price=sp.tez(150),
-            use_deadline=False,
-            deadline=sp.timestamp(0),
+            deadline=sp.none,
             mint_right=True,
             mint_discount=sp.tez(100))).run(valid=False, sender=ben)
 
@@ -1388,8 +1366,7 @@ def module_test_pre_sale_public_sale_with_allowlist(is_default=True):
             max_supply=30,
             max_per_user=20,
             price=sp.tez(200),
-            use_deadline=False,
-            deadline=sp.timestamp(0),
+            deadline=sp.none,
             mint_right=True,
             mint_discount=sp.tez(100))).run(valid=True, sender=admin)
 
@@ -1480,13 +1457,13 @@ def module_test_public_sale(is_default=True):
         c1.open_pub_sale(sp.record(
             max_supply=30,
             max_per_user=20,
-            price=sp.tez(200), use_deadline=False, deadline=sp.timestamp(0))).run(valid=False, sender=bob)
+            price=sp.tez(200), deadline=sp.none)).run(valid=False, sender=bob)
 
         scenario.p("2. Successfully open a public sale without allowlist")
         c1.open_pub_sale(sp.record(
             max_supply=30,
             max_per_user=20,
-            price=sp.tez(200), use_deadline=False, deadline=sp.timestamp(0))).run(valid=True, sender=admin)
+            price=sp.tez(200), deadline=sp.none)).run(valid=True, sender=admin)
 
         scenario.p("3. Check users cannot mint more NFTs that the max number mintable per user in this event")
         c1.user_mint(sp.record(amount=21, address=alice.address)).run(valid=False, amount=sp.tez(4200), sender=alice)

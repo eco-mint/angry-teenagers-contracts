@@ -38,11 +38,11 @@ FA2_MINT_PARAM_TYPE = sp.TAddress
 
 ADMIN_FILL_ALLOWLIST_PARAM_TYPE=sp.TSet(sp.TAddress)
 ADMIN_FILL_PRE_ALLOWLIST_PARAM_TYPE=sp.TSet(sp.TAddress)
-ADMIN_OPEN_EVENT_PRIVATE_ALLOWLIST_REGISTRATION_PARAM_TYPE = sp.TRecord(price=sp.TMutez, deadline=sp.TOption(sp.TTimestamp))
-ADMIN_OPEN_EVENT_PUBLIC_ALLOWLIST_REGISTRATION_PARAM_TYPE = sp.TRecord(max_space=sp.TNat, price=sp.TMutez, deadline=sp.TOption(sp.TTimestamp))
-ADMIN_OPEN_PRE_SALE_PARAM_TYPE=sp.TRecord(max_supply=sp.TNat, max_per_user=sp.TNat, price=sp.TMutez, deadline=sp.TOption(sp.TTimestamp))
-ADMIN_OPEN_PUBLIC_SALE_PARAM_TYPE=sp.TRecord(max_supply=sp.TNat, max_per_user=sp.TNat, price=sp.TMutez, deadline=sp.TOption(sp.TTimestamp))
-ADMIN_OPEN_PUBLIC_SALE_WITH_ALLOWLIST_PARAM_TYPE=sp.TRecord(max_supply=sp.TNat, max_per_user=sp.TNat, price=sp.TMutez, deadline=sp.TOption(sp.TTimestamp), mint_right=sp.TBool, mint_discount=sp.TMutez)
+ADMIN_OPEN_EVENT_PRIVATE_ALLOWLIST_REGISTRATION_PARAM_TYPE = sp.TRecord(price=sp.TMutez)
+ADMIN_OPEN_EVENT_PUBLIC_ALLOWLIST_REGISTRATION_PARAM_TYPE = sp.TRecord(max_space=sp.TNat, price=sp.TMutez)
+ADMIN_OPEN_PRE_SALE_PARAM_TYPE=sp.TRecord(max_supply=sp.TNat, max_per_user=sp.TNat, price=sp.TMutez)
+ADMIN_OPEN_PUBLIC_SALE_PARAM_TYPE=sp.TRecord(max_supply=sp.TNat, max_per_user=sp.TNat, price=sp.TMutez)
+ADMIN_OPEN_PUBLIC_SALE_WITH_ALLOWLIST_PARAM_TYPE=sp.TRecord(max_supply=sp.TNat, max_per_user=sp.TNat, price=sp.TMutez, mint_right=sp.TBool, mint_discount=sp.TMutez)
 ADMIN_UPDATE_TOKEN_METADATA_PARAM_TYPE = sp.TList(FA2_UPDATE_TOKEN_METADATA_PARAM_TYPE)
 
 ########################################################################################################################
@@ -64,7 +64,6 @@ class AngryTeenagersSale(sp.Contract):
                 event_price=sp.TMutez,
                 event_max_supply=sp.TNat,
                 event_max_per_user=sp.TNat,
-                event_deadline=sp.TOption(sp.TTimestamp),
                 event_user_balance=sp.TBigMap(sp.TAddress, sp.TNat),
                 public_allowlist_max_space=sp.TNat,
                 public_allowlist_space_taken=sp.TNat,
@@ -90,7 +89,6 @@ class AngryTeenagersSale(sp.Contract):
             event_max_supply=sp.nat(0),
             event_max_per_user=sp.nat(0),
 
-            event_deadline=sp.none,
             event_user_balance=sp.big_map(l={}, tkey=sp.TAddress, tvalue=sp.TNat),
 
             public_allowlist_max_space=sp.nat(0),
@@ -235,11 +233,7 @@ class AngryTeenagersSale(sp.Contract):
 
         sp.set_type(params, ADMIN_OPEN_EVENT_PRIVATE_ALLOWLIST_REGISTRATION_PARAM_TYPE)
 
-        sp.if params.deadline.is_some():
-            sp.verify(params.deadline.open_some() > sp.now, message=Error.ErrorMessage.sale_invalid_deadline())
-
         self.data.event_price=params.price
-        self.data.event_deadline = params.deadline
 
         # Go to state STATE_EVENT_PRIV_ALLOWLIST_REG_1
         self.data.state = STATE_EVENT_PRIV_ALLOWLIST_REG_1
@@ -251,7 +245,6 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
     @sp.entry_point
     def pay_to_enter_allowlist_priv(self):
-        self.check_event_duration()
         # Only in state STATE_EVENT_PRIV_ALLOWLIST_REG_1
         sp.verify(self.data.state == STATE_EVENT_PRIV_ALLOWLIST_REG_1, message=Error.ErrorMessage.sale_event_already_open())
 
@@ -276,15 +269,11 @@ class AngryTeenagersSale(sp.Contract):
         sp.verify((self.data.state == STATE_NO_EVENT_OPEN_0) | (self.data.state == STATE_NO_EVENT_WITH_PRIV_ALLOWLIST_READY_2), Error.ErrorMessage.sale_event_already_open())
         sp.verify(params.max_space > 0, message=Error.ErrorMessage.invalid_parameter())
 
-        sp.if params.deadline.is_some():
-            sp.verify(params.deadline.open_some() > sp.now, message=Error.ErrorMessage.sale_invalid_deadline())
-
         sp.set_type(params, ADMIN_OPEN_EVENT_PUBLIC_ALLOWLIST_REGISTRATION_PARAM_TYPE)
 
         self.data.public_allowlist_max_space = params.max_space
         self.data.public_allowlist_space_taken = 0
         self.data.event_price=params.price
-        self.data.event_deadline = params.deadline
 
         # Go to state STATE_EVENT_PUB_ALLOWLIST_REG_3
         self.data.state = STATE_EVENT_PUB_ALLOWLIST_REG_3
@@ -297,8 +286,6 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
     @sp.entry_point
     def pay_to_enter_allowlist_pub(self):
-        self.check_event_duration()
-
         # Only in state STATE_EVENT_PUB_ALLOWLIST_REG_3
         sp.verify(self.data.state == STATE_EVENT_PUB_ALLOWLIST_REG_3, message=Error.ErrorMessage.sale_event_already_open())
 
@@ -339,10 +326,7 @@ class AngryTeenagersSale(sp.Contract):
         sp.verify(params.max_per_user > 0, message=Error.ErrorMessage.invalid_parameter())
         sp.verify(params.max_supply > params.max_per_user, message=Error.ErrorMessage.invalid_parameter())
 
-        sp.if params.deadline.is_some():
-            sp.verify(params.deadline.open_some() > sp.now, message=Error.ErrorMessage.sale_invalid_deadline())
-
-        self.start_sale_init(params.max_supply, params.max_per_user, params.price, params.deadline)
+        self.start_sale_init(params.max_supply, params.max_per_user, params.price)
 
         self.data.state = STATE_EVENT_PRESALE_5
 
@@ -368,14 +352,11 @@ class AngryTeenagersSale(sp.Contract):
         sp.verify(params.max_per_user > 0, message=Error.ErrorMessage.invalid_parameter())
         sp.verify(params.max_supply > params.max_per_user, message=Error.ErrorMessage.invalid_parameter())
 
-        sp.if params.deadline.is_some():
-            sp.verify(params.deadline.open_some() > sp.now, message=Error.ErrorMessage.sale_invalid_deadline())
-
         self.data.public_sale_allowlist_config.used = False
         self.data.public_sale_allowlist_config.discount = sp.mutez(0)
         self.data.public_sale_allowlist_config.minting_rights = False
 
-        self.start_sale_init(params.max_supply, params.max_per_user, params.price, params.deadline)
+        self.start_sale_init(params.max_supply, params.max_per_user, params.price)
 
         self.data.state = STATE_EVENT_PUBLIC_SALE_6
 
@@ -402,14 +383,11 @@ class AngryTeenagersSale(sp.Contract):
         sp.verify(params.max_supply > params.max_per_user, message=Error.ErrorMessage.invalid_parameter())
         sp.verify(params.price >= params.mint_discount, message=Error.ErrorMessage.invalid_parameter())
 
-        sp.if params.deadline.is_some():
-            sp.verify(params.deadline.open_some() > sp.now, message=Error.ErrorMessage.sale_invalid_deadline())
-
         self.data.public_sale_allowlist_config.used = True
         self.data.public_sale_allowlist_config.discount = params.mint_discount
         self.data.public_sale_allowlist_config.minting_rights = params.mint_right
 
-        self.start_sale_init(params.max_supply, params.max_per_user, params.price, params.deadline)
+        self.start_sale_init(params.max_supply, params.max_per_user, params.price)
 
         self.data.state = STATE_EVENT_PUBLIC_SALE_6
 
@@ -429,7 +407,6 @@ class AngryTeenagersSale(sp.Contract):
 ########################################################################################################################
     @sp.entry_point
     def user_mint(self, params):
-        self.check_event_duration()
         sp.set_type(params, sp.TRecord(amount=sp.TNat, address=sp.TAddress))
 
         sp.verify(params.amount > 0, message=Error.ErrorMessage.sale_no_token())
@@ -583,7 +560,6 @@ class AngryTeenagersSale(sp.Contract):
         self.data.event_price = sp.mutez(0)
         self.data.event_max_supply = sp.nat(0)
         self.data.event_max_per_user = sp.nat(0)
-        self.data.event_deadline =sp.none
         self.data.event_user_balance = sp.big_map(l={}, tkey=sp.TAddress, tvalue=sp.TNat)
         self.data.public_allowlist_max_space = sp.nat(0)
         self.data.public_allowlist_space_taken = sp.nat(0)
@@ -602,12 +578,6 @@ class AngryTeenagersSale(sp.Contract):
             sp.else:
                 self.data.state = STATE_NO_EVENT_OPEN_0
 
-    def check_event_duration(self):
-        sp.if self.is_any_event_open():
-            sp.if self.data.event_deadline.is_some():
-                sp.if sp.now >= self.data.event_deadline.open_some():
-                    self.stop_internal_event()
-
     def mint_internal(self, amount, address):
         # Mint token(s) and transfer them to user
         minted = sp.local("minted", sp.nat(0))
@@ -618,13 +588,12 @@ class AngryTeenagersSale(sp.Contract):
 
         self.data.token_index = self.data.token_index + amount
 
-    def start_sale_init(self, max_supply, max_per_user, price, deadline):
+    def start_sale_init(self, max_supply, max_per_user, price):
         self.data.event_user_balance = sp.big_map(l={}, tkey=sp.TAddress, tvalue=sp.TNat)
         self.data.token_minted_in_event = 0
         self.data.event_max_supply = max_supply
         self.data.event_max_per_user = max_per_user
         self.data.event_price = price
-        self.data.event_deadline = deadline
 
     def is_any_event_open(self):
         return (self.data.state == STATE_EVENT_PRIV_ALLOWLIST_REG_1) | \

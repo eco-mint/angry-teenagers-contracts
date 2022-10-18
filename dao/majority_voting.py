@@ -40,8 +40,9 @@ MAJORITY_POLL_DATA = sp.TRecord(
     voting_end_block=sp.TNat,
     vote_id=sp.TNat,
     quorum=sp.TNat,
+    total_available_voters=sp.TNat,
     voters=sp.TMap(sp.TAddress, VOTE_RECORD_TYPE)
-).layout(("vote_yay", ("vote_nay", ("vote_abstain", ("total_votes", ("voting_start_block", ("voting_end_block", ("vote_id", ("quorum", "voters")))))))))
+).layout(("vote_yay", ("vote_nay", ("vote_abstain", ("total_votes", ("voting_start_block", ("voting_end_block", ("vote_id", ("quorum", ("total_available_voters", "voters"))))))))))
 
 # QUORUM_CAP_TYPE
 # - lower: Lowest possible value of the quorum percentage
@@ -221,9 +222,11 @@ class DaoMajorityVoting(sp.Contract):
         sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
 
         # Define the quorum depending on how it is configured in the governance parameters
-        new_quorum = sp.local('', self.data.current_dynamic_quorum_value)
+        new_quorum = sp.local('', sp.nat(0))
         sp.if self.data.governance_parameters.fixed_quorum:
             new_quorum.value = (total_available_voters * self.data.governance_parameters.fixed_quorum_percentage) // SCALE
+        sp.else:
+            new_quorum.value = (total_available_voters * self.data.current_dynamic_quorum_value) // SCALE
 
         # Compute when the vote starts and when it ends
         start_block = sp.level + self.data.governance_parameters.vote_delay_blocks
@@ -240,6 +243,7 @@ class DaoMajorityVoting(sp.Contract):
                 voting_end_block=end_block,
                 vote_id=self.data.vote_id,
                 quorum=new_quorum.value,
+                total_available_voters=total_available_voters,
                 voters=sp.map(l={}, tkey=sp.TAddress, tvalue=VOTE_RECORD_TYPE)
         ))
 
@@ -355,8 +359,8 @@ class DaoMajorityVoting(sp.Contract):
 
     def update_quorum(self):
         last_weight = (self.data.poll_descriptor.open_some().quorum * DYNAMIC_QUORUM_CURRENT_QUORUM_WEIGHT) // SCALE
-        new_participation = (self.data.poll_descriptor.open_some().total_votes * DYNAMIC_QUORUM_CURRENT_PARTICIPATION_WEIGHT) // SCALE  # 20% weight
-        new_quorum = sp.local('newQuorum', new_participation + last_weight)
+        new_participation = (self.data.poll_descriptor.open_some().total_votes * DYNAMIC_QUORUM_CURRENT_PARTICIPATION_WEIGHT) // SCALE
+        new_quorum = sp.local('newQuorum', ((new_participation + last_weight) * SCALE) // self.data.poll_descriptor.open_some().total_available_voters)
 
         # Bound upper and lower quorum.
         sp.if new_quorum.value < self.data.governance_parameters.quorum_cap.lower:

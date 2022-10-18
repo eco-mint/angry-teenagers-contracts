@@ -45,8 +45,8 @@ MAJORITY_POLL_DATA = sp.TRecord(
 ).layout(("vote_yay", ("vote_nay", ("vote_abstain", ("total_votes", ("voting_start_block", ("voting_end_block", ("vote_id", ("quorum", ("total_available_voters", "voters"))))))))))
 
 # QUORUM_CAP_TYPE
-# - lower: Lowest possible value of the quorum percentage
-# - upper: Biggest possible value of the quorum percentage
+# - lower: Lowest possible value of the quorum pertenmill
+# - upper: Biggest possible value of the quorum pertenmill
 QUORUM_CAP_TYPE = sp.TRecord(
     lower=sp.TNat,
     upper=sp.TNat
@@ -57,18 +57,18 @@ QUORUM_CAP_TYPE = sp.TRecord(
 # Only the DAO can change these parameters.
 # - vote_delay_blocks: Amount of blocks to wait to start voting after the proposal is inject
 # - vote_length_blocks: Length of the vote in blocks
-# - percentage_for_supermajority: Supermajority percentage
-# - fixed_quorum_percentage: Quorum percentage when fixed quorum is used (i.e the percentage always remains the same)
+# - supermajority_pertenmill: Supermajority pertenmill
+# - fixed_quorum_pertenmill: Quorum pertenmill when fixed quorum is used (i.e the percentage always remains the same)
 # - fixed_quorum: Define whether the quorum is fixed or not
-# - quorum_cap: See QUORUM_CAP_TYPE
+# - quorum_cap_pertenmill: See QUORUM_CAP_TYPE
 GOVERNANCE_PARAMETERS_TYPE = sp.TRecord(
   vote_delay_blocks=sp.TNat,
   vote_length_blocks=sp.TNat,
-  percentage_for_supermajority=sp.TNat,
-  fixed_quorum_percentage=sp.TNat,
+  supermajority_pertenmill=sp.TNat,
+  fixed_quorum_pertenmill=sp.TNat,
   fixed_quorum=sp.TBool,
-  quorum_cap=QUORUM_CAP_TYPE
-).layout(("vote_delay_blocks", ("vote_length_blocks", ("percentage_for_supermajority", ("fixed_quorum_percentage", ("fixed_quorum", "quorum_cap"))))))
+  quorum_cap_pertenmill=QUORUM_CAP_TYPE
+).layout(("vote_delay_blocks", ("vote_length_blocks", ("supermajority_pertenmill", ("fixed_quorum_pertenmill", ("fixed_quorum", "quorum_cap_pertenmill"))))))
 
 # OUTCOMES_TYPE
 # - poll_outcome: Outcome of the poll (PASSED or FAILED)
@@ -83,13 +83,11 @@ OUTCOMES_TYPE = sp.TBigMap(sp.TNat, sp.TRecord(poll_outcome=sp.TNat, poll_data=M
 
 # When the dynamic quorum is adjusted, we use 80% of the current quorum and 20% of the current participation
 # to adust the quorum for the next poll
-DYNAMIC_QUORUM_CURRENT_QUORUM_WEIGHT = 80
-DYNAMIC_QUORUM_CURRENT_PARTICIPATION_WEIGHT = 20
+DYNAMIC_QUORUM_CURRENT_QUORUM_WEIGHT_PERTENMILL = 8000
+DYNAMIC_QUORUM_CURRENT_PARTICIPATION_WEIGHT_PERTENMILL = 2000
 
 # Scale is the precision with which numbers are measured.
-# For instance, a scale of 100 means the number 1.23 is represented
-# as 123.
-SCALE = 100
+SCALE_PERTENMILL = 10000
 
 ################################################################
 ################################################################
@@ -111,14 +109,14 @@ IN_PROGRESS=1
 ################################################################
 class DaoMajorityVoting(sp.Contract):
     def __init__(self, admin,
-                 current_dynamic_quorum_value,
+                 current_dynamic_quorum_value_pertenmill,
                  governance_parameters,
                  metadata,
                  outcomes=sp.big_map(l={}, tkey=sp.TNat, tvalue=sp.TRecord(poll_outcome=sp.TNat, poll_data=MAJORITY_POLL_DATA))):
       self.init_type(
         sp.TRecord(
             governance_parameters=GOVERNANCE_PARAMETERS_TYPE,
-            current_dynamic_quorum_value=sp.TNat,
+            current_dynamic_quorum_value_pertenmill=sp.TNat,
             poll_leader=sp.TOption(sp.TAddress),
             admin=sp.TAddress,
             next_admin=sp.TOption(sp.TAddress),
@@ -132,7 +130,7 @@ class DaoMajorityVoting(sp.Contract):
 
       self.init(
         governance_parameters=governance_parameters,
-        current_dynamic_quorum_value=current_dynamic_quorum_value,
+        current_dynamic_quorum_value_pertenmill=current_dynamic_quorum_value_pertenmill,
         poll_leader=sp.none,
         admin=admin,
         next_admin=sp.none,
@@ -224,9 +222,9 @@ class DaoMajorityVoting(sp.Contract):
         # Define the quorum depending on how it is configured in the governance parameters
         new_quorum = sp.local('', sp.nat(0))
         sp.if self.data.governance_parameters.fixed_quorum:
-            new_quorum.value = (total_available_voters * self.data.governance_parameters.fixed_quorum_percentage) // SCALE
+            new_quorum.value = (total_available_voters * self.data.governance_parameters.fixed_quorum_pertenmill) // SCALE_PERTENMILL
         sp.else:
-            new_quorum.value = (total_available_voters * self.data.current_dynamic_quorum_value) // SCALE
+            new_quorum.value = (total_available_voters * self.data.current_dynamic_quorum_value_pertenmill) // SCALE_PERTENMILL
 
         # Compute when the vote starts and when it ends
         start_block = sp.level + self.data.governance_parameters.vote_delay_blocks
@@ -309,7 +307,7 @@ class DaoMajorityVoting(sp.Contract):
 
         # Calculate whether voting thresholds were met.
         total_opinionated_votes = self.data.poll_descriptor.open_some().vote_yay + self.data.poll_descriptor.open_some().vote_nay
-        yay_votes_needed_for_superMajority = (total_opinionated_votes * self.data.governance_parameters.percentage_for_supermajority) // SCALE
+        yay_votes_needed_for_superMajority = (total_opinionated_votes * self.data.governance_parameters.supermajority_pertenmill) // SCALE_PERTENMILL
 
         # Define the vote outcome and sed the result to the poll leader
         sp.if (self.data.poll_descriptor.open_some().vote_yay >= yay_votes_needed_for_superMajority) & (self.data.poll_descriptor.open_some().total_votes >= self.data.poll_descriptor.open_some().quorum):
@@ -358,19 +356,19 @@ class DaoMajorityVoting(sp.Contract):
         sp.transfer(arg, sp.mutez(0), destination)
 
     def update_quorum(self):
-        last_weight = (self.data.poll_descriptor.open_some().quorum * DYNAMIC_QUORUM_CURRENT_QUORUM_WEIGHT) // SCALE
-        new_participation = (self.data.poll_descriptor.open_some().total_votes * DYNAMIC_QUORUM_CURRENT_PARTICIPATION_WEIGHT) // SCALE
-        new_quorum = sp.local('newQuorum', ((new_participation + last_weight) * SCALE) // self.data.poll_descriptor.open_some().total_available_voters)
+        last_weight = (self.data.poll_descriptor.open_some().quorum * DYNAMIC_QUORUM_CURRENT_QUORUM_WEIGHT_PERTENMILL) // SCALE_PERTENMILL
+        new_participation = (self.data.poll_descriptor.open_some().total_votes * DYNAMIC_QUORUM_CURRENT_PARTICIPATION_WEIGHT_PERTENMILL) // SCALE_PERTENMILL
+        new_quorum_pertenmill = sp.local('new_quorum_pertenmill', ((new_participation + last_weight) * SCALE_PERTENMILL) // self.data.poll_descriptor.open_some().total_available_voters)
 
         # Bound upper and lower quorum.
-        sp.if new_quorum.value < self.data.governance_parameters.quorum_cap.lower:
-            new_quorum.value = self.data.governance_parameters.quorum_cap.lower
+        sp.if new_quorum_pertenmill.value < self.data.governance_parameters.quorum_cap_pertenmill.lower:
+            new_quorum_pertenmill.value = self.data.governance_parameters.quorum_cap_pertenmill.lower
 
-        sp.if new_quorum.value > self.data.governance_parameters.quorum_cap.upper:
-            new_quorum.value = self.data.governance_parameters.quorum_cap.upper
+        sp.if new_quorum_pertenmill.value > self.data.governance_parameters.quorum_cap_pertenmill.upper:
+            new_quorum_pertenmill.value = self.data.governance_parameters.quorum_cap_pertenmill.upper
 
         # Update quorum.
-        self.data.current_dynamic_quorum_value = new_quorum.value
+        self.data.current_dynamic_quorum_value_pertenmill = new_quorum_pertenmill.value
 
     def callback_leader_start(self):
         leaderContractHandle = sp.contract(sp.TNat,

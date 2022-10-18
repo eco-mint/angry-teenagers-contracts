@@ -22,25 +22,25 @@ class TestHelper():
     def create_contracts(scenario, admin, with_fixed_quorum = False):
         if with_fixed_quorum:
             c1 = DAO.DaoMajorityVoting(admin=admin.address,
-                                   current_dynamic_quorum_value=sp.nat(2000),
+                                   current_dynamic_quorum_value=sp.nat(30),
                                    governance_parameters=sp.record(
                                         vote_delay_blocks = sp.nat(10),
                                         vote_length_blocks = sp.nat(180),
                                         percentage_for_supermajority = sp.nat(85),
                                         fixed_quorum_percentage = sp.nat(25),
                                         fixed_quorum = sp.bool(True),
-                                        quorum_cap = sp.record(lower=sp.nat(500), upper=sp.nat(4500))),
+                                        quorum_cap = sp.record(lower=sp.nat(10), upper=sp.nat(90))),
                                    metadata=sp.utils.metadata_of_url("https://example.com"))
         else:
             c1 = DAO.DaoMajorityVoting(admin=admin.address,
-                                   current_dynamic_quorum_value=sp.nat(2000),
+                                   current_dynamic_quorum_value=sp.nat(30),
                                    governance_parameters=sp.record(
                                         vote_delay_blocks = sp.nat(10),
                                         vote_length_blocks = sp.nat(180),
                                         percentage_for_supermajority = sp.nat(85),
                                         fixed_quorum_percentage = sp.nat(25),
                                         fixed_quorum = sp.bool(False),
-                                        quorum_cap = sp.record(lower=sp.nat(500), upper=sp.nat(4500))),
+                                        quorum_cap = sp.record(lower=sp.nat(10), upper=sp.nat(90))),
                                    metadata=sp.utils.metadata_of_url("https://example.com"))
         simulated_poll_leader_contract = SimulatedLeaderPoll(scenario)
         c1.set_initial_balance(sp.mutez(300000000))
@@ -129,10 +129,10 @@ def unit_test_initial_storage(is_default = True):
         scenario.verify(c1.data.governance_parameters.percentage_for_supermajority == sp.nat(85))
         scenario.verify(c1.data.governance_parameters.fixed_quorum_percentage == sp.nat(25))
         scenario.verify(c1.data.governance_parameters.fixed_quorum == sp.bool(False))
-        scenario.verify(c1.data.governance_parameters.quorum_cap.lower == sp.nat(500))
-        scenario.verify(c1.data.governance_parameters.quorum_cap.upper == sp.nat(4500))
+        scenario.verify(c1.data.governance_parameters.quorum_cap.lower == sp.nat(10))
+        scenario.verify(c1.data.governance_parameters.quorum_cap.upper == sp.nat(90))
 
-        scenario.verify(c1.data.current_dynamic_quorum_value == sp.nat(2000))
+        scenario.verify(c1.data.current_dynamic_quorum_value == sp.nat(30))
         scenario.verify(~c1.data.outcomes.contains(0))
         scenario.verify(c1.data.metadata[""] == sp.utils.bytes_of_string("https://example.com"))
 

@@ -57,13 +57,13 @@ MAJORITY_POLL_DATA = sp.TRecord(
 # by the DAO
 # - vote_delay_blocks: Amount of blocks to wait to start voting after the proposal is inject
 # - vote_length_blocks: Length of the vote in blocks
-# - percentage_for_objection: Percentage that needs to be reached to reject the proposal in phase 1 and go to phase 2
+# - objection_threshold_pertenmill: Pertenmill that needs to be reached to reject the proposal in phase 1 and go to phase 2
 GOVERNANCE_PARAMETERS_TYPE = sp.TRecord(
   vote_delay_blocks=sp.TNat,
   vote_length_blocks=sp.TNat,
-  percentage_for_objection=sp.TNat
+  objection_threshold_pertenmill=sp.TNat
 ).layout(("vote_delay_blocks",
-          ("vote_length_blocks", "percentage_for_objection")))
+          ("vote_length_blocks", "objection_threshold_pertenmill")))
 
 # OUTCOMES_TYPE
 # - poll_outcome: Outcome of the poll (PASSED or FAILED)
@@ -77,9 +77,7 @@ OUTCOMES_TYPE = sp.TBigMap(sp.TNat, sp.TRecord(poll_outcome=sp.TNat, poll_data=M
 ################################################################
 
 # Scale is the precision with which numbers are measured.
-# For instance, a scale of 100 means the number 1.23 is represented
-# as 123.
-SCALE = 100
+SCALE_PERTENMILL = 10000
 
 
 ################################################################
@@ -233,7 +231,7 @@ class DaoOptOutVoting(sp.Contract):
         sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
 
         # Compute the objection threshold using the percentage and the number of possible voters
-        objection_threshold = (total_available_voters * self.data.governance_parameters.percentage_for_objection) // SCALE
+        objection_threshold = (total_available_voters * self.data.governance_parameters.objection_threshold_pertenmill) // SCALE_PERTENMILL
 
         # Compute the start and end block of the vote
         start_block = sp.level + self.data.governance_parameters.vote_delay_blocks

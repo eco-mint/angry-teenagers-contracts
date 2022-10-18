@@ -36,13 +36,12 @@ MAJORITY_POLL_DATA = sp.TRecord(
     vote_nay=sp.TNat,
     vote_abstain=sp.TNat,
     total_votes=sp.TNat,
-    snapshot_block=sp.TNat,
     voting_start_block=sp.TNat,
     voting_end_block=sp.TNat,
     vote_id=sp.TNat,
     quorum=sp.TNat,
     voters=sp.TMap(sp.TAddress, VOTE_RECORD_TYPE)
-).layout(("vote_yay", ("vote_nay", ("vote_abstain", ("total_votes", ("snapshot_block", ("voting_start_block", ("voting_end_block", ("vote_id", ("quorum", "voters"))))))))))
+).layout(("vote_yay", ("vote_nay", ("vote_abstain", ("total_votes", ("voting_start_block", ("voting_end_block", ("vote_id", ("quorum", "voters")))))))))
 
 # QUORUM_CAP_TYPE
 # - lower: Lowest possible value of the quorum percentage
@@ -213,9 +212,9 @@ class DaoMajorityVoting(sp.Contract):
 # start
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
-    def start(self, params):
+    def start(self, total_available_voters):
         # Check type
-        sp.set_type(params, sp.TRecord(total_available_voters=sp.TNat, level=sp.TNat))
+        sp.set_type(total_available_voters, sp.TNat)
 
         # Asserts
         sp.verify(self.data.vote_state == NONE, message=Error.ErrorMessage.dao_vote_in_progress())
@@ -224,7 +223,7 @@ class DaoMajorityVoting(sp.Contract):
         # Define the quorum depending on how it is configured in the governance parameters
         new_quorum = sp.local('', self.data.current_dynamic_quorum_value)
         sp.if self.data.governance_parameters.fixed_quorum:
-            new_quorum.value = (params.total_available_voters * self.data.governance_parameters.fixed_quorum_percentage) // SCALE
+            new_quorum.value = (total_available_voters * self.data.governance_parameters.fixed_quorum_percentage) // SCALE
 
         # Compute when the vote starts and when it ends
         start_block = sp.level + self.data.governance_parameters.vote_delay_blocks
@@ -237,7 +236,6 @@ class DaoMajorityVoting(sp.Contract):
                 vote_yay=sp.nat(0),
                 vote_abstain=sp.nat(0),
                 total_votes=sp.nat(0),
-                snapshot_block=params.level,
                 voting_start_block=start_block,
                 voting_end_block=end_block,
                 vote_id=self.data.vote_id,

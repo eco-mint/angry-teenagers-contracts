@@ -106,7 +106,6 @@ class SimulatedVotingStrategy(sp.Contract):
                 end_vote_id = sp.TNat,
                 vote_called_times = sp.TNat,
                 total_available_voters = sp.TNat,
-                snapshot_block = sp.TNat,
                 vote_last_address = sp.TOption(sp.TAddress),
                 vote_last_value = sp.TNat,
                 vote_last_id = sp.TNat,
@@ -120,7 +119,6 @@ class SimulatedVotingStrategy(sp.Contract):
             end_vote_id=sp.nat(100),
             vote_called_times = sp.nat(0),
             total_available_voters = sp.nat(0),
-            snapshot_block=sp.nat(100),
             vote_last_address = sp.none,
             vote_last_value = sp.nat(1000),
             vote_last_id = sp.nat(1000),
@@ -129,11 +127,10 @@ class SimulatedVotingStrategy(sp.Contract):
         self.scenario = scenario
 
     @sp.entry_point()
-    def start(self, params):
-        sp.set_type(params, sp.TRecord(total_available_voters=sp.TNat, level=sp.TNat))
+    def start(self, total_available_voters):
+        sp.set_type(total_available_voters, sp.TNat)
         self.data.start_called_times = self.data.start_called_times + 1
-        self.data.total_available_voters = params.total_available_voters
-        self.data.snapshot_block = params.level
+        self.data.total_available_voters = total_available_voters
 
     @sp.entry_point()
     def end(self, params):

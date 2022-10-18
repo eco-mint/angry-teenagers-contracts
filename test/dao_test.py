@@ -127,10 +127,10 @@ class SimulatedVotingStrategy(sp.Contract):
         self.scenario = scenario
 
     @sp.entry_point()
-    def start(self, params):
-        sp.set_type(params, sp.TRecord(total_available_voters=sp.TNat))
+    def start(self, total_available_voters):
+        sp.set_type(total_available_voters, sp.TNat)
         self.data.start_called_times = self.data.start_called_times + 1
-        self.data.total_available_voters = params.total_available_voters
+        self.data.total_available_voters = total_available_voters
 
     @sp.entry_point()
     def end(self, params):
@@ -428,7 +428,7 @@ def unit_test_propose_callback(is_default = True):
 
         voting_id = 3
         snapshot_block = 1213
-        propose_callback_params_valid = sp.record(id=3, snapshot_block=1213)
+        propose_callback_params_valid = voting_id
 
         scenario.h2("Test the propose_callback entrypoint.")
 
@@ -445,7 +445,7 @@ def unit_test_propose_callback(is_default = True):
                                proposal_lambda=sp.none,
                                voting_strategy=0
                                )
-        c1.propose(proposal_1).run(valid=True, sender=admin.address)
+        c1.propose(proposal_1).run(valid=True, sender=admin.address, level=snapshot_block)
 
         scenario.p("4. Only the chosen voting strategy can call the propose_callback")
         c1.propose_callback(propose_callback_params_valid).run(valid=False, sender=simulated_voting_strategy_two.address)
@@ -476,7 +476,7 @@ def unit_test_vote(is_default = True):
 
         voting_id = 3
         snapshot_block = 1213
-        propose_callback_params_valid = sp.record(id=voting_id, snapshot_block=snapshot_block)
+        propose_callback_params_valid = voting_id
         proposal_id = 0
         vote_value = DAO.VoteValue.YAY
         vote_param = sp.record(proposal_id=proposal_id, vote_value=vote_value)
@@ -484,7 +484,7 @@ def unit_test_vote(is_default = True):
         scenario.h2("Test the vote entrypoint.")
 
         scenario.p("1. Register the FA2 contract")
-        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin)
+        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin, level=snapshot_block)
 
         scenario.p("2. Vote can only be called when a vote is ongoing")
         c1.vote(vote_param).run(valid=False, sender=alice.address)
@@ -544,12 +544,12 @@ def unit_test_end(is_default = True):
 
         voting_id = 3
         snapshot_block = 1213
-        propose_callback_params_valid = sp.record(id=voting_id, snapshot_block=snapshot_block)
+        propose_callback_params_valid = voting_id
 
         scenario.h2("Test the end entrypoint.")
 
         scenario.p("1. Register the FA2 contract")
-        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin)
+        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin, level=snapshot_block)
 
         scenario.p("2. You can only end a vote when one is in progress")
         c1.end(0).run(valid=False, sender=alice.address)
@@ -592,7 +592,7 @@ def unit_test_end_callback(is_default = True):
 
         voting_id = 3
         snapshot_block = 1213
-        propose_callback_params_valid = sp.record(id=voting_id, snapshot_block=snapshot_block)
+        propose_callback_params_valid = voting_id
 
         end_callback_valid = sp.record(voting_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
         end_callback_invalid = sp.record(voting_id=0, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
@@ -600,7 +600,7 @@ def unit_test_end_callback(is_default = True):
         scenario.h2("Test the end_callback entrypoint.")
 
         scenario.p("1. Register the FA2 contract")
-        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin)
+        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin, level=snapshot_block)
 
         scenario.p("2. end_callback can only be called when the contract is in the right state")
         c1.end_callback(end_callback_valid).run(valid=False, sender=simulated_voting_strategy_one.address)
@@ -661,12 +661,12 @@ def unit_test_end_callback(is_default = True):
                                proposal_lambda=sp.none,
                                voting_strategy=1
                                )
-        c1.propose(proposal_1).run(valid=True, sender=admin.address)
+        snapshot_block_2 = 2312
+        c1.propose(proposal_1).run(valid=True, sender=admin.address, level=2312)
 
         scenario.p("14. Call propose_callback can be called")
-        snapshot_block_2 = 2312
-        propose_callback_params_valid_2 = sp.record(id=voting_id, snapshot_block=snapshot_block_2)
-        c1.propose_callback(propose_callback_params_valid_2).run(valid=True, sender=simulated_voting_strategy_two.address)
+        propose_callback_params_valid_2 = voting_id
+        c1.propose_callback(propose_callback_params_valid_2).run(valid=True, sender=simulated_voting_strategy_two.address, level=snapshot_block_2)
 
         scenario.p("15. Let's close the vote now")
         scenario.verify(simulated_voting_strategy_two.data.end_called_times == 0)
@@ -716,14 +716,14 @@ def unit_test_offchain_views(is_default=True):
 
         voting_id = 3
         snapshot_block = 1213
-        propose_callback_params_valid = sp.record(id=voting_id, snapshot_block=snapshot_block)
+        propose_callback_params_valid = voting_id
 
         end_callback_valid = sp.record(voting_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
 
         scenario.h2("Test the end_callback entrypoint.")
 
         scenario.p("1. Register the FA2 contract")
-        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin)
+        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin, level=snapshot_block)
 
         scenario.p("2. Inject a valid proposal")
         scenario.verify(c1.is_poll_in_progress() == False)
@@ -777,15 +777,16 @@ def unit_test_offchain_views(is_default=True):
                                proposal_lambda=sp.none,
                                voting_strategy=1
                                )
-        c1.propose(proposal_1).run(valid=True, sender=admin.address)
+        snapshot_block_2 = 2312
+        c1.propose(proposal_1).run(valid=True, sender=admin.address, level=2312)
         scenario.verify(c1.is_poll_in_progress() == True)
         scenario.verify(c1.get_contract_state() == DAO.STARTING_VOTE)
 
         scenario.p("8. Call propose_callback can be called")
-        snapshot_block_2 = 2312
-        propose_callback_params_valid_2 = sp.record(id=voting_id, snapshot_block=snapshot_block_2)
+        propose_callback_params_valid_2 = voting_id
         c1.propose_callback(propose_callback_params_valid_2).run(valid=True,
-                                                                 sender=simulated_voting_strategy_two.address)
+                                                                 sender=simulated_voting_strategy_two.address,
+                                                                 level=snapshot_block_2)
         scenario.verify(c1.get_contract_state() == DAO.VOTE_ONGOING)
 
         scenario.p("9. Let's close the vote now")

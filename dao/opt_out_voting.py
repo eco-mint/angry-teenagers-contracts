@@ -31,7 +31,6 @@ VOTE_RECORD_TYPE = sp.TRecord(
 # - phase_1_objection_threshold: Numbers of voters needed to reject the proposal in phase 1
 # - phase_2_needed: Record whether the phase 2 is needed or not
 # - phase_2_vote_id: Vote id of the phase 2 (use the majority contract)
-# - phase_2_voting_start_block: Tezos start block of the phase 2
 # - phase_1_voters: Record of the voters data in phase 1 (phase 2 is recorded in the majority contract)
 MAJORITY_POLL_DATA = sp.TRecord(
     phase_1_vote_objection=sp.TNat,
@@ -42,7 +41,6 @@ MAJORITY_POLL_DATA = sp.TRecord(
     phase_1_objection_threshold=sp.TNat,
     phase_2_needed=sp.TBool,
     phase_2_vote_id=sp.TNat,
-    phase_2_voting_start_block=sp.TNat,
     phase_1_voters=sp.TMap(sp.TAddress, VOTE_RECORD_TYPE)
 ).layout(("phase_1_vote_objection",
           ("phase_1_voting_start_block",
@@ -52,27 +50,25 @@ MAJORITY_POLL_DATA = sp.TRecord(
               ("phase_1_objection_threshold",
                 ("phase_2_needed",
                  ("phase_2_vote_id",
-                  ("phase_2_voting_start_block", "phase_1_voters"))))))))))
+                  ("phase_1_voters"))))))))))
 
 # GOVERNANCE_PARAMETERS_TYPE
 # Governance parameters are defined when the contract is deployed and can only be changed
 # by the DAO
 # - vote_delay_blocks: Amount of blocks to wait to start voting after the proposal is inject
 # - vote_length_blocks: Length of the vote in blocks
-# - percentage_for_objection: Percentage that needs to be reached to reject the proposal in phase 1 and go to phase 2
+# - objection_threshold_pertenmill: Pertenmill that needs to be reached to reject the proposal in phase 1 and go to phase 2
 GOVERNANCE_PARAMETERS_TYPE = sp.TRecord(
   vote_delay_blocks=sp.TNat,
   vote_length_blocks=sp.TNat,
-  percentage_for_objection=sp.TNat
+  objection_threshold_pertenmill=sp.TNat
 ).layout(("vote_delay_blocks",
-          ("vote_length_blocks", "percentage_for_objection")))
+          ("vote_length_blocks", "objection_threshold_pertenmill")))
 
 # OUTCOMES_TYPE
 # - poll_outcome: Outcome of the poll (PASSED or FAILED)
 # - poll_data: See MAJORITY_POLL_DATA
 OUTCOMES_TYPE = sp.TBigMap(sp.TNat, sp.TRecord(poll_outcome=sp.TNat, poll_data=MAJORITY_POLL_DATA))
-
-PROPOSE_CALLBACK_TYPE = sp.TRecord(id=sp.TNat, snapshot_block=sp.TNat)
 
 ################################################################
 ################################################################
@@ -81,9 +77,7 @@ PROPOSE_CALLBACK_TYPE = sp.TRecord(id=sp.TNat, snapshot_block=sp.TNat)
 ################################################################
 
 # Scale is the precision with which numbers are measured.
-# For instance, a scale of 100 means the number 1.23 is represented
-# as 123.
-SCALE = 100
+SCALE_PERTENMILL = 10000
 
 
 ################################################################
@@ -237,7 +231,7 @@ class DaoOptOutVoting(sp.Contract):
         sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
 
         # Compute the objection threshold using the percentage and the number of possible voters
-        objection_threshold = (total_available_voters * self.data.governance_parameters.percentage_for_objection) // SCALE
+        objection_threshold = (total_available_voters * self.data.governance_parameters.objection_threshold_pertenmill) // SCALE_PERTENMILL
 
         # Compute the start and end block of the vote
         start_block = sp.level + self.data.governance_parameters.vote_delay_blocks
@@ -254,7 +248,6 @@ class DaoOptOutVoting(sp.Contract):
                 phase_1_objection_threshold=objection_threshold,
                 phase_2_needed=sp.bool(False),
                 phase_2_vote_id=sp.nat(0),
-                phase_2_voting_start_block=sp.nat(0),
                 phase_1_voters=sp.map(l={}, tkey=sp.TAddress, tvalue=VOTE_RECORD_TYPE)
         ))
 
@@ -296,7 +289,7 @@ class DaoOptOutVoting(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def propose_callback(self, params):
         # Check type
-        sp.set_type(params, PROPOSE_CALLBACK_TYPE)
+        sp.set_type(params, sp.TNat)
 
         # Asserts
         sp.verify(self.data.vote_state == STARTING_PHASE_2, message=Error.ErrorMessage.dao_no_vote_open())
@@ -306,8 +299,7 @@ class DaoOptOutVoting(sp.Contract):
 
         # Update the poll data
         new_poll = sp.local('new_poll', self.data.poll_descriptor.open_some())
-        new_poll.value.phase_2_vote_id = params.id
-        new_poll.value.phase_2_voting_start_block = params.snapshot_block
+        new_poll.value.phase_2_vote_id = params
         self.data.poll_descriptor = sp.some(new_poll.value)
 
         # Change the state of the contract
@@ -387,18 +379,12 @@ class DaoOptOutVoting(sp.Contract):
 
     def callback_leader_start(self):
         leaderContractHandle = sp.contract(
-            sp.TRecord(
-                id=sp.TNat,
-                snapshot_block=sp.TNat
-            ),
+            sp.TNat,
             self.data.poll_leader.open_some(),
             "propose_callback"
         ).open_some("Interface mismatch")
 
-        leaderContractArg = sp.record(
-            id=self.data.poll_descriptor.open_some().vote_id,
-            snapshot_block=self.data.poll_descriptor.open_some().phase_1_voting_start_block
-        )
+        leaderContractArg = self.data.poll_descriptor.open_some().vote_id
         self.call(leaderContractHandle, leaderContractArg)
 
     def callback_leader_end(self, result):
@@ -431,13 +417,12 @@ class DaoOptOutVoting(sp.Contract):
 
     def call_voting_strategy_start(self, total_available_voters):
         voteContractHandle = sp.contract(
-            sp.TRecord (total_available_voters=sp.TNat),
+            sp.TNat,
             self.data.phase_2_majority_vote_contract.open_some(),
             "start"
         ).open_some("Interface mismatch")
 
-        voteContractArg = sp.record(total_available_voters=total_available_voters)
-        self.call(voteContractHandle, voteContractArg)
+        self.call(voteContractHandle, total_available_voters)
 
     def phase_1_vote(self, params):
         # Asserts

@@ -23,7 +23,7 @@ class TestHelper():
         c1 = DAO.DaoOptOutVoting(admin=admin.address,
                             governance_parameters=sp.record(vote_delay_blocks=sp.nat(10),
                                                              vote_length_blocks=sp.nat(180),
-                                                             percentage_for_objection=sp.nat(10)),
+                                                             objection_threshold_pertenmill=sp.nat(1000)),
                             metadata=sp.utils.metadata_of_url("https://example.com"))
 
         simulated_poll_leader_contract = SimulatedLeaderPoll(scenario)
@@ -67,7 +67,6 @@ class SimulatedLeaderPoll(sp.Contract):
         self.init(
             propose_callback_called_times = sp.nat(0),
             propose_callback_id = sp.nat(100),
-            propose_callback_snapshot_block = sp.nat(100),
             end_callback_called_times = sp.nat(0),
             end_callback_voting_id = sp.nat(100),
             end_callback_voting_outcome = sp.nat(100)
@@ -76,10 +75,9 @@ class SimulatedLeaderPoll(sp.Contract):
 
     @sp.entry_point()
     def propose_callback(self, params):
-        sp.set_type(params, sp.TRecord(id=sp.TNat, snapshot_block=sp.TNat))
+        sp.set_type(params, sp.TNat)
         self.data.propose_callback_called_times = self.data.propose_callback_called_times + 1
-        self.data.propose_callback_id = params.id
-        self.data.propose_callback_snapshot_block = params.snapshot_block
+        self.data.propose_callback_id = params
 
     @sp.entry_point()
     def end_callback(self, params):
@@ -120,10 +118,10 @@ class SimulatedPhase2Voting(sp.Contract):
         self.scenario = scenario
 
     @sp.entry_point()
-    def start(self, params):
-        sp.set_type(params, sp.TRecord(total_available_voters=sp.TNat))
+    def start(self, total_available_voters):
+        sp.set_type(total_available_voters, sp.TNat)
         self.data.start_called_times = self.data.start_called_times + 1
-        self.data.total_available_voters = params.total_available_voters
+        self.data.total_available_voters = total_available_voters
 
     @sp.entry_point()
     def vote(self, params):
@@ -164,7 +162,7 @@ def unit_test_initial_storage(is_default = True):
         scenario.verify(~c1.data.poll_descriptor.is_some())
         scenario.verify(c1.data.governance_parameters.vote_delay_blocks == sp.nat(10))
         scenario.verify(c1.data.governance_parameters.vote_length_blocks == sp.nat(180))
-        scenario.verify(c1.data.governance_parameters.percentage_for_objection == sp.nat(10))
+        scenario.verify(c1.data.governance_parameters.objection_threshold_pertenmill == sp.nat(1000))
         scenario.verify(~c1.data.outcomes.contains(0))
         scenario.verify(c1.data.metadata[""] == sp.utils.bytes_of_string("https://example.com"))
 
@@ -304,7 +302,6 @@ def unit_test_start(is_default = True):
         scenario.verify(~c1.data.poll_descriptor.is_some())
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_id == 100)
-        scenario.verify(simulated_poll_leader_contract.data.propose_callback_snapshot_block == 100)
         scenario.verify(c1.data.vote_state == DAO.NONE)
         c1.start(total_available_voters).run(valid=True, sender=simulated_poll_leader_contract.address)
 
@@ -314,21 +311,19 @@ def unit_test_start(is_default = True):
         scenario.verify(c1.data.poll_descriptor.open_some().phase_1_vote_objection == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().phase_1_voting_start_block == start_block)
         scenario.verify(c1.data.poll_descriptor.open_some().phase_1_voting_end_block == start_block + c1.data.governance_parameters.vote_length_blocks)
-        phase_1_objection_threshold = (total_available_voters * c1.data.governance_parameters.percentage_for_objection) // DAO.SCALE
+        phase_1_objection_threshold = (total_available_voters * c1.data.governance_parameters.objection_threshold_pertenmill) // DAO.SCALE_PERTENMILL
         scenario.verify(c1.data.poll_descriptor.open_some().phase_1_objection_threshold == phase_1_objection_threshold)
         scenario.verify(c1.data.poll_descriptor.open_some().total_voters == total_available_voters)
         scenario.verify(c1.data.poll_descriptor.open_some().vote_id == 0)
         scenario.verify(sp.len(c1.data.poll_descriptor.open_some().phase_1_voters) == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_needed == sp.bool(False))
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_vote_id == 0)
-        scenario.verify(c1.data.poll_descriptor.open_some().phase_2_voting_start_block == 0)
         scenario.verify(c1.data.vote_state == DAO.PHASE_1_OPT_OUT)
 
         scenario.p("4. Check the expected callback is called")
         scenario.verify(simulated_poll_leader_contract.data.end_callback_called_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 1)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_id == 0)
-        scenario.verify(simulated_poll_leader_contract.data.propose_callback_snapshot_block == start_block)
 
 # Description: Test the vote function.
 def unit_test_vote(is_default = True):
@@ -423,13 +418,13 @@ def unit_test_end_phase1_ok_1(is_default = True):
         c1.set_phase_2_contract(simulated_phase2_voting_contract.address).run(valid=True, sender=admin)
 
         scenario.p("2. Start poll")
-        c1.start(100).run(valid=True, sender=simulated_poll_leader_contract.address)
+        c1.start(1199).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Send votes")
         start_block = c1.data.governance_parameters.vote_delay_blocks
-        alice_vote_param_valid_nay = sp.record(votes=sp.nat(7), address=alice.address, vote_value=DAO.VoteValue.NAY, vote_id=sp.nat(0))
+        alice_vote_param_valid_nay = sp.record(votes=sp.nat(114), address=alice.address, vote_value=DAO.VoteValue.NAY, vote_id=sp.nat(0))
         c1.vote(alice_vote_param_valid_nay).run(valid=True, sender=simulated_poll_leader_contract.address, level=start_block)
-        bob_vote_param_valid_nay = sp.record(votes=sp.nat(2), address=bob.address, vote_value=DAO.VoteValue.NAY, vote_id=sp.nat(0))
+        bob_vote_param_valid_nay = sp.record(votes=sp.nat(4), address=bob.address, vote_value=DAO.VoteValue.NAY, vote_id=sp.nat(0))
         c1.vote(bob_vote_param_valid_nay).run(valid=True, sender=simulated_poll_leader_contract.address, level=start_block)
 
         scenario.p("4. Cannot close when time is not elapsed")
@@ -455,15 +450,14 @@ def unit_test_end_phase1_ok_1(is_default = True):
         scenario.p("9. Check vote results is added to history")
         scenario.verify(c1.data.outcomes.contains(0))
         scenario.verify(c1.data.outcomes[0].poll_outcome == DAO.PollOutcome.POLL_OUTCOME_PASSED)
-        scenario.verify(c1.data.outcomes[0].poll_data.phase_1_vote_objection == 9)
-        scenario.verify(c1.data.outcomes[0].poll_data.total_voters == 100)
+        scenario.verify(c1.data.outcomes[0].poll_data.phase_1_vote_objection == 118)
+        scenario.verify(c1.data.outcomes[0].poll_data.total_voters == 1199)
         scenario.verify(c1.data.outcomes[0].poll_data.phase_1_voting_start_block == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.phase_1_voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
-        scenario.verify(c1.data.outcomes[0].poll_data.phase_1_objection_threshold == 10)
+        scenario.verify(c1.data.outcomes[0].poll_data.phase_1_objection_threshold == 119)
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_needed == sp.bool(False))
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_vote_id == 0)
-        scenario.verify(c1.data.outcomes[0].poll_data.phase_2_voting_start_block == 0)
         scenario.verify(sp.len(c1.data.outcomes[0].poll_data.phase_1_voters) == 2)
 
 def unit_test_end_phase1_ok_2(is_default = True):
@@ -514,7 +508,6 @@ def unit_test_end_phase1_ok_2(is_default = True):
         scenario.verify(c1.data.outcomes[0].poll_data.phase_1_objection_threshold == 10000)
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_needed == sp.bool(False))
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_vote_id == 0)
-        scenario.verify(c1.data.outcomes[0].poll_data.phase_2_voting_start_block == 0)
         scenario.verify(sp.len(c1.data.outcomes[0].poll_data.phase_1_voters) == 2)
 
 def unit_test_end_phase1_ok_3(is_default = True):
@@ -565,7 +558,6 @@ def unit_test_end_phase1_ok_3(is_default = True):
         scenario.verify(c1.data.outcomes[0].poll_data.phase_1_objection_threshold == 523)
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_needed == sp.bool(False))
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_vote_id == 0)
-        scenario.verify(c1.data.outcomes[0].poll_data.phase_2_voting_start_block == 0)
         scenario.verify(sp.len(c1.data.outcomes[0].poll_data.phase_1_voters) == 2)
 
 def unit_test_end_phase1_ok_4(is_default = True):
@@ -616,7 +608,6 @@ def unit_test_end_phase1_ok_4(is_default = True):
         scenario.verify(c1.data.outcomes[0].poll_data.phase_1_objection_threshold == 523)
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_needed == sp.bool(False))
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_vote_id == 0)
-        scenario.verify(c1.data.outcomes[0].poll_data.phase_2_voting_start_block == 0)
         scenario.verify(sp.len(c1.data.outcomes[0].poll_data.phase_1_voters) == 2)
 
 def unit_test_end_phase1_nok_1(is_default = True):
@@ -633,14 +624,14 @@ def unit_test_end_phase1_nok_1(is_default = True):
         c1.set_phase_2_contract(simulated_phase2_voting_contract.address).run(valid=True, sender=admin)
 
         scenario.p("2. Start poll")
-        total_voters = 100
+        total_voters = 1199
         c1.start(total_voters).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("3. Send votes")
         start_block = c1.data.governance_parameters.vote_delay_blocks
-        alice_vote_param_valid_nay = sp.record(votes=sp.nat(7), address=alice.address, vote_value=DAO.VoteValue.NAY, vote_id=sp.nat(0))
+        alice_vote_param_valid_nay = sp.record(votes=sp.nat(115), address=alice.address, vote_value=DAO.VoteValue.NAY, vote_id=sp.nat(0))
         c1.vote(alice_vote_param_valid_nay).run(valid=True, sender=simulated_poll_leader_contract.address, level=start_block)
-        bob_vote_param_valid_nay = sp.record(votes=sp.nat(3), address=bob.address, vote_value=DAO.VoteValue.NAY, vote_id=sp.nat(0))
+        bob_vote_param_valid_nay = sp.record(votes=sp.nat(4), address=bob.address, vote_value=DAO.VoteValue.NAY, vote_id=sp.nat(0))
         c1.vote(bob_vote_param_valid_nay).run(valid=True, sender=simulated_poll_leader_contract.address, level=start_block)
 
         scenario.p("4. Let's close now")
@@ -658,15 +649,14 @@ def unit_test_end_phase1_nok_1(is_default = True):
         scenario.verify(~c1.data.outcomes.contains(0))
         scenario.verify(c1.data.vote_state == DAO.STARTING_PHASE_2)
         scenario.verify(c1.data.poll_descriptor.is_some())
-        scenario.verify(c1.data.poll_descriptor.open_some().phase_1_vote_objection == 10)
+        scenario.verify(c1.data.poll_descriptor.open_some().phase_1_vote_objection == 119)
         scenario.verify(c1.data.poll_descriptor.open_some().total_voters == total_voters)
         scenario.verify(c1.data.poll_descriptor.open_some().phase_1_voting_start_block == 10)
         scenario.verify(c1.data.poll_descriptor.open_some().phase_1_voting_end_block == 190)
         scenario.verify(c1.data.poll_descriptor.open_some().vote_id == 0)
-        scenario.verify(c1.data.poll_descriptor.open_some().phase_1_objection_threshold == 10)
+        scenario.verify(c1.data.poll_descriptor.open_some().phase_1_objection_threshold == 119)
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_needed == sp.bool(True))
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_vote_id == 0)
-        scenario.verify(c1.data.poll_descriptor.open_some().phase_2_voting_start_block == 0)
         scenario.verify(sp.len(c1.data.poll_descriptor.open_some().phase_1_voters) == 2)
 
 def unit_test_end_phase1_nok_2(is_default = True):
@@ -716,7 +706,6 @@ def unit_test_end_phase1_nok_2(is_default = True):
         scenario.verify(c1.data.poll_descriptor.open_some().phase_1_objection_threshold == 10000)
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_needed == sp.bool(True))
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_vote_id == 0)
-        scenario.verify(c1.data.poll_descriptor.open_some().phase_2_voting_start_block == 0)
         scenario.verify(sp.len(c1.data.poll_descriptor.open_some().phase_1_voters) == 2)
 
 def unit_test_end_phase1_nok_3(is_default = True):
@@ -766,7 +755,6 @@ def unit_test_end_phase1_nok_3(is_default = True):
         scenario.verify(c1.data.poll_descriptor.open_some().phase_1_objection_threshold == 523)
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_needed == sp.bool(True))
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_vote_id == 0)
-        scenario.verify(c1.data.poll_descriptor.open_some().phase_2_voting_start_block == 0)
         scenario.verify(sp.len(c1.data.poll_descriptor.open_some().phase_1_voters) == 2)
 
 def unit_test_end_phase1_nok_4(is_default = True):
@@ -816,7 +804,6 @@ def unit_test_end_phase1_nok_4(is_default = True):
         scenario.verify(c1.data.poll_descriptor.open_some().phase_1_objection_threshold == 523)
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_needed == sp.bool(True))
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_vote_id == 0)
-        scenario.verify(c1.data.poll_descriptor.open_some().phase_2_voting_start_block == 0)
         scenario.verify(sp.len(c1.data.poll_descriptor.open_some().phase_1_voters) == 2)
 
 def unit_test_end_phase2_vote(is_default = True):
@@ -833,8 +820,7 @@ def unit_test_end_phase2_vote(is_default = True):
         c1.set_phase_2_contract(simulated_phase2_voting_contract.address).run(valid=True, sender=admin)
 
         scenario.p("2. propose_callback can only be called when in state STARTING_PHASE_2")
-        param_propose_callback_1 = sp.record(id=1, snapshot_block=sp.level)
-        c1.propose_callback(param_propose_callback_1).run(valid=False, sender=simulated_phase2_voting_contract.address)
+        c1.propose_callback(1).run(valid=False, sender=simulated_phase2_voting_contract.address)
 
         scenario.p("3. Start poll")
         total_voters = 5233
@@ -848,8 +834,7 @@ def unit_test_end_phase2_vote(is_default = True):
         c1.vote(bob_vote_param_valid_nay).run(valid=True, sender=simulated_poll_leader_contract.address, level=start_block)
 
         scenario.p("5. propose_callback can only be called when in state STARTING_PHASE_2")
-        param_propose_callback_2 = sp.record(id=1, snapshot_block=sp.level)
-        c1.propose_callback(param_propose_callback_2).run(valid=False, sender=simulated_phase2_voting_contract.address)
+        c1.propose_callback(1).run(valid=False, sender=simulated_phase2_voting_contract.address)
 
         scenario.p("6. Let's close now and start phase 2")
         end_block = sp.level + c1.data.governance_parameters.vote_length_blocks
@@ -861,12 +846,10 @@ def unit_test_end_phase2_vote(is_default = True):
         c1.vote(alice_vote_param_valid_yay).run(valid=False, sender=simulated_poll_leader_contract.address)
 
         scenario.p("8. Only the phase 2 contract can call the propose_callback.")
-        snapshot_block = sp.level + 10
-        param_propose_callback_3 = sp.record(id=1, snapshot_block=snapshot_block)
-        c1.propose_callback(param_propose_callback_3).run(valid=False, sender=admin.address)
+        c1.propose_callback(1).run(valid=False, sender=admin.address)
 
         scenario.p("9. The majority voting contract will call the propose_callback. Let's simulate this call.")
-        c1.propose_callback(param_propose_callback_3).run(valid=True, sender=simulated_phase2_voting_contract.address)
+        c1.propose_callback(1).run(valid=True, sender=simulated_phase2_voting_contract.address)
         scenario.verify(c1.data.vote_state == DAO.PHASE_2_MAJORITY)
 
         scenario.p("10. Verify poll_descriptor data are as expected")
@@ -880,12 +863,11 @@ def unit_test_end_phase2_vote(is_default = True):
         scenario.verify(c1.data.poll_descriptor.open_some().phase_1_objection_threshold == 523)
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_needed == sp.bool(True))
         scenario.verify(c1.data.poll_descriptor.open_some().phase_2_vote_id == 1)
-        scenario.verify(c1.data.poll_descriptor.open_some().phase_2_voting_start_block == snapshot_block)
         scenario.verify(sp.len(c1.data.poll_descriptor.open_some().phase_1_voters) == 2)
 
         scenario.p("11. Vote")
         alice_vote_param_valid_yay = sp.record(votes=sp.nat(200), address=alice.address, vote_value=DAO.VoteValue.YAY, vote_id=sp.nat(0))
-        c1.vote(alice_vote_param_valid_yay).run(valid=True, sender=simulated_poll_leader_contract.address, level=snapshot_block)
+        c1.vote(alice_vote_param_valid_yay).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("12. Verify callback calls")
         scenario.verify(simulated_phase2_voting_contract.data.vote_called_times == 1)
@@ -917,9 +899,7 @@ def unit_test_end_phase2_end_ok(is_default = True):
         c1.end(0).run(valid=True, sender=simulated_poll_leader_contract.address, level=end_block + 1)
 
         scenario.p("4. The majority voting contract will call the propose_callback. Let's simulate this call.")
-        snapshot_block = sp.level + 10
-        param_propose_callback_3 = sp.record(id=1, snapshot_block=snapshot_block)
-        c1.propose_callback(param_propose_callback_3).run(valid=True, sender=simulated_phase2_voting_contract.address)
+        c1.propose_callback(1).run(valid=True, sender=simulated_phase2_voting_contract.address)
         scenario.verify(c1.data.vote_state == DAO.PHASE_2_MAJORITY)
 
         scenario.p("5. end_callback cann only be called in state ENDING_PHASE_2.")
@@ -960,7 +940,6 @@ def unit_test_end_phase2_end_ok(is_default = True):
         scenario.verify(c1.data.outcomes[0].poll_data.phase_1_objection_threshold == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_needed == sp.bool(True))
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_vote_id == 1)
-        scenario.verify(c1.data.outcomes[0].poll_data.phase_2_voting_start_block == snapshot_block)
         scenario.verify(sp.len(c1.data.outcomes[0].poll_data.phase_1_voters) == 1)
         scenario.verify(~c1.data.poll_descriptor.is_some())
         scenario.verify(c1.data.vote_state == DAO.NONE)
@@ -1003,7 +982,6 @@ def unit_test_end_phase2_end_ok(is_default = True):
         scenario.verify(c1.data.outcomes[1].poll_data.phase_1_objection_threshold == 523)
         scenario.verify(c1.data.outcomes[1].poll_data.phase_2_needed == sp.bool(False))
         scenario.verify(c1.data.outcomes[1].poll_data.phase_2_vote_id == 0)
-        scenario.verify(c1.data.outcomes[1].poll_data.phase_2_voting_start_block == 0)
         scenario.verify(sp.len(c1.data.outcomes[1].poll_data.phase_1_voters) == 2)
 
 def unit_test_end_phase2_end_nok(is_default = True):
@@ -1029,9 +1007,7 @@ def unit_test_end_phase2_end_nok(is_default = True):
         c1.end(0).run(valid=True, sender=simulated_poll_leader_contract.address, level=end_block + 1)
 
         scenario.p("4. The majority voting contract will call the propose_callback. Let's simulate this call.")
-        snapshot_block = sp.level + 10
-        param_propose_callback_3 = sp.record(id=1, snapshot_block=snapshot_block)
-        c1.propose_callback(param_propose_callback_3).run(valid=True, sender=simulated_phase2_voting_contract.address)
+        c1.propose_callback(1).run(valid=True, sender=simulated_phase2_voting_contract.address)
         scenario.verify(c1.data.vote_state == DAO.PHASE_2_MAJORITY)
 
         scenario.p("5. end_callback cann only be called in state ENDING_PHASE_2.")
@@ -1056,7 +1032,6 @@ def unit_test_end_phase2_end_nok(is_default = True):
         scenario.verify(c1.data.outcomes[0].poll_data.phase_1_objection_threshold == 10)
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_needed == sp.bool(True))
         scenario.verify(c1.data.outcomes[0].poll_data.phase_2_vote_id == 1)
-        scenario.verify(c1.data.outcomes[0].poll_data.phase_2_voting_start_block == snapshot_block)
         scenario.verify(sp.len(c1.data.outcomes[0].poll_data.phase_1_voters) == 1)
         scenario.verify(~c1.data.poll_descriptor.is_some())
         scenario.verify(c1.data.vote_state == DAO.NONE)
@@ -1096,7 +1071,6 @@ def unit_test_offchain_views(is_default = True):
         scenario.verify(poll_data_0.phase_1_objection_threshold == 10)
         scenario.verify(poll_data_0.phase_2_needed == sp.bool(False))
         scenario.verify(poll_data_0.phase_2_vote_id == 0)
-        scenario.verify(poll_data_0.phase_2_voting_start_block == 0)
         scenario.verify(sp.len(poll_data_0.phase_1_voters) == 2)
 
         scenario.p("5. Let's close now")
@@ -1122,7 +1096,6 @@ def unit_test_offchain_views(is_default = True):
         scenario.verify(outcome_0.poll_data.phase_1_objection_threshold == 10)
         scenario.verify(outcome_0.poll_data.phase_2_needed == sp.bool(False))
         scenario.verify(outcome_0.poll_data.phase_2_vote_id == 0)
-        scenario.verify(outcome_0.poll_data.phase_2_voting_start_block == 0)
         scenario.verify(sp.len(outcome_0.poll_data.phase_1_voters) == 2)
 
         scenario.p("9. Start poll with phase 2 this time")
@@ -1135,9 +1108,7 @@ def unit_test_offchain_views(is_default = True):
         c1.end(1).run(valid=True, sender=simulated_poll_leader_contract.address, level=end_block + 1)
 
         scenario.p("10. The majority voting contract will call the propose_callback. Let's simulate this call.")
-        snapshot_block = sp.level + 10
-        param_propose_callback_3 = sp.record(id=1, snapshot_block=snapshot_block)
-        c1.propose_callback(param_propose_callback_3).run(valid=True, sender=simulated_phase2_voting_contract.address)
+        c1.propose_callback(1).run(valid=True, sender=simulated_phase2_voting_contract.address)
         scenario.verify(c1.get_contract_state() == DAO.PHASE_2_MAJORITY)
 
         scenario.p("11. Simulate end of phase with successful outcome")
@@ -1160,7 +1131,6 @@ def unit_test_offchain_views(is_default = True):
         scenario.verify(outcome_0.poll_data.phase_1_objection_threshold == 10)
         scenario.verify(outcome_0.poll_data.phase_2_needed == sp.bool(False))
         scenario.verify(outcome_0.poll_data.phase_2_vote_id == 0)
-        scenario.verify(outcome_0.poll_data.phase_2_voting_start_block == 0)
         scenario.verify(sp.len(outcome_0.poll_data.phase_1_voters) == 2)
 
         outcome_1 = c1.get_historical_outcome_data(1)

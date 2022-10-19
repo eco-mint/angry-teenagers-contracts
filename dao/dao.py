@@ -184,7 +184,7 @@ class AngryTeenagersDao(sp.Contract):
         sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
         sp.verify(self.data.state == NONE, message=Error.ErrorMessage.dao_vote_in_progress())
         sp.verify(self.data.angry_teenager_fa2.is_some(), message=Error.ErrorMessage.dao_not_registered())
-        sp.verify(~self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_vote_in_progress())
+        sp.verify(~self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
         sp.verify(self.data.poll_manager.contains(proposal.voting_strategy), message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Create the poll with the proposal
@@ -224,7 +224,7 @@ class AngryTeenagersDao(sp.Contract):
 
         # Asserts
         sp.verify(self.data.state == STARTING_VOTE, message=Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
         sp.verify(self.data.ongoing_poll.open_some().voting_strategy_address == sp.sender, message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Update the poll data
@@ -252,7 +252,7 @@ class AngryTeenagersDao(sp.Contract):
 
         # Asserts
         sp.verify(self.data.state == VOTE_ONGOING, message=Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
         sp.verify(params.proposal_id == self.data.ongoing_poll.open_some().proposal_id, message=Error.ErrorMessage.dao_no_invalid_proposal())
 
         # Find the user voting power before sending the votes
@@ -279,7 +279,7 @@ class AngryTeenagersDao(sp.Contract):
         # Asserts
         # Everybody can call this function to avoid a vote been blocked by the admin or anybody else
         sp.verify(self.data.state == VOTE_ONGOING, message=Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
         sp.verify(self.data.ongoing_poll.open_some().proposal_id == proposal_id, message=Error.ErrorMessage.dao_no_invalid_proposal())
 
         # Change the state of contract
@@ -300,7 +300,7 @@ class AngryTeenagersDao(sp.Contract):
 
         # Asserts
         sp.verify(self.data.state == ENDING_VOTE, message=Error.ErrorMessage.dao_no_vote_open())
-        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
         sp.verify(self.data.ongoing_poll.open_some().voting_strategy_address == sp.sender, message=Error.ErrorMessage.dao_invalid_voting_strat())
         sp.verify(~self.data.outcomes.contains(self.data.next_proposal_id), message=Error.ErrorMessage.dao_invalid_voting_strat())
         sp.verify(params.voting_id == self.data.ongoing_poll.open_some().voting_id, message=Error.ErrorMessage.dao_invalid_voting_strat())

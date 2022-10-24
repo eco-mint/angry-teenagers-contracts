@@ -26,6 +26,9 @@ OUTCOMES_TYPE = sp.TBigMap(sp.TNat, PollOutcome.HISTORICAL_OUTCOME_TYPE)
 VOTE_TYPE_MAJORITY=0
 # Voting strategy called "opt out". Mainly used to unblock ATs funds.
 VOTE_TYPE_OPT_OUT=1
+# If a voting strategy is not available anymore, we want to be able
+# to unblock the DAO
+BLOCK_NUMBER_BEFORE_UNLOCKING_CONTRACT=10
 
 ################################################################
 ################################################################
@@ -65,6 +68,7 @@ class AngryTeenagersDao(sp.Contract):
               admin=sp.TAddress,
               next_admin=sp.TOption(sp.TAddress),
               outcomes=OUTCOMES_TYPE,
+              time_ref=sp.TOption(sp.TNat),
               metadata=sp.TBigMap(sp.TString, sp.TBytes)
           )
       )
@@ -78,6 +82,7 @@ class AngryTeenagersDao(sp.Contract):
           admin=admin,
           next_admin=sp.none,
           outcomes=outcomes,
+          time_ref=sp.none,
           metadata=metadata
       )
 
@@ -208,11 +213,29 @@ class AngryTeenagersDao(sp.Contract):
 
         # Change the state of the contract accordingly
         self.data.state = STARTING_VOTE
+        self.data.time_ref = sp.some(sp.level)
 
         # Call voting strategy to start the poll
         self.call_voting_strategy_start(total_available_voters.value)
 
         sp.emit(self.data.next_proposal_id, with_type=True, tag="Propose vote")
+
+########################################################################################################################
+# unlock_contract
+########################################################################################################################
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def unlock_contract(self):
+        # Asserts
+        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
+        sp.verify((self.data.state == STARTING_VOTE) | (self.data.state == ENDING_VOTE), message=Error.ErrorMessage.dao_no_vote_open())
+
+        sp.verify((self.data.time_ref.open_some() + BLOCK_NUMBER_BEFORE_UNLOCKING_CONTRACT) < sp.level,
+                  message=Error.ErrorMessage.dao_too_early_for_unlock())
+
+        self.data.state = NONE
+        self.data.ongoing_poll = sp.none
+        self.data.time_ref = sp.none
+
 
 ########################################################################################################################
 # propose_callback
@@ -226,6 +249,8 @@ class AngryTeenagersDao(sp.Contract):
         sp.verify(self.data.state == STARTING_VOTE, message=Error.ErrorMessage.dao_no_vote_open())
         sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
         sp.verify(self.data.ongoing_poll.open_some().voting_strategy_address == sp.sender, message=Error.ErrorMessage.dao_invalid_voting_strat())
+
+        self.data.time_ref = sp.none
 
         # Update the poll data
         self.data.ongoing_poll = sp.some(
@@ -284,6 +309,7 @@ class AngryTeenagersDao(sp.Contract):
 
         # Change the state of contract
         self.data.state = ENDING_VOTE
+        self.data.time_ref = sp.some(sp.level)
 
         # Call the appropriate voting strategy
         self.call_voting_strategy_end()
@@ -313,6 +339,8 @@ class AngryTeenagersDao(sp.Contract):
 
         # Change the state of contract
         self.data.state = NONE
+
+        self.data.time_ref = sp.none
 
         # Record the result of the vote
         self.data.outcomes[self.data.next_proposal_id] = sp.record(outcome=params.voting_outcome, poll_data=self.data.ongoing_poll.open_some())

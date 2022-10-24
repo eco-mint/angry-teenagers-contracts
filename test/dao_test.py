@@ -830,6 +830,115 @@ def unit_test_offchain_views(is_default=True):
         scenario.verify(outcome_1.poll_data.voting_id == 3)
         scenario.verify(outcome_1.poll_data.snapshot_block == 2312)
 
+def unit_test_unlock_contract_start(is_default = True):
+    @sp.add_test(name="unit_test_unlock_contract_start", is_default=is_default)
+    def test():
+        scenario = TestHelper.create_scenario("unit_test_unlock_contract_start")
+        admin, alice, bob, john = TestHelper.create_account(scenario)
+        c1, simulated_voting_strategy_one, simulated_voting_strategy_two, simulated_fa2 = TestHelper.create_contracts(scenario, admin)
+
+        scenario.h2("Test the unlock_contract entrypoint when start is stuck.")
+
+        proposal_1 = sp.record(title="Test1",
+                               description_link="link1",
+                               description_hash="hash1",
+                               proposal_lambda=sp.none,
+                               voting_strategy=0
+                               )
+
+        scenario.p("1. Register the FA2 contract")
+        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin)
+
+        scenario.p("2. Entrypoint can only be called when we are in STARTING_VOTE and ENDING_VOTE")
+        c1.unlock_contract().run(valid=False, sender=admin.address)
+
+        scenario.p("3. Inject a valid proposal")
+        c1.propose(proposal_1).run(valid=True, sender=admin.address)
+
+        scenario.p("4. Check storage is as expected")
+        scenario.verify(c1.data.state == DAO.STARTING_VOTE)
+
+        scenario.p("5. Only admin can unlock the contract")
+        c1.unlock_contract().run(valid=False, sender=alice.address, level=sp.level + 11)
+        c1.unlock_contract().run(valid=False, sender=bob.address, level=sp.level + 11)
+        c1.unlock_contract().run(valid=False, sender=john.address, level=sp.level + 11)
+        scenario.verify(c1.data.state == DAO.STARTING_VOTE)
+
+        scenario.p("6. unlock the contract successfully")
+        c1.unlock_contract().run(valid=True, sender=admin.address, level=sp.level + 11)
+        scenario.verify(c1.data.state == DAO.NONE)
+        scenario.verify(~c1.data.time_ref.is_some())
+        scenario.verify(~c1.data.ongoing_poll.is_some())
+
+        scenario.p("7. Inject a valid proposal")
+        c1.propose(proposal_1).run(valid=True, sender=admin.address)
+
+        scenario.p("8. Unlock can only be called when more than 10 blocks have passed")
+        c1.unlock_contract().run(valid=False, sender=admin.address, level=sp.level + 10)
+
+        scenario.p("9. Call propose_callback")
+        voting_id = 3
+        c1.propose_callback(voting_id).run(valid=True, sender=simulated_voting_strategy_one.address)
+        scenario.verify(c1.data.state == DAO.VOTE_ONGOING)
+        scenario.verify(~c1.data.time_ref.is_some())
+
+        scenario.p("10. Unlock cannot be called anymore")
+        c1.unlock_contract().run(valid=False, sender=admin.address)
+
+def unit_test_unlock_contract_end(is_default = True):
+    @sp.add_test(name="unit_test_unlock_contract_end", is_default=is_default)
+    def test():
+        scenario = TestHelper.create_scenario("unit_test_unlock_contract_end")
+        admin, alice, bob, john = TestHelper.create_account(scenario)
+        c1, simulated_voting_strategy_one, simulated_voting_strategy_two, simulated_fa2 = TestHelper.create_contracts(scenario, admin)
+
+        scenario.h2("Test the unlock_contract entrypoint when end is stuck.")
+
+        proposal_1 = sp.record(title="Test1",
+                               description_link="link1",
+                               description_hash="hash1",
+                               proposal_lambda=sp.none,
+                               voting_strategy=0
+                               )
+
+        scenario.p("1. Register the FA2 contract")
+        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin)
+
+        scenario.p("2. Go to ending state")
+        c1.propose(proposal_1).run(valid=True, sender=admin.address)
+        c1.propose_callback(3).run(valid=True, sender=simulated_voting_strategy_one.address)
+        c1.end(0).run(valid=True, sender=admin.address)
+
+        scenario.p("3. Check storage is as expected")
+        scenario.verify(c1.data.state == DAO.ENDING_VOTE)
+
+        scenario.p("4. Only admin can unlock the contract")
+        c1.unlock_contract().run(valid=False, sender=alice.address, level=sp.level + 11)
+        c1.unlock_contract().run(valid=False, sender=bob.address, level=sp.level + 11)
+        c1.unlock_contract().run(valid=False, sender=john.address, level=sp.level + 11)
+        scenario.verify(c1.data.state == DAO.ENDING_VOTE)
+
+        scenario.p("5. unlock the contract successfully")
+        c1.unlock_contract().run(valid=True, sender=admin.address, level=sp.level + 11)
+        scenario.verify(c1.data.state == DAO.NONE)
+        scenario.verify(~c1.data.time_ref.is_some())
+        scenario.verify(~c1.data.ongoing_poll.is_some())
+
+        scenario.p("6. Go to ending state again")
+        c1.propose(proposal_1).run(valid=True, sender=admin.address)
+        c1.propose_callback(3).run(valid=True, sender=simulated_voting_strategy_one.address)
+        c1.end(0).run(valid=True, sender=admin.address)
+
+        scenario.p("7. Unlock can only be called when more than 10 blocks have passed")
+        c1.unlock_contract().run(valid=False, sender=admin.address, level=sp.level + 10)
+
+        scenario.p("8. Call end_callback")
+        c1.end_callback(sp.record(voting_id=3, voting_outcome=0)).run(valid=True, sender=simulated_voting_strategy_one.address)
+        scenario.verify(c1.data.state == DAO.NONE)
+        scenario.verify(~c1.data.time_ref.is_some())
+
+        scenario.p("9. Unlock cannot be called anymore")
+        c1.unlock_contract().run(valid=False, sender=admin.address)
 
 unit_test_initial_storage()
 unit_test_set_next_administrator()
@@ -844,4 +953,6 @@ unit_test_vote()
 unit_test_end()
 unit_test_end_callback()
 unit_test_offchain_views()
+unit_test_unlock_contract_start()
+unit_test_unlock_contract_end()
 

@@ -266,8 +266,7 @@ class AngryTeenagers(sp.Contract):
         sp.verify( ~self.is_paused(), message=Error.ErrorMessage.unauthorized_user())
         sp.set_type(params, BALANCE_OF_FUNCTION_TYPE)
         def f_process_request(req):
-            sp.verify(self.data.ledger.contains(req.token_id), message=Error.Fa2ErrorMessage.token_undefined())
-            sp.if self.data.ledger[req.token_id] == req.owner:
+            sp.if self.data.ledger.get(req.token_id, message=Error.Fa2ErrorMessage.token_undefined()) == req.owner:
                 sp.result(sp.record(
                         request=sp.record(
                         owner=sp.set_type_expr(req.owner, sp.TAddress),
@@ -302,8 +301,7 @@ class AngryTeenagers(sp.Contract):
                 sp.verify(tx.amount <= 1, Error.Fa2ErrorMessage.insufficient_balance())
 
                 sp.if tx.amount == 1:
-                    sp.verify(self.data.ledger.contains(tx.token_id), Error.Fa2ErrorMessage.token_undefined())
-                    sp.verify(self.data.ledger[tx.token_id] == current_from, Error.Fa2ErrorMessage.insufficient_balance())
+                    sp.verify(self.data.ledger.get(tx.token_id, message=Error.Fa2ErrorMessage.token_undefined()) == current_from, Error.Fa2ErrorMessage.insufficient_balance())
                     self.data.ledger[tx.token_id] = tx.to_
 
                     self.update_balance(current_from, tx.to_)
@@ -360,7 +358,8 @@ class AngryTeenagers(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_extra_token_metadata(self, tokend_id, key, value):
         sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
-        sp.if ~self.data.extra_token_metadata.contains(tokend_id):
+        has_token_id = sp.local("has_token_id", self.data.extra_token_metadata.get_opt(tokend_id))
+        sp.if ~has_token_id.value.is_some():
             self.data.extra_token_metadata[tokend_id] = sp.record(token_id=tokend_id, token_info=sp.map(l={}, tkey=sp.TString, tvalue=sp.TBytes))
         self.data.extra_token_metadata[tokend_id].token_info[key] = value
 
@@ -396,11 +395,9 @@ class AngryTeenagers(sp.Contract):
         sp.verify(self.is_artwork_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
         sp.set_type(params, UPDATE_ARTWORK_METADATA_FUNCTION_TYPE)
         sp.for artwork_metadata in params:
-            sp.verify(self.data.ledger.contains(sp.fst(artwork_metadata)), message=Error.Fa2ErrorMessage.token_undefined())
-            sp.verify(self.data.token_metadata.contains(sp.fst(artwork_metadata)), message=Error.Fa2ErrorMessage.token_undefined())
-            info = sp.local('info', sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]))
-            sp.verify(info.value.contains(REVEALED_METADATA), message=Error.Fa2ErrorMessage.token_undefined())
-            sp.verify(info.value[REVEALED_METADATA] == sp.utils.bytes_of_string("false"), message=Error.ErrorMessage.token_revealed())
+            sp.verify(self.data.ledger.get_opt(sp.fst(artwork_metadata)).is_some(), message=Error.Fa2ErrorMessage.token_undefined())
+            info = sp.local('info', sp.snd(self.data.token_metadata.get(sp.fst(artwork_metadata), message=Error.Fa2ErrorMessage.token_undefined())))
+            sp.verify(info.value.get(REVEALED_METADATA, message=Error.Fa2ErrorMessage.token_undefined()) == sp.utils.bytes_of_string("false"), message=Error.ErrorMessage.token_revealed())
 
             my_map = sp.local('my_map', sp.update_map(sp.snd(self.data.token_metadata[sp.fst(artwork_metadata)]), REVEALED_METADATA, sp.some(sp.utils.bytes_of_string("true"))))
             my_map.value = sp.update_map(my_map.value, ARTIFACTURI_METADATA, sp.some((sp.snd(artwork_metadata)).artifact_uri))
@@ -444,10 +441,9 @@ class AngryTeenagers(sp.Contract):
 
         # Change NFTs token metadata
         sp.for token in params:
-            sp.verify(self.data.ledger.contains(token), message=Error.Fa2ErrorMessage.token_undefined())
-            sp.verify(self.data.token_metadata.contains(token), message=Error.Fa2ErrorMessage.token_undefined())
-            info = sp.local('info', sp.snd(self.data.token_metadata[token]))
-            sp.verify(info.value.contains(ROYALTIES_METADATA), Error.Fa2ErrorMessage.token_undefined())
+            sp.verify(self.data.ledger.get_opt(token).is_some(), message=Error.Fa2ErrorMessage.token_undefined())
+            info = sp.local('info', sp.snd(self.data.token_metadata.get(token, message=Error.Fa2ErrorMessage.token_undefined())))
+            info.value.get(ROYALTIES_METADATA, message=Error.Fa2ErrorMessage.token_undefined())
 
             my_map = sp.local('my_map', sp.update_map(sp.snd(self.data.token_metadata[token]), ROYALTIES_METADATA, sp.some(self.data.royalties)))
             self.data.token_metadata[token] = sp.pair(token, my_map.value)
@@ -464,8 +460,8 @@ class AngryTeenagers(sp.Contract):
 
         self.data.minted_tokens = self.data.minted_tokens + 1
 
-
-        sp.if ~self.data.voting_power.contains(params):
+        has_voting_power = sp.local("has_voting_power", self.data.voting_power.get_opt(params))
+        sp.if ~has_voting_power.value.is_some():
             self.data.voting_power[params] = sp.list(l={}, t=sp.TRecord(level=sp.TNat, value=sp.TNat))
 
         with sp.match_cons(self.data.voting_power[params]) as last_balance:
@@ -489,7 +485,8 @@ class AngryTeenagers(sp.Contract):
     def get_voting_power(self, params):
         sp.set_type(params, sp.TPair(sp.TAddress, sp.TNat))
         address, level = sp.match_pair(params)
-        sp.if ~self.data.voting_power.contains(address):
+        has_voting_power = sp.local("has_voting_power", self.data.voting_power.get_opt(address))
+        sp.if ~has_voting_power.value.is_some():
             sp.result(sp.nat(0))
         sp.else:
             sp.verify(sp.len(self.data.voting_power[address]) > 0, message=Error.ErrorMessage.balance_inconsistency())
@@ -542,8 +539,7 @@ class AngryTeenagers(sp.Contract):
         token_list = sp.local('token_list', sp.list(l={}, t=TOKEN_ID))
         i = sp.local("i", sp.nat(0))
         sp.while i.value < self.data.minted_tokens:
-            sp.verify(self.data.ledger.contains(i.value), message=Error.Fa2ErrorMessage.token_undefined())
-            sp.if self.data.ledger[i.value] == params:
+            sp.if self.data.ledger.get(i.value, message=Error.Fa2ErrorMessage.token_undefined()) == params:
                 token_list.value.push(i.value)
             i.value = i.value + 1
         sp.result(token_list.value)
@@ -555,8 +551,7 @@ class AngryTeenagers(sp.Contract):
         token_list = sp.local('token_list', sp.list(l={}, t=TOKEN_ID))
         i = sp.local("i", sp.nat(0))
         sp.while i.value < self.data.minted_tokens:
-            sp.verify(self.data.token_metadata.contains(i.value), message=Error.Fa2ErrorMessage.token_undefined())
-            sp.if (sp.snd(self.data.token_metadata[i.value]))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"):
+            sp.if (sp.snd(self.data.token_metadata.get(i.value, message=Error.Fa2ErrorMessage.token_undefined())))[REVEALED_METADATA] == sp.utils.bytes_of_string("false"):
                 token_list.value.push(i.value)
             i.value = i.value + 1
         sp.result(token_list.value)
@@ -596,8 +591,7 @@ class AngryTeenagers(sp.Contract):
                 owner=sp.TAddress,
                 token_id=sp.TNat
             ).layout(("owner", "token_id")))
-        sp.verify(self.data.ledger.contains(request.token_id), message=Error.Fa2ErrorMessage.token_undefined())
-        sp.if self.data.ledger[request.token_id] == request.owner:
+        sp.if self.data.ledger.get(request.token_id, message=Error.Fa2ErrorMessage.token_undefined()) == request.owner:
             sp.result(sp.nat(1))
         sp.else:
             sp.result(sp.nat(0))
@@ -615,10 +609,9 @@ class AngryTeenagers(sp.Contract):
         """
         sp.set_type(token_id, sp.TNat)
         sp.verify(token_id < self.data.total_supply)
-        sp.verify(self.data.ledger.contains(token_id), message=Error.Fa2ErrorMessage.token_undefined())
-        sp.verify(self.data.token_metadata.contains(token_id), message=Error.Fa2ErrorMessage.token_undefined())
+        sp.verify(self.data.ledger.get_opt(token_id).is_some(), message=Error.Fa2ErrorMessage.token_undefined())
 
-        sp.result(self.data.token_metadata[token_id])
+        sp.result(self.data.token_metadata.get(token_id, message=Error.Fa2ErrorMessage.token_undefined()))
 
 ########################################################################################################################
 # Internal functions
@@ -636,8 +629,7 @@ class AngryTeenagers(sp.Contract):
         return (sender == self.data.administrator) | (sender == self.data.artwork_administrator)
 
     def update_balance(self, sender, receiver):
-        sp.verify(self.data.voting_power.contains(sender), message=Error.ErrorMessage.balance_inconsistency())
-        sp.verify(sp.len(self.data.voting_power[sender]) > 0,
+        sp.verify(sp.len(self.data.voting_power.get(sender, message=Error.ErrorMessage.balance_inconsistency())) > 0,
                   message=Error.ErrorMessage.balance_inconsistency())
 
         # Update sender balances
@@ -655,7 +647,8 @@ class AngryTeenagers(sp.Contract):
             sp.failwith(Error.ErrorMessage.balance_inconsistency())
 
         # Update receiver balances
-        sp.if ~self.data.voting_power.contains(receiver):
+        has_voting_power = sp.local("has_voting_power", self.data.voting_power.get_opt(receiver))
+        sp.if ~has_voting_power.value.is_some():
             self.data.voting_power[receiver] = sp.list(l={}, t = sp.TRecord(level=sp.TNat, value=sp.TNat))
 
         with sp.match_cons(self.data.voting_power[receiver]) as last_balance:
@@ -674,7 +667,7 @@ class AngryTeenagers(sp.Contract):
         sp.set_type(token_id, sp.TNat)
 
         # asserts
-        sp.verify(~self.data.token_metadata.contains(token_id), Error.ErrorMessage.invalid_token_metadata())
+        sp.verify(~self.data.token_metadata.get_opt(token_id).is_some(), Error.ErrorMessage.invalid_token_metadata())
 
         nat_to_bytes = sp.local('nat_to_bytes', sp.map(l={sp.nat(0): sp.bytes('0x30'),
                                                           sp.nat(1): sp.bytes('0x31'),

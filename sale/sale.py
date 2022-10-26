@@ -138,7 +138,8 @@ class AngryTeenagersSale(sp.Contract):
         sp.set_type(params, sp.TAddress)
 
         user_balance = sp.local('balance', 0)
-        sp.if self.data.event_user_balance.contains(params):
+        has_user_balance = sp.local("has_user_balance", self.data.event_user_balance.get_opt(params))
+        sp.if has_user_balance.value.is_some():
             user_balance.value = self.data.event_user_balance[params]
 
         sp.if self.data.state == STATE_EVENT_PRESALE_5:
@@ -616,7 +617,8 @@ class AngryTeenagersSale(sp.Contract):
                   message=Error.ErrorMessage.sale_no_token())
 
         # User minted his token already ?
-        sp.if self.data.event_user_balance.contains(params.address):
+        has_user_balance = sp.local("has_user_balance", self.data.event_user_balance.get_opt(params.address))
+        sp.if has_user_balance.value.is_some():
             sp.verify(self.data.event_user_balance[params.address] + params.amount <= self.data.event_max_per_user,
                       message=Error.ErrorMessage.sale_no_token())
 
@@ -624,7 +626,7 @@ class AngryTeenagersSale(sp.Contract):
         self.check_amount_and_transfer_tez(params.amount, self.data.event_price)
         self.mint_internal(params.amount, params.address)
 
-        sp.if self.data.event_user_balance.contains(params.address):
+        sp.if has_user_balance.value.is_some():
             self.data.event_user_balance[params.address] = self.data.event_user_balance[params.address] + params.amount
         sp.else:
             self.data.event_user_balance[params.address] = params.amount
@@ -638,7 +640,8 @@ class AngryTeenagersSale(sp.Contract):
             self.data.token_minted_in_event = self.data.token_minted_in_event + params.amount
 
         # User minted his token already ?
-        sp.if self.data.event_user_balance.contains(params.address):
+        has_user_event_balance = sp.local("has_user_event_balance", self.data.event_user_balance.get_opt(params.address))
+        sp.if has_user_event_balance.value.is_some():
             sp.verify(self.data.event_user_balance[params.address] + params.amount <= self.data.event_max_per_user,
                       message=Error.ErrorMessage.forbidden_operation())
 
@@ -651,7 +654,7 @@ class AngryTeenagersSale(sp.Contract):
 
         self.mint_internal(params.amount, params.address)
 
-        sp.if self.data.event_user_balance.contains(params.address):
+        sp.if has_user_event_balance.value.is_some():
             self.data.event_user_balance[params.address] = self.data.event_user_balance[params.address] + params.amount
         sp.else:
             self.data.event_user_balance[params.address] = params.amount

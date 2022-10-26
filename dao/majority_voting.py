@@ -265,7 +265,7 @@ class DaoMajorityVoting(sp.Contract):
         sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
         sp.verify(self.data.vote_state == IN_PROGRESS, message=Error.ErrorMessage.dao_no_vote_open())
         sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
-        sp.verify(~self.data.poll_descriptor.open_some().voters.contains(params.address), message=Error.ErrorMessage.dao_vote_already_received())
+        sp.verify(~self.data.poll_descriptor.open_some().voters.get_opt(params.address).is_some(), message=Error.ErrorMessage.dao_vote_already_received())
         sp.verify(self.data.poll_descriptor.open_some().vote_id == params.vote_id, message=Error.ErrorMessage.dao_invalid_vote_id())
         sp.verify(sp.level >= self.data.poll_descriptor.open_some().voting_start_block, message=Error.ErrorMessage.dao_vote_not_yet_open())
         sp.verify(sp.level <= self.data.poll_descriptor.open_some().voting_end_block, message=Error.ErrorMessage.dao_vote_period_is_over())

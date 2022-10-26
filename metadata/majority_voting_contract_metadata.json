@@ -9,7 +9,7 @@
     {
       "name": "get_historical_outcome_data",
       "pure": true,
-      "description": "Get all historical outcomes ids.\n        ",
+      "description": "Get historical data per outcome id.\n        ",
       "implementations": [
         {
           "michelsonStorageView": {
@@ -50,18 +50,24 @@
                                               "args": [
                                                 { "prim": "nat", "annots": [ "%quorum" ] },
                                                 {
-                                                  "prim": "map",
+                                                  "prim": "pair",
                                                   "args": [
-                                                    { "prim": "address" },
+                                                    { "prim": "nat", "annots": [ "%total_available_voters" ] },
                                                     {
-                                                      "prim": "pair",
+                                                      "prim": "map",
                                                       "args": [
-                                                        { "prim": "nat", "annots": [ "%vote_value" ] },
-                                                        { "prim": "pair", "args": [ { "prim": "nat", "annots": [ "%level" ] }, { "prim": "nat", "annots": [ "%votes" ] } ] }
-                                                      ]
+                                                        { "prim": "address" },
+                                                        {
+                                                          "prim": "pair",
+                                                          "args": [
+                                                            { "prim": "nat", "annots": [ "%vote_value" ] },
+                                                            { "prim": "pair", "args": [ { "prim": "nat", "annots": [ "%level" ] }, { "prim": "nat", "annots": [ "%votes" ] } ] }
+                                                          ]
+                                                        }
+                                                      ],
+                                                      "annots": [ "%voters" ]
                                                     }
-                                                  ],
-                                                  "annots": [ "%voters" ]
+                                                  ]
                                                 }
                                               ]
                                             }
@@ -86,24 +92,14 @@
             "code": [
               { "prim": "UNPAIR" },
               { "prim": "SWAP" },
-              { "prim": "DUP" },
-              { "prim": "DUG", "args": [ { "int": "2" } ] },
-              { "prim": "GET", "args": [ { "int": "3" } ] },
-              { "prim": "CAR" },
-              { "prim": "SWAP" },
-              { "prim": "DUP" },
-              { "prim": "DUG", "args": [ { "int": "2" } ] },
-              { "prim": "MEM" },
-              {
-                "prim": "IF",
-                "args": [ [], [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_DAO_INVALID_OUTCOME_ID" } ] }, { "prim": "FAILWITH" } ] ]
-              },
-              { "prim": "SWAP" },
               { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CAR" },
               { "prim": "SWAP" },
               { "prim": "GET" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "402" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              {
+                "prim": "IF_NONE",
+                "args": [ [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_DAO_INVALID_OUTCOME_ID" } ] }, { "prim": "FAILWITH" } ], [] ]
+              }
             ]
           }
         }
@@ -161,18 +157,24 @@
                                           "args": [
                                             { "prim": "nat", "annots": [ "%quorum" ] },
                                             {
-                                              "prim": "map",
+                                              "prim": "pair",
                                               "args": [
-                                                { "prim": "address" },
+                                                { "prim": "nat", "annots": [ "%total_available_voters" ] },
                                                 {
-                                                  "prim": "pair",
+                                                  "prim": "map",
                                                   "args": [
-                                                    { "prim": "nat", "annots": [ "%vote_value" ] },
-                                                    { "prim": "pair", "args": [ { "prim": "nat", "annots": [ "%level" ] }, { "prim": "nat", "annots": [ "%votes" ] } ] }
-                                                  ]
+                                                    { "prim": "address" },
+                                                    {
+                                                      "prim": "pair",
+                                                      "args": [
+                                                        { "prim": "nat", "annots": [ "%vote_value" ] },
+                                                        { "prim": "pair", "args": [ { "prim": "nat", "annots": [ "%level" ] }, { "prim": "nat", "annots": [ "%votes" ] } ] }
+                                                      ]
+                                                    }
+                                                  ],
+                                                  "annots": [ "%voters" ]
                                                 }
-                                              ],
-                                              "annots": [ "%voters" ]
+                                              ]
                                             }
                                           ]
                                         }
@@ -202,7 +204,7 @@
               },
               { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CDR" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "409" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "420" } ] }, { "prim": "FAILWITH" } ], [] ] }
             ]
           }
         }

@@ -17,17 +17,6 @@
             "returnType": { "prim": "nat" },
             "code": [
               { "prim": "UNPAIR" },
-              { "prim": "SWAP" },
-              { "prim": "DUP" },
-              { "prim": "DUG", "args": [ { "int": "2" } ] },
-              { "prim": "CAR" },
-              { "prim": "GET", "args": [ { "int": "5" } ] },
-              { "prim": "SWAP" },
-              { "prim": "DUP" },
-              { "prim": "DUG", "args": [ { "int": "2" } ] },
-              { "prim": "CDR" },
-              { "prim": "MEM" },
-              { "prim": "IF", "args": [ [], [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ] ] },
               { "prim": "DUP" },
               { "prim": "CAR" },
               { "prim": "DIG", "args": [ { "int": "2" } ] },
@@ -36,7 +25,7 @@
               { "prim": "DIG", "args": [ { "int": "2" } ] },
               { "prim": "CDR" },
               { "prim": "GET" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "553" } ] }, { "prim": "FAILWITH" } ], [] ] },
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "FA2_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ], [] ] },
               { "prim": "COMPARE" },
               { "prim": "EQ" },
               {
@@ -51,7 +40,7 @@
     {
       "name": "does_token_exist",
       "pure": true,
-      "description": "Akd whether a token exists.\n        ",
+      "description": "Aks whether a token exists.\n        ",
       "implementations": [
         {
           "michelsonStorageView": {
@@ -141,24 +130,13 @@
                 "prim": "LOOP",
                 "args": [
                   [
-                    { "prim": "DUP", "args": [ { "int": "4" } ] },
-                    { "prim": "CAR" },
-                    { "prim": "GET", "args": [ { "int": "5" } ] },
-                    { "prim": "SWAP" },
-                    { "prim": "DUP" },
-                    { "prim": "DUG", "args": [ { "int": "2" } ] },
-                    { "prim": "MEM" },
-                    {
-                      "prim": "IF",
-                      "args": [ [], [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ] ]
-                    },
                     { "prim": "DUP", "args": [ { "int": "3" } ] },
                     { "prim": "DUP", "args": [ { "int": "5" } ] },
                     { "prim": "CAR" },
                     { "prim": "GET", "args": [ { "int": "5" } ] },
                     { "prim": "DUP", "args": [ { "int": "3" } ] },
                     { "prim": "GET" },
-                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "502" } ] }, { "prim": "FAILWITH" } ], [] ] },
+                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "FA2_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ], [] ] },
                     { "prim": "COMPARE" },
                     { "prim": "EQ" },
                     { "prim": "IF", "args": [ [ { "prim": "DUP" }, { "prim": "DUG", "args": [ { "int": "2" } ] }, { "prim": "CONS" }, { "prim": "SWAP" } ], [] ] },
@@ -205,7 +183,7 @@
               { "prim": "SWAP" },
               { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CAR" },
-              { "prim": "CAR" },
+              { "prim": "CDR" },
               { "prim": "SWAP" },
               { "prim": "DUP" },
               { "prim": "GET", "args": [ { "int": "4" } ] },
@@ -224,10 +202,23 @@
     {
       "name": "total_supply",
       "pure": true,
-      "description": "Get the total supply.\n        ",
+      "description": "Get the total supply for one token_id.\n        ",
       "implementations": [
         {
-          "michelsonStorageView": { "parameter": { "prim": "nat" }, "returnType": { "prim": "nat" }, "code": [ { "prim": "CDR" }, { "prim": "GET", "args": [ { "int": "7" } ] } ] }
+          "michelsonStorageView": {
+            "parameter": { "prim": "nat" },
+            "returnType": { "prim": "nat" },
+            "code": [
+              { "prim": "UNPAIR" },
+              { "prim": "SWAP" },
+              { "prim": "CAR" },
+              { "prim": "GET", "args": [ { "int": "8" } ] },
+              { "prim": "COMPARE" },
+              { "prim": "GT" },
+              { "prim": "IF", "args": [ [], [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "FA2_INSUFFICIENT_BALANCE" } ] }, { "prim": "FAILWITH" } ] ] },
+              { "prim": "PUSH", "args": [ { "prim": "nat" }, { "int": "1" } ] }
+            ]
+          }
         }
       ]
     },
@@ -263,24 +254,17 @@
               { "prim": "SWAP" },
               { "prim": "DUP" },
               { "prim": "DUG", "args": [ { "int": "2" } ] },
-              { "prim": "MEM" },
-              { "prim": "IF", "args": [ [], [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ] ] },
-              { "prim": "SWAP" },
-              { "prim": "DUP" },
-              { "prim": "DUG", "args": [ { "int": "2" } ] },
-              { "prim": "GET", "args": [ { "int": "5" } ] },
-              { "prim": "CDR" },
-              { "prim": "SWAP" },
-              { "prim": "DUP" },
-              { "prim": "DUG", "args": [ { "int": "2" } ] },
-              { "prim": "MEM" },
-              { "prim": "IF", "args": [ [], [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ] ] },
+              { "prim": "GET" },
+              {
+                "prim": "IF_NONE",
+                "args": [ [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "FA2_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ], [ { "prim": "DROP" } ] ]
+              },
               { "prim": "SWAP" },
               { "prim": "GET", "args": [ { "int": "5" } ] },
               { "prim": "CDR" },
               { "prim": "SWAP" },
               { "prim": "GET" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "574" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "FA2_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ], [] ] }
             ]
           }
         }
@@ -291,7 +275,7 @@
       "pure": true,
       "description": "Get oracle stream\n        ",
       "implementations": [
-        { "michelsonStorageView": { "returnType": { "prim": "bytes" }, "code": [ { "prim": "GET", "args": [ { "int": "3" } ] }, { "prim": "GET", "args": [ { "int": "3" } ] } ] } }
+        { "michelsonStorageView": { "returnType": { "prim": "bytes" }, "code": [ { "prim": "GET", "args": [ { "int": "3" } ] }, { "prim": "GET", "args": [ { "int": "5" } ] } ] } }
       ]
     },
     {
@@ -317,28 +301,17 @@
                 "prim": "LOOP",
                 "args": [
                   [
-                    { "prim": "DUP", "args": [ { "int": "3" } ] },
-                    { "prim": "GET", "args": [ { "int": "5" } ] },
-                    { "prim": "CDR" },
-                    { "prim": "SWAP" },
-                    { "prim": "DUP" },
-                    { "prim": "DUG", "args": [ { "int": "2" } ] },
-                    { "prim": "MEM" },
-                    {
-                      "prim": "IF",
-                      "args": [ [], [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ] ]
-                    },
                     { "prim": "PUSH", "args": [ { "prim": "bytes" }, { "bytes": "66616c7365" } ] },
                     { "prim": "DUP", "args": [ { "int": "4" } ] },
                     { "prim": "GET", "args": [ { "int": "5" } ] },
                     { "prim": "CDR" },
                     { "prim": "DUP", "args": [ { "int": "3" } ] },
                     { "prim": "GET" },
-                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "515" } ] }, { "prim": "FAILWITH" } ], [] ] },
+                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "FA2_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ], [] ] },
                     { "prim": "CDR" },
                     { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "revealed" } ] },
                     { "prim": "GET" },
-                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "515" } ] }, { "prim": "FAILWITH" } ], [] ] },
+                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "554" } ] }, { "prim": "FAILWITH" } ], [] ] },
                     { "prim": "COMPARE" },
                     { "prim": "EQ" },
                     { "prim": "IF", "args": [ [ { "prim": "DUP" }, { "prim": "DUG", "args": [ { "int": "2" } ] }, { "prim": "CONS" }, { "prim": "SWAP" } ], [] ] },

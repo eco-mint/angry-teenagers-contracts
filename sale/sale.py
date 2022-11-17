@@ -639,4 +639,5 @@ class AngryTeenagersSale(sp.Contract):
         self.data.event_user_balance[params.address] = user_event_balance.value + params.amount
 
     def redirect_fund(self, amount):
-        sp.send(self.data.multisig_fund_address, amount)
+        sp.if amount > 0:
+            sp.send(self.data.multisig_fund_address, amount)

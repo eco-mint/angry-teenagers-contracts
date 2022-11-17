@@ -306,8 +306,8 @@ class AngryTeenagers(sp.Contract):
 
                     self.update_balance(current_from, tx.to_)
 
-                event = sp.record(from_=current_from, to_=tx.to_, token_id=tx.token_id)
-                sp.emit(event, with_type=True, tag="Transfer")
+                    event = sp.record(from_=current_from, to_=tx.to_, token_id=tx.token_id)
+                    sp.emit(event, with_type=True, tag="Transfer")
 
 
     @sp.entry_point(check_no_incoming_transfer=True)

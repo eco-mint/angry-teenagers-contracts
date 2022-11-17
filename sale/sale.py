@@ -105,7 +105,7 @@ class AngryTeenagersSale(sp.Contract):
         metadata_base = {
             "name": "Angry Teenagers CrowdSale"
             ,
-            "version": "1.0.5"
+            "version": "1.1.1"
             , "description": (
                 "Angry Teenagers Crowdsale contract"
             )
@@ -639,5 +639,5 @@ class AngryTeenagersSale(sp.Contract):
         self.data.event_user_balance[params.address] = user_event_balance.value + params.amount
 
     def redirect_fund(self, amount):
-        sp.if amount > 0:
+        sp.if amount > sp.mutez(0):
             sp.send(self.data.multisig_fund_address, amount)

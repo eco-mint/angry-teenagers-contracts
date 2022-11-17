@@ -153,7 +153,7 @@ class DaoOptOutVoting(sp.Contract):
       metadata_base = {
           "name": "Angry Teenagers DAO OptOut vote"
           ,
-          "version": "1.0.5"
+          "version": "1.1.1"
           , "description": (
               "Angry Teenagers Opt out strategy."
           )

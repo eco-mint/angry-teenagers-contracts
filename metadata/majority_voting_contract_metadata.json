@@ -1,6 +1,6 @@
 {
   "name": "Angry Teenagers DAO Majority vote",
-  "version": "1.0.5",
+  "version": "1.1.1",
   "description": "Angry Teenagers Majority voting strategy.",
   "interfaces": [ "TZIP-016" ],
   "authors": [ "EcoMint LTD <www.angryteenagers.xyz>" ],
@@ -45,32 +45,7 @@
                                           "prim": "pair",
                                           "args": [
                                             { "prim": "nat", "annots": [ "%vote_id" ] },
-                                            {
-                                              "prim": "pair",
-                                              "args": [
-                                                { "prim": "nat", "annots": [ "%quorum" ] },
-                                                {
-                                                  "prim": "pair",
-                                                  "args": [
-                                                    { "prim": "nat", "annots": [ "%total_available_voters" ] },
-                                                    {
-                                                      "prim": "map",
-                                                      "args": [
-                                                        { "prim": "address" },
-                                                        {
-                                                          "prim": "pair",
-                                                          "args": [
-                                                            { "prim": "nat", "annots": [ "%vote_value" ] },
-                                                            { "prim": "pair", "args": [ { "prim": "nat", "annots": [ "%level" ] }, { "prim": "nat", "annots": [ "%votes" ] } ] }
-                                                          ]
-                                                        }
-                                                      ],
-                                                      "annots": [ "%voters" ]
-                                                    }
-                                                  ]
-                                                }
-                                              ]
-                                            }
+                                            { "prim": "pair", "args": [ { "prim": "nat", "annots": [ "%quorum" ] }, { "prim": "nat", "annots": [ "%total_available_voters" ] } ] }
                                           ]
                                         }
                                       ]
@@ -109,13 +84,13 @@
       "name": "get_number_of_historical_outcomes",
       "pure": true,
       "description": "Get how many historical outcome are stored in the DAO.\n        ",
-      "implementations": [ { "michelsonStorageView": { "returnType": { "prim": "nat" }, "code": [ { "prim": "GET", "args": [ { "int": "7" } ] } ] } } ]
+      "implementations": [ { "michelsonStorageView": { "returnType": { "prim": "nat" }, "code": [ { "prim": "GET", "args": [ { "int": "5" } ] } ] } } ]
     },
     {
       "name": "get_contract_state",
       "pure": true,
       "description": "Get contract state\n        ",
-      "implementations": [ { "michelsonStorageView": { "returnType": { "prim": "nat" }, "code": [ { "prim": "GET", "args": [ { "int": "8" } ] } ] } } ]
+      "implementations": [ { "michelsonStorageView": { "returnType": { "prim": "nat" }, "code": [ { "prim": "GET", "args": [ { "int": "7" } ] } ] } } ]
     },
     {
       "name": "get_current_poll_data",
@@ -152,32 +127,7 @@
                                       "prim": "pair",
                                       "args": [
                                         { "prim": "nat", "annots": [ "%vote_id" ] },
-                                        {
-                                          "prim": "pair",
-                                          "args": [
-                                            { "prim": "nat", "annots": [ "%quorum" ] },
-                                            {
-                                              "prim": "pair",
-                                              "args": [
-                                                { "prim": "nat", "annots": [ "%total_available_voters" ] },
-                                                {
-                                                  "prim": "map",
-                                                  "args": [
-                                                    { "prim": "address" },
-                                                    {
-                                                      "prim": "pair",
-                                                      "args": [
-                                                        { "prim": "nat", "annots": [ "%vote_value" ] },
-                                                        { "prim": "pair", "args": [ { "prim": "nat", "annots": [ "%level" ] }, { "prim": "nat", "annots": [ "%votes" ] } ] }
-                                                      ]
-                                                    }
-                                                  ],
-                                                  "annots": [ "%voters" ]
-                                                }
-                                              ]
-                                            }
-                                          ]
-                                        }
+                                        { "prim": "pair", "args": [ { "prim": "nat", "annots": [ "%quorum" ] }, { "prim": "nat", "annots": [ "%total_available_voters" ] } ] }
                                       ]
                                     }
                                   ]
@@ -195,7 +145,7 @@
             "code": [
               { "prim": "DUP" },
               { "prim": "GET", "args": [ { "int": "3" } ] },
-              { "prim": "CDR" },
+              { "prim": "GET", "args": [ { "int": "3" } ] },
               {
                 "prim": "IF_NONE",
                 "args": [
@@ -203,8 +153,38 @@
                 ]
               },
               { "prim": "GET", "args": [ { "int": "3" } ] },
-              { "prim": "CDR" },
-              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "420" } ] }, { "prim": "FAILWITH" } ], [] ] }
+              { "prim": "GET", "args": [ { "int": "3" } ] },
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "425" } ] }, { "prim": "FAILWITH" } ], [] ] }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "get_voter_history",
+      "pure": true,
+      "description": "Retrieve voters information per vote.\n        ",
+      "implementations": [
+        {
+          "michelsonStorageView": {
+            "parameter": { "prim": "pair", "args": [ { "prim": "address", "annots": [ "%address" ] }, { "prim": "nat", "annots": [ "%vote_id" ] } ] },
+            "returnType": {
+              "prim": "pair",
+              "args": [
+                { "prim": "nat", "annots": [ "%vote_value" ] },
+                { "prim": "pair", "args": [ { "prim": "nat", "annots": [ "%level" ] }, { "prim": "nat", "annots": [ "%votes" ] } ] }
+              ]
+            },
+            "code": [
+              { "prim": "UNPAIR" },
+              { "prim": "SWAP" },
+              { "prim": "GET", "args": [ { "int": "8" } ] },
+              { "prim": "SWAP" },
+              { "prim": "GET" },
+              {
+                "prim": "IF_NONE",
+                "args": [ [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "ANGRY_TEENAGERS_DAO_NO_VOTER_INFO" } ] }, { "prim": "FAILWITH" } ], [] ]
+              }
             ]
           }
         }

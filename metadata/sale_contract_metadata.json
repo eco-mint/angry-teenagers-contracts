@@ -1,8 +1,8 @@
 {
   "name": "Angry Teenagers CrowdSale",
-  "version": "1.0.5",
+  "version": "1.1.1",
   "description": "Angry Teenagers Crowdsale contract",
-  "interfaces": [ "TZIP-016", "TZIP-021" ],
+  "interfaces": [ "TZIP-016" ],
   "authors": [ "EcoMint LTD <www.angryteenagers.xyz>" ],
   "homepage": "https://www.angryteenagers.xyz",
   "views": [
@@ -17,33 +17,17 @@
             "returnType": { "prim": "int" },
             "code": [
               { "prim": "UNPAIR" },
-              { "prim": "PUSH", "args": [ { "prim": "nat" }, { "int": "0" } ] },
-              { "prim": "DUP", "args": [ { "int": "3" } ] },
+              { "prim": "SWAP" },
+              { "prim": "DUP" },
+              { "prim": "DUG", "args": [ { "int": "2" } ] },
               { "prim": "CAR" },
               { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CDR" },
-              { "prim": "DUP", "args": [ { "int": "3" } ] },
+              { "prim": "SWAP" },
+              { "prim": "DUP" },
+              { "prim": "DUG", "args": [ { "int": "2" } ] },
               { "prim": "GET" },
-              {
-                "prim": "IF_NONE",
-                "args": [
-                  [],
-                  [
-                    { "prim": "DROP", "args": [ { "int": "2" } ] },
-                    { "prim": "SWAP" },
-                    { "prim": "DUP" },
-                    { "prim": "DUG", "args": [ { "int": "2" } ] },
-                    { "prim": "CAR" },
-                    { "prim": "GET", "args": [ { "int": "3" } ] },
-                    { "prim": "CDR" },
-                    { "prim": "SWAP" },
-                    { "prim": "DUP" },
-                    { "prim": "DUG", "args": [ { "int": "2" } ] },
-                    { "prim": "GET" },
-                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "143" } ] }, { "prim": "FAILWITH" } ], [] ] }
-                  ]
-                ]
-              },
+              { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "nat" }, { "int": "0" } ] } ], [] ] },
               { "prim": "PUSH", "args": [ { "prim": "nat" }, { "int": "5" } ] },
               { "prim": "DUP", "args": [ { "int": "4" } ] },
               { "prim": "GET", "args": [ { "int": "7" } ] },
@@ -72,7 +56,7 @@
                           { "prim": "SWAP" },
                           { "prim": "DUP" },
                           { "prim": "DUG", "args": [ { "int": "4" } ] },
-                          { "prim": "GET", "args": [ { "int": "10" } ] },
+                          { "prim": "GET", "args": [ { "int": "8" } ] },
                           { "prim": "COMPARE" },
                           { "prim": "GE" },
                           {
@@ -96,7 +80,7 @@
                                     [
                                       { "prim": "DIG", "args": [ { "int": "2" } ] },
                                       { "prim": "DUP" },
-                                      { "prim": "GET", "args": [ { "int": "10" } ] },
+                                      { "prim": "GET", "args": [ { "int": "8" } ] },
                                       { "prim": "SWAP" },
                                       { "prim": "DUP" },
                                       { "prim": "DUG", "args": [ { "int": "4" } ] },
@@ -129,7 +113,7 @@
                                           [
                                             { "prim": "DROP", "args": [ { "int": "2" } ] },
                                             { "prim": "DUP" },
-                                            { "prim": "GET", "args": [ { "int": "10" } ] },
+                                            { "prim": "GET", "args": [ { "int": "8" } ] },
                                             { "prim": "SWAP" },
                                             { "prim": "CAR" },
                                             { "prim": "CAR" },
@@ -211,7 +195,7 @@
                                 { "prim": "SWAP" },
                                 { "prim": "DUP" },
                                 { "prim": "DUG", "args": [ { "int": "4" } ] },
-                                { "prim": "GET", "args": [ { "int": "10" } ] },
+                                { "prim": "GET", "args": [ { "int": "8" } ] },
                                 { "prim": "COMPARE" },
                                 { "prim": "GE" },
                                 {
@@ -235,7 +219,7 @@
                                           [
                                             { "prim": "DIG", "args": [ { "int": "2" } ] },
                                             { "prim": "DUP" },
-                                            { "prim": "GET", "args": [ { "int": "10" } ] },
+                                            { "prim": "GET", "args": [ { "int": "8" } ] },
                                             { "prim": "SWAP" },
                                             { "prim": "DUP" },
                                             { "prim": "DUG", "args": [ { "int": "4" } ] },
@@ -268,7 +252,7 @@
                                                 [
                                                   { "prim": "DROP", "args": [ { "int": "2" } ] },
                                                   { "prim": "DUP" },
-                                                  { "prim": "GET", "args": [ { "int": "10" } ] },
+                                                  { "prim": "GET", "args": [ { "int": "8" } ] },
                                                   { "prim": "SWAP" },
                                                   { "prim": "CAR" },
                                                   { "prim": "CAR" },
@@ -298,6 +282,5 @@
         }
       ]
     }
-  ],
-  "permissions": { "operator": "owner-or-operator-transfer", "receiver": "owner-no-hook", "sender": "owner-no-hook" }
+  ]
 }

@@ -394,7 +394,7 @@ class AngryTeenagers(sp.Contract):
         sp.verify(self.is_artwork_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
         sp.set_type(params, UPDATE_ARTWORK_METADATA_FUNCTION_TYPE)
         sp.for artwork_metadata in params:
-            self.data.ledger.get(sp.fst(artwork_metadata), message=Error.Fa2ErrorMessage.token_undefined())
+            sp.verify(self.data.ledger.contains(sp.fst(artwork_metadata)), message=Error.Fa2ErrorMessage.token_undefined())
             info = sp.local('info', sp.snd(self.data.token_metadata.get(sp.fst(artwork_metadata), message=Error.Fa2ErrorMessage.token_undefined())))
             sp.verify(info.value.get(REVEALED_METADATA, message=Error.Fa2ErrorMessage.token_undefined()) == sp.utils.bytes_of_string("false"), message=Error.ErrorMessage.token_revealed())
 
@@ -440,7 +440,7 @@ class AngryTeenagers(sp.Contract):
 
         # Change NFTs token metadata
         sp.for token in params:
-            self.data.ledger.get(token, message=Error.Fa2ErrorMessage.token_undefined())
+            sp.verify(self.data.ledger.contains(token), message=Error.Fa2ErrorMessage.token_undefined())
             info = sp.local('info', sp.snd(self.data.token_metadata.get(token, message=Error.Fa2ErrorMessage.token_undefined())))
             info.value.get(ROYALTIES_METADATA, message=Error.Fa2ErrorMessage.token_undefined())
 
@@ -602,7 +602,7 @@ class AngryTeenagers(sp.Contract):
         """
         sp.set_type(token_id, sp.TNat)
         sp.verify(token_id < self.data.max_supply)
-        self.data.ledger.get(token_id, message=Error.Fa2ErrorMessage.token_undefined())
+        sp.verify(self.data.ledger.contains(token_id), message=Error.Fa2ErrorMessage.token_undefined())
 
         sp.result(self.data.token_metadata.get(token_id, message=Error.Fa2ErrorMessage.token_undefined()))
 

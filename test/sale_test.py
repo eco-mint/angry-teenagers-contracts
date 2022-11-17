@@ -103,7 +103,7 @@ class TestHelper():
                                    generic_image_ipfs_thumbnail=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
                                    project_oracles_stream=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"),
                                    what3words_file_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"),
-                                   total_supply=5236,
+                                   max_supply=5236,
                                    artifact_file_type=ARTIFACT_FILE_TYPE,
                                    artifact_file_size_generic=ARTIFACT_FILE_SIZE,
                                    artifact_file_name=ARTIFACT_FILE_NAME,

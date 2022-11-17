@@ -190,7 +190,7 @@ class AngryTeenagersDao(sp.Contract):
         sp.verify(self.data.state == NONE, message=Error.ErrorMessage.dao_vote_in_progress())
         sp.verify(self.data.angry_teenager_fa2.is_some(), message=Error.ErrorMessage.dao_not_registered())
         sp.verify(~self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
-        self.data.poll_manager.get(proposal.voting_strategy, message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(self.data.poll_manager.contains(proposal.voting_strategy), message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Create the poll with the proposal
         self.data.ongoing_poll = sp.some(

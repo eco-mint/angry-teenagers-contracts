@@ -103,7 +103,7 @@ class TestHelper():
                                    generic_image_ipfs_thumbnail=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"),
                                    project_oracles_stream=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"),
                                    what3words_file_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"),
-                                   total_supply=5236,
+                                   max_supply=5236,
                                    artifact_file_type=ARTIFACT_FILE_TYPE,
                                    artifact_file_size_generic=ARTIFACT_FILE_SIZE,
                                    artifact_file_name=ARTIFACT_FILE_NAME,
@@ -198,7 +198,6 @@ def unit_test_initial_storage(is_default = True):
         scenario.verify(c1.data.public_sale_allowlist_config == sp.record(used=sp.bool(False), discount=sp.mutez(0),
                                                  minting_rights=sp.bool(False)))
 
-        scenario.verify(c1.data.token_index == sp.nat(0))
         scenario.verify(c1.data.token_minted_in_event == sp.nat(0))
         scenario.verify(c1.data.multisig_fund_address == admin.address)
 

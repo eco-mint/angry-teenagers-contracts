@@ -97,7 +97,7 @@ class AngryTeenagersDao(sp.Contract):
       metadata_base = {
           "name": "Angry Teenagers DAO"
           ,
-          "version": "1.0.5"
+          "version": "1.1.1"
           , "description": (
               "Angry Teenagers DAO."
           )
@@ -165,7 +165,7 @@ class AngryTeenagersDao(sp.Contract):
         sp.verify(self.data.state == NONE, message=Error.ErrorMessage.dao_vote_in_progress())
         sp.verify((sp.self_address == sp.sender) | (self.data.admin == sp.sender), message=Error.ErrorMessage.unauthorized_user())
         sp.set_type(params, sp.TRecord(id=sp.TNat, name=sp.TString, address=sp.TAddress))
-        sp.verify(~self.data.poll_manager.get_opt(params.id).is_some(), message=Error.ErrorMessage.dao_already_registered())
+        sp.verify(~self.data.poll_manager.contains(params.id), message=Error.ErrorMessage.dao_already_registered())
         self.data.poll_manager[params.id] = sp.record(name=params.name, address=params.address)
 
 ########################################################################################################################
@@ -190,7 +190,7 @@ class AngryTeenagersDao(sp.Contract):
         sp.verify(self.data.state == NONE, message=Error.ErrorMessage.dao_vote_in_progress())
         sp.verify(self.data.angry_teenager_fa2.is_some(), message=Error.ErrorMessage.dao_not_registered())
         sp.verify(~self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
-        sp.verify(self.data.poll_manager.get_opt(proposal.voting_strategy).is_some(), message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(self.data.poll_manager.contains(proposal.voting_strategy), message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Create the poll with the proposal
         self.data.ongoing_poll = sp.some(
@@ -328,7 +328,7 @@ class AngryTeenagersDao(sp.Contract):
         sp.verify(self.data.state == ENDING_VOTE, message=Error.ErrorMessage.dao_no_vote_open())
         sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
         sp.verify(self.data.ongoing_poll.open_some().voting_strategy_address == sp.sender, message=Error.ErrorMessage.dao_invalid_voting_strat())
-        sp.verify(~self.data.outcomes.get_opt(self.data.next_proposal_id).is_some(), message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(~self.data.outcomes.contains(self.data.next_proposal_id), message=Error.ErrorMessage.dao_invalid_voting_strat())
         sp.verify(params.voting_id == self.data.ongoing_poll.open_some().voting_id, message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Execute the lambda if the vote is passed and the lambda exists

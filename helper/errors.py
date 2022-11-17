@@ -30,6 +30,7 @@ class ErrorMessage:
     def dao_invalid_token_view():    return "ANGRY_TEENAGERS_DAO_INVALID_TOKEN_VIEW"
     def dao_no_voting_power():       return "ANGRY_TEENAGERS_DAO_NO_VOTING_POWER"
     def dao_no_vote_open():          return "ANGRY_TEENAGERS_DAO_NO_VOTE_OPEN"
+    def dao_no_voter_info():         return "ANGRY_TEENAGERS_DAO_NO_VOTER_INFO"
     def dao_no_poll_descriptor():    return "ANGRY_TEENAGERS_DAO_NO_POLL_DESCRIPTOR"
     def dao_poll_descriptor_defined(): return "ANGRY_TEENAGERS_DAO_POLL_DESCRIPTOR_DEFINED"
     def dao_vote_not_yet_open():     return "ANGRY_TEENAGERS_DAO_VOTE_NOT_YET_OPEN"

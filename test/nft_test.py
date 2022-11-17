@@ -54,7 +54,7 @@ class TestHelper():
                         project_oracles_stream=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"),
                         what3words_file_ipfs=sp.utils.bytes_of_string(
                             "ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"),
-                        total_supply=128,
+                        max_supply=128,
                         artifact_file_type=ARTIFACT_FILE_TYPE,
                         artifact_file_size_generic=ARTIFACT_FILE_SIZE,
                         artifact_file_name=ARTIFACT_FILE_NAME,
@@ -174,7 +174,7 @@ def unit_fa2_test_initial_storage(is_default = True):
         scenario.verify(c1.data.artwork_administrator == admin.address)
         scenario.verify(c1.data.what3words_file_ipfs == sp.utils.bytes_of_string(
                                 "ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))
-        scenario.verify(c1.data.total_supply == 128)
+        scenario.verify(c1.data.max_supply == 128)
         scenario.verify(c1.data.minted_tokens == sp.nat(0))
         scenario.verify(c1.data.paused == sp.bool(False))
         scenario.verify(c1.data.generic_image_ipfs == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"))

@@ -68,7 +68,6 @@ class AngryTeenagersSale(sp.Contract):
                 public_allowlist_max_space=sp.TNat,
                 public_allowlist_space_taken=sp.TNat,
                 public_sale_allowlist_config=sp.TRecord(used=sp.TBool, discount=sp.TMutez, minting_rights=sp.TBool),
-                token_index=sp.TNat,
                 token_minted_in_event=sp.TNat,
                 metadata=sp.TBigMap(sp.TString, sp.TBytes)
             )
@@ -95,7 +94,6 @@ class AngryTeenagersSale(sp.Contract):
             public_allowlist_space_taken=sp.nat(0),
             public_sale_allowlist_config=sp.record(used=sp.bool(False), discount=sp.mutez(0), minting_rights=sp.bool(False)),
 
-            token_index=sp.nat(0),
             token_minted_in_event=sp.nat(0),
 
             metadata=metadata
@@ -107,22 +105,16 @@ class AngryTeenagersSale(sp.Contract):
         metadata_base = {
             "name": "Angry Teenagers CrowdSale"
             ,
-            "version": "1.0.5"
+            "version": "1.1.1"
             , "description": (
                 "Angry Teenagers Crowdsale contract"
             )
-            , "interfaces": ["TZIP-016", "TZIP-021"]
+            , "interfaces": ["TZIP-016"]
             , "authors": [
                 "EcoMint LTD <www.angryteenagers.xyz>"
             ]
             , "homepage": "https://www.angryteenagers.xyz"
             , "views": list_of_views
-            , "permissions": {
-                "operator":
-                    "owner-or-operator-transfer"
-                , "receiver": "owner-no-hook"
-                , "sender": "owner-no-hook"
-            }
         }
         self.init_metadata("metadata_base", metadata_base)
 
@@ -137,10 +129,7 @@ class AngryTeenagersSale(sp.Contract):
         # We can add some protection with a view.
         sp.set_type(params, sp.TAddress)
 
-        user_balance = sp.local('balance', 0)
-        has_user_balance = sp.local("has_user_balance", self.data.event_user_balance.get_opt(params))
-        sp.if has_user_balance.value.is_some():
-            user_balance.value = self.data.event_user_balance[params]
+        user_balance = sp.local("user_balance", self.data.event_user_balance.get(params, 0))
 
         sp.if self.data.state == STATE_EVENT_PRESALE_5:
             sp.if ~self.data.allowlist.contains(params):
@@ -482,7 +471,6 @@ class AngryTeenagersSale(sp.Contract):
         """Change the addresses where Tez are transfered. Reserve to Admin"""
         sp.set_type(params, sp.TAddress)
         sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
-        total = sp.local("total", sp.nat(0))
         self.data.multisig_fund_address = params
 
 ########################################################################################################################
@@ -519,23 +507,23 @@ class AngryTeenagersSale(sp.Contract):
 
         tokens = sp.local('tokens', sp.view("all_tokens", params, sp.unit).open_some(message=Error.ErrorMessage.invalid_parameter()))
 
+        burn_list = sp.local("burn_list", sp.list(l={}, t=sp.TNat))
         sp.for token in tokens.value:
             is_burn = sp.local('is_burn', sp.view("is_token_burned", params, token).open_some(message=Error.ErrorMessage.invalid_parameter()))
-            burn_list = sp.local("burn_list", sp.list(l={}, t=sp.TNat))
 
             sp.if ~is_burn.value:
                 owner = sp.local('owner', sp.view("get_token_owner", params, token).open_some(message=Error.ErrorMessage.invalid_parameter()))
                 self.mint_internal(amount=1, address=owner.value)
                 burn_list.value.push(token)
 
-            presale_contract_handle = sp.contract(
-                sp.TList(sp.TNat),
-                params,
-                "burn"
-            ).open_some("Interface mismatch")
+        presale_contract_handle = sp.contract(
+            sp.TList(sp.TNat),
+            params,
+            "burn"
+        ).open_some("Interface mismatch")
 
-            presale_contract_arg = burn_list.value
-            self.call(presale_contract_handle, presale_contract_arg)
+        presale_contract_arg = burn_list.value
+        self.call(presale_contract_handle, presale_contract_arg)
 
 
 ########################################################################################################################
@@ -587,8 +575,6 @@ class AngryTeenagersSale(sp.Contract):
                                           self.data.fa2, entry_point="mint").open_some())
             minted.value = minted.value + 1
 
-        self.data.token_index = self.data.token_index + amount
-
     def start_sale_init(self, max_supply, max_per_user, price):
         self.data.event_user_balance = sp.big_map(l={}, tkey=sp.TAddress, tvalue=sp.TNat)
         self.data.token_minted_in_event = 0
@@ -617,20 +603,16 @@ class AngryTeenagersSale(sp.Contract):
                   message=Error.ErrorMessage.sale_no_token())
 
         # User minted his token already ?
-        has_user_balance = sp.local("has_user_balance", self.data.event_user_balance.get_opt(params.address))
-        sp.if has_user_balance.value.is_some():
-            sp.verify(self.data.event_user_balance[params.address] + params.amount <= self.data.event_max_per_user,
-                      message=Error.ErrorMessage.sale_no_token())
+        user_balance = sp.local("user_balance", self.data.event_user_balance.get(params.address, 0))
+
+        sp.verify(user_balance.value + params.amount <= self.data.event_max_per_user,
+                  message=Error.ErrorMessage.sale_no_token())
 
         # User gave the right amount of Tez. If yes transfer these Tez to the transfer address
         self.check_amount_and_transfer_tez(params.amount, self.data.event_price)
         self.mint_internal(params.amount, params.address)
 
-        sp.if has_user_balance.value.is_some():
-            self.data.event_user_balance[params.address] = self.data.event_user_balance[params.address] + params.amount
-        sp.else:
-            self.data.event_user_balance[params.address] = params.amount
-
+        self.data.event_user_balance[params.address] = user_balance.value + params.amount
         self.data.token_minted_in_event = self.data.token_minted_in_event + params.amount
 
     def mint_public_sale(self, params):
@@ -640,10 +622,10 @@ class AngryTeenagersSale(sp.Contract):
             self.data.token_minted_in_event = self.data.token_minted_in_event + params.amount
 
         # User minted his token already ?
-        has_user_event_balance = sp.local("has_user_event_balance", self.data.event_user_balance.get_opt(params.address))
-        sp.if has_user_event_balance.value.is_some():
-            sp.verify(self.data.event_user_balance[params.address] + params.amount <= self.data.event_max_per_user,
-                      message=Error.ErrorMessage.forbidden_operation())
+        user_event_balance = sp.local("user_event_balance", self.data.event_user_balance.get(params.address, 0))
+
+        sp.verify(user_event_balance.value + params.amount <= self.data.event_max_per_user,
+                  message=Error.ErrorMessage.forbidden_operation())
 
         # User gave the right amount of Tez. If yes transfer these Tez to the transfer address
         sp.if self.data.allowlist.contains(params.address):
@@ -654,10 +636,8 @@ class AngryTeenagersSale(sp.Contract):
 
         self.mint_internal(params.amount, params.address)
 
-        sp.if has_user_event_balance.value.is_some():
-            self.data.event_user_balance[params.address] = self.data.event_user_balance[params.address] + params.amount
-        sp.else:
-            self.data.event_user_balance[params.address] = params.amount
+        self.data.event_user_balance[params.address] = user_event_balance.value + params.amount
 
     def redirect_fund(self, amount):
-        sp.send(self.data.multisig_fund_address, amount)
+        sp.if amount > sp.mutez(0):
+            sp.send(self.data.multisig_fund_address, amount)

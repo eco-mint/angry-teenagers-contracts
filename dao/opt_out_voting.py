@@ -31,7 +31,6 @@ VOTE_RECORD_TYPE = sp.TRecord(
 # - phase_1_objection_threshold: Numbers of voters needed to reject the proposal in phase 1
 # - phase_2_needed: Record whether the phase 2 is needed or not
 # - phase_2_vote_id: Vote id of the phase 2 (use the majority contract)
-# - phase_1_voters: Record of the voters data in phase 1 (phase 2 is recorded in the majority contract)
 MAJORITY_POLL_DATA = sp.TRecord(
     phase_1_vote_objection=sp.TNat,
     phase_1_voting_start_block=sp.TNat,
@@ -40,8 +39,7 @@ MAJORITY_POLL_DATA = sp.TRecord(
     total_voters=sp.TNat,
     phase_1_objection_threshold=sp.TNat,
     phase_2_needed=sp.TBool,
-    phase_2_vote_id=sp.TNat,
-    phase_1_voters=sp.TMap(sp.TAddress, VOTE_RECORD_TYPE)
+    phase_2_vote_id=sp.TNat
 ).layout(("phase_1_vote_objection",
           ("phase_1_voting_start_block",
            ("phase_1_voting_end_block",
@@ -49,8 +47,7 @@ MAJORITY_POLL_DATA = sp.TRecord(
              ("total_voters",
               ("phase_1_objection_threshold",
                 ("phase_2_needed",
-                 ("phase_2_vote_id",
-                  ("phase_1_voters"))))))))))
+                 ("phase_2_vote_id")))))))))
 
 # GOVERNANCE_PARAMETERS_TYPE
 # Governance parameters are defined when the contract is deployed and can only be changed
@@ -69,6 +66,9 @@ GOVERNANCE_PARAMETERS_TYPE = sp.TRecord(
 # - poll_outcome: Outcome of the poll (PASSED or FAILED)
 # - poll_data: See MAJORITY_POLL_DATA
 OUTCOMES_TYPE = sp.TBigMap(sp.TNat, sp.TRecord(poll_outcome=sp.TNat, poll_data=MAJORITY_POLL_DATA))
+
+# VOTERS_HISTORY_TYPE
+VOTERS_HISTORY_TYPE = sp.TBigMap(sp.TRecord(address=sp.TAddress, vote_id=sp.TNat), VOTE_RECORD_TYPE)
 
 ################################################################
 ################################################################
@@ -110,7 +110,8 @@ class DaoOptOutVoting(sp.Contract):
     def __init__(self, admin,
                  governance_parameters,
                  metadata,
-                 outcomes=sp.big_map(l={}, tkey=sp.TNat, tvalue=sp.TRecord(poll_outcome=sp.TNat, poll_data=MAJORITY_POLL_DATA))):
+                 outcomes=sp.big_map(l={}, tkey=sp.TNat, tvalue=sp.TRecord(poll_outcome=sp.TNat, poll_data=MAJORITY_POLL_DATA)),
+                 phase_1_voters_history=sp.big_map(l={}, tkey=sp.TRecord(address=sp.TAddress, vote_id=sp.TNat), tvalue=VOTE_RECORD_TYPE)):
       self.init_type(
         sp.TRecord(
             governance_parameters=GOVERNANCE_PARAMETERS_TYPE,
@@ -122,6 +123,7 @@ class DaoOptOutVoting(sp.Contract):
             poll_descriptor=sp.TOption(MAJORITY_POLL_DATA),
             vote_id=sp.TNat,
             outcomes=OUTCOMES_TYPE,
+            phase_1_voters_history=VOTERS_HISTORY_TYPE,
             metadata=sp.TBigMap(sp.TString, sp.TBytes)
         )
       )
@@ -136,6 +138,7 @@ class DaoOptOutVoting(sp.Contract):
         poll_descriptor=sp.none,
         vote_id=sp.nat(0),
         outcomes=outcomes,
+        phase_1_voters_history=phase_1_voters_history,
         metadata=metadata
       )
 
@@ -144,12 +147,13 @@ class DaoOptOutVoting(sp.Contract):
           , self.get_number_of_historical_outcomes
           , self.get_contract_state
           , self.get_current_poll_data
+          , self.get_voter_history
       ]
 
       metadata_base = {
           "name": "Angry Teenagers DAO OptOut vote"
           ,
-          "version": "1.0.5"
+          "version": "1.1.1"
           , "description": (
               "Angry Teenagers Opt out strategy."
           )
@@ -248,7 +252,6 @@ class DaoOptOutVoting(sp.Contract):
                 phase_1_objection_threshold=objection_threshold,
                 phase_2_needed=sp.bool(False),
                 phase_2_vote_id=sp.nat(0),
-                phase_1_voters=sp.map(l={}, tkey=sp.TAddress, tvalue=VOTE_RECORD_TYPE)
         ))
 
         # Callback the poll leader
@@ -342,7 +345,7 @@ class DaoOptOutVoting(sp.Contract):
         sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
         sp.verify(self.data.phase_2_majority_vote_contract.open_some() == sp.sender,
                   message=Error.ErrorMessage.dao_invalid_voting_strat())
-        sp.verify(~self.data.outcomes.get_opt(self.data.vote_id).is_some(), message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(~self.data.outcomes.contains(self.data.vote_id), message=Error.ErrorMessage.dao_invalid_voting_strat())
         sp.verify(params.voting_id == self.data.poll_descriptor.open_some().phase_2_vote_id, message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Record the vote outcome
@@ -426,7 +429,8 @@ class DaoOptOutVoting(sp.Contract):
 
     def phase_1_vote(self, params):
         # Asserts
-        sp.verify(~self.data.poll_descriptor.open_some().phase_1_voters.get_opt(params.address).is_some(), message=Error.ErrorMessage.dao_vote_already_received())
+        voters_history_key = sp.local( "voters_history_key",sp.record(address=params.address, vote_id=params.vote_id))
+        sp.verify(~self.data.phase_1_voters_history.contains(voters_history_key.value), message=Error.ErrorMessage.dao_vote_already_received())
         sp.verify(sp.level >= self.data.poll_descriptor.open_some().phase_1_voting_start_block, message=Error.ErrorMessage.dao_vote_not_yet_open())
         sp.verify(sp.level <= self.data.poll_descriptor.open_some().phase_1_voting_end_block, message=Error.ErrorMessage.dao_vote_period_is_over())
 
@@ -438,7 +442,7 @@ class DaoOptOutVoting(sp.Contract):
         sp.else:
             sp.failwith(Error.ErrorMessage.dao_invalid_vote_value())
 
-        new_poll.value.phase_1_voters[params.address] = sp.record(vote_value=params.vote_value, level=sp.level, votes=params.votes)
+        self.data.phase_1_voters_history[voters_history_key.value] = sp.record(vote_value=params.vote_value, level=sp.level, votes=params.votes)
         self.data.poll_descriptor = sp.some(new_poll.value)
 
     def phase_2_vote(self, params):
@@ -526,3 +530,11 @@ class DaoOptOutVoting(sp.Contract):
         """Get contract state
         """
         sp.result(self.data.vote_state)
+
+    @sp.offchain_view(pure=True)
+    def get_voter_history(self, params):
+        """Retrieve voters information per vote.
+        """
+        sp.set_type(params, sp.TRecord(address=sp.TAddress, vote_id=sp.TNat))
+        sp.result(self.data.phase_1_voters_history.get(sp.record(address=params.address, vote_id=params.vote_id),
+                                               message=Error.ErrorMessage.dao_no_voter_info()))

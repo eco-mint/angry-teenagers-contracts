@@ -255,7 +255,6 @@ def unit_test_start_with_dynamic_quorum(is_default = True):
         scenario.verify(c1.data.poll_descriptor.open_some().vote_abstain == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().total_votes == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().vote_id == 0)
-        scenario.verify(sp.len(c1.data.poll_descriptor.open_some().voters) == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().quorum == (c1.data.current_dynamic_quorum_value_pertenmill * total_available_voters) // DAO.SCALE_PERTENMILL)
         start_block = sp.level + c1.data.governance_parameters.vote_delay_blocks
         scenario.verify(c1.data.poll_descriptor.open_some().voting_start_block == start_block)
@@ -296,7 +295,6 @@ def unit_test_start_with_fixed_quorum(is_default = True):
         scenario.verify(c1.data.poll_descriptor.open_some().vote_abstain == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().total_votes == 0)
         scenario.verify(c1.data.poll_descriptor.open_some().vote_id == 0)
-        scenario.verify(sp.len(c1.data.poll_descriptor.open_some().voters) == 0)
         fixed_quorum = (total_available_voters * c1.data.governance_parameters.fixed_quorum_pertenmill) // DAO.SCALE_PERTENMILL
         scenario.verify(c1.data.poll_descriptor.open_some().quorum == fixed_quorum)
         start_block = sp.level + c1.data.governance_parameters.vote_delay_blocks
@@ -387,7 +385,38 @@ def unit_test_vote(is_default = True):
         scenario.verify_equal(c1.data.poll_descriptor.open_some().vote_abstain, 362)
         scenario.verify_equal(c1.data.poll_descriptor.open_some().total_votes, 538)
         scenario.verify(c1.data.poll_descriptor.open_some().vote_id == 0)
-        scenario.verify(sp.len(c1.data.poll_descriptor.open_some().voters) == 6)
+
+        # Bob
+        scenario.verify(c1.data.voters_history.get(sp.record(address=bob.address, vote_id=0), message="No voters").vote_value == DAO.VoteValue.ABSTAIN)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=bob.address, vote_id=0), message="No voters").votes == 112)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=bob.address, vote_id=0), message="No voters").level == end_block)
+
+        # Admin
+        scenario.verify(c1.data.voters_history.get(sp.record(address=admin.address, vote_id=0), message="No voters").vote_value == DAO.VoteValue.NAY)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=admin.address, vote_id=0), message="No voters").votes == 30)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=admin.address, vote_id=0), message="No voters").level == start_block + 50)
+
+        # Chris
+        scenario.verify(c1.data.voters_history.get(sp.record(address=chris.address, vote_id=0), message="No voters").vote_value == DAO.VoteValue.YAY)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=chris.address, vote_id=0), message="No voters").votes == 36)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=chris.address, vote_id=0), message="No voters").level == start_block)
+
+        # Gabe
+        scenario.verify(c1.data.voters_history.get(sp.record(address=gabe.address, vote_id=0), message="No voters").vote_value == DAO.VoteValue.NAY)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=gabe.address, vote_id=0), message="No voters").votes == 100)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=gabe.address, vote_id=0), message="No voters").level == start_block)
+
+        # Ben
+        scenario.verify(c1.data.voters_history.get(sp.record(address=ben.address, vote_id=0), message="No voters").vote_value == DAO.VoteValue.ABSTAIN)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=ben.address, vote_id=0), message="No voters").votes == 250)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=ben.address, vote_id=0), message="No voters").level == start_block)
+
+        # Alice
+        scenario.verify(c1.data.voters_history.get(sp.record(address=alice.address, vote_id=0), message="No voters").vote_value == DAO.VoteValue.YAY)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=alice.address, vote_id=0), message="No voters").votes == 10)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=alice.address, vote_id=0), message="No voters").level == start_block)
+
+        scenario.verify(~c1.data.voters_history.contains(sp.record(address=john.address, vote_id=0)))
 
 # Description: Test the end function.
 def unit_test_end_valid_call(is_default = True):
@@ -489,7 +518,19 @@ def unit_test_end_passed_but_quorum_not_reached_with_fixed_quorum(is_default = T
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
         scenario.verify(c1.data.outcomes[0].poll_data.quorum == 2999)
-        scenario.verify(sp.len(c1.data.outcomes[0].poll_data.voters) == 3)
+
+        # Chris
+        scenario.verify(c1.data.voters_history.get(sp.record(address=chris.address, vote_id=0), message="No voters").vote_value == DAO.VoteValue.YAY)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=chris.address, vote_id=0), message="No voters").votes == 2909)
+
+        # Gabe
+        scenario.verify(c1.data.voters_history.get(sp.record(address=gabe.address, vote_id=0), message="No voters").vote_value == DAO.VoteValue.NAY)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=gabe.address, vote_id=0), message="No voters").votes == 79)
+
+        # Ben
+        scenario.verify(c1.data.voters_history.get(sp.record(address=ben.address, vote_id=0), message="No voters").vote_value == DAO.VoteValue.ABSTAIN)
+        scenario.verify(c1.data.voters_history.get(sp.record(address=ben
+                                                             .address, vote_id=0), message="No voters").votes == 10)
 
 def unit_test_end_passed_1_with_quorum_reached_with_fixed_quorum(is_default = True):
     @sp.add_test(name="unit_test_end_passed_1_with_quorum_reached_with_fixed_quorum", is_default=is_default)
@@ -535,7 +576,6 @@ def unit_test_end_passed_1_with_quorum_reached_with_fixed_quorum(is_default = Tr
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
         scenario.verify(c1.data.outcomes[0].poll_data.quorum == 2999)
-        scenario.verify(sp.len(c1.data.outcomes[0].poll_data.voters) == 3)
 
 def unit_test_end_passed_2_with_quorum_reached_with_fixed_quorum(is_default = True):
     @sp.add_test(name="unit_test_end_passed_2_with_quorum_reached_with_fixed_quorum", is_default=is_default)
@@ -581,7 +621,6 @@ def unit_test_end_passed_2_with_quorum_reached_with_fixed_quorum(is_default = Tr
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
         scenario.verify(c1.data.outcomes[0].poll_data.quorum == 2999)
-        scenario.verify(sp.len(c1.data.outcomes[0].poll_data.voters) == 3)
 
 def unit_test_end_passed_3_with_quorum_reached_with_fixed_quorum(is_default = True):
     @sp.add_test(name="unit_test_end_passed_3_with_quorum_reached_with_fixed_quorum", is_default=is_default)
@@ -627,7 +666,6 @@ def unit_test_end_passed_3_with_quorum_reached_with_fixed_quorum(is_default = Tr
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
         scenario.verify(c1.data.outcomes[0].poll_data.quorum == 5000)
-        scenario.verify(sp.len(c1.data.outcomes[0].poll_data.voters) == 3)
 
 def unit_test_end_not_passed_1_with_quorum_reached_with_fixed_quorum(is_default = True):
     @sp.add_test(name="unit_test_end_not_passed_1_with_quorum_reached_with_fixed_quorum", is_default=is_default)
@@ -673,7 +711,6 @@ def unit_test_end_not_passed_1_with_quorum_reached_with_fixed_quorum(is_default 
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
         scenario.verify(c1.data.outcomes[0].poll_data.quorum == 2999)
-        scenario.verify(sp.len(c1.data.outcomes[0].poll_data.voters) == 3)
 
 def unit_test_end_not_passed_2_with_quorum_reached_with_fixed_quorum(is_default = True):
     @sp.add_test(name="unit_test_end_not_passed_2_with_quorum_reached_with_fixed_quorum", is_default=is_default)
@@ -719,7 +756,6 @@ def unit_test_end_not_passed_2_with_quorum_reached_with_fixed_quorum(is_default 
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
         scenario.verify(c1.data.outcomes[0].poll_data.quorum == 2999)
-        scenario.verify(sp.len(c1.data.outcomes[0].poll_data.voters) == 3)
 
 def unit_test_end_dynamic_quorum(is_default = True):
     @sp.add_test(name="unit_test_end_dynamic_quorum", is_default=is_default)
@@ -768,7 +804,6 @@ def unit_test_end_dynamic_quorum(is_default = True):
         scenario.verify(c1.data.outcomes[0].poll_data.voting_end_block == 190)
         scenario.verify(c1.data.outcomes[0].poll_data.vote_id == 0)
         scenario.verify(c1.data.outcomes[0].poll_data.quorum == 11306)
-        scenario.verify(sp.len(c1.data.outcomes[0].poll_data.voters) == 3)
 
         scenario.p("8. Check new dynamic quorum is computed")
         new_quorum = ((11306 * 8000) // DAO.SCALE_PERTENMILL) + ((c1.data.outcomes[0].poll_data.total_votes * 2000) // DAO.SCALE_PERTENMILL)
@@ -810,7 +845,6 @@ def unit_test_offchain_views(is_default = True):
         scenario.verify(poll_data_0.voting_end_block == 190)
         scenario.verify(poll_data_0.vote_id == 0)
         scenario.verify(poll_data_0.quorum == 3000)
-        scenario.verify(sp.len(poll_data_0.voters) == 3)
 
         scenario.p("5. End the vote")
         scenario.verify(c1.get_contract_state() == DAO.IN_PROGRESS)
@@ -831,14 +865,26 @@ def unit_test_offchain_views(is_default = True):
         scenario.verify(outcome_0.poll_data.voting_end_block == 190)
         scenario.verify(outcome_0.poll_data.vote_id == 0)
         scenario.verify(outcome_0.poll_data.quorum == 3000)
-        scenario.verify(sp.len(outcome_0.poll_data.voters) == 3)
         scenario.verify(c1.get_contract_state() == DAO.NONE)
 
-        scenario.p("7. Start another poll")
+        scenario.p("7. Check get_voter_history")
+        chris_vote_history = c1.get_voter_history(sp.record(address=chris.address, vote_id=0))
+        scenario.verify(chris_vote_history.vote_value == DAO.VoteValue.YAY)
+        scenario.verify(chris_vote_history.votes == 3000)
+
+        ben_vote_history = c1.get_voter_history(sp.record(address=ben.address, vote_id=0))
+        scenario.verify(ben_vote_history.vote_value == DAO.VoteValue.ABSTAIN)
+        scenario.verify(ben_vote_history.votes == 1000)
+
+        gabe_vote_history = c1.get_voter_history(sp.record(address=gabe.address, vote_id=0))
+        scenario.verify(gabe_vote_history.vote_value == DAO.VoteValue.NAY)
+        scenario.verify(gabe_vote_history.votes == 400)
+
+        scenario.p("8. Start another poll")
         c1.start(10000).run(valid=True, sender=simulated_poll_leader_contract.address)
         scenario.verify(c1.get_contract_state() == DAO.IN_PROGRESS)
 
-        scenario.p("8. Add votes")
+        scenario.p("9. Add votes")
         chris_vote_param_valid_yay_2 = sp.record(votes=sp.nat(2000), address=chris.address, vote_value=DAO.VoteValue.YAY, vote_id=sp.nat(1))
         gabe_vote_param_valid_nay_2 = sp.record(votes=sp.nat(2500), address=gabe.address, vote_value=DAO.VoteValue.NAY, vote_id=sp.nat(1))
         ben_vote_param_valid_abstain_2 = sp.record(votes=sp.nat(500), address=ben.address, vote_value=DAO.VoteValue.ABSTAIN, vote_id=sp.nat(1))
@@ -847,12 +893,12 @@ def unit_test_offchain_views(is_default = True):
         c1.vote(ben_vote_param_valid_abstain_2).run(valid=True, sender=simulated_poll_leader_contract.address)
         scenario.verify(c1.get_contract_state() == DAO.IN_PROGRESS)
 
-        scenario.p("9. End the vote again")
+        scenario.p("10. End the vote again")
         skip_vote_period = c1.data.governance_parameters.vote_length_blocks + 1
         c1.end(1).run(valid=True, sender=simulated_poll_leader_contract.address, level=sp.level + skip_vote_period)
         scenario.verify(c1.get_contract_state() == DAO.NONE)
 
-        scenario.p("10. Check get_number_of_historical_outcomes and get_historical_outcome_data function")
+        scenario.p("11. Check get_number_of_historical_outcomes and get_historical_outcome_data function")
         scenario.verify(c1.get_number_of_historical_outcomes() == 2)
         outcome_1 = c1.get_historical_outcome_data(1)
         scenario.verify(outcome_1.poll_outcome == DAO.PollOutcome.POLL_OUTCOME_FAILED)
@@ -863,6 +909,31 @@ def unit_test_offchain_views(is_default = True):
         scenario.verify(outcome_1.poll_data.voting_start_block == 201)
         scenario.verify(outcome_1.poll_data.voting_end_block == 381)
         scenario.verify(outcome_1.poll_data.vote_id == 1)
+
+        scenario.p("12. Check get_voter_history")
+        chris_vote_history_0 = c1.get_voter_history(sp.record(address=chris.address, vote_id=0))
+        scenario.verify(chris_vote_history_0.vote_value == DAO.VoteValue.YAY)
+        scenario.verify(chris_vote_history_0.votes == 3000)
+
+        ben_vote_history_0 = c1.get_voter_history(sp.record(address=ben.address, vote_id=0))
+        scenario.verify(ben_vote_history_0.vote_value == DAO.VoteValue.ABSTAIN)
+        scenario.verify(ben_vote_history_0.votes == 1000)
+
+        gabe_vote_history_0 = c1.get_voter_history(sp.record(address=gabe.address, vote_id=0))
+        scenario.verify(gabe_vote_history_0.vote_value == DAO.VoteValue.NAY)
+        scenario.verify(gabe_vote_history_0.votes == 400)
+
+        chris_vote_history_1 = c1.get_voter_history(sp.record(address=chris.address, vote_id=1))
+        scenario.verify(chris_vote_history_1.vote_value == DAO.VoteValue.YAY)
+        scenario.verify(chris_vote_history_1.votes == 2000)
+
+        ben_vote_history_1 = c1.get_voter_history(sp.record(address=ben.address, vote_id=1))
+        scenario.verify(ben_vote_history_1.vote_value == DAO.VoteValue.ABSTAIN)
+        scenario.verify(ben_vote_history_1.votes == 500)
+
+        gabe_vote_history_1 = c1.get_voter_history(sp.record(address=gabe.address, vote_id=1))
+        scenario.verify(gabe_vote_history_1.vote_value == DAO.VoteValue.NAY)
+        scenario.verify(gabe_vote_history_1.votes == 2500)
 
 def unit_test_mutez_transfer(is_default=True):
     @sp.add_test(name="unit_test_mutez_transfer", is_default=is_default)

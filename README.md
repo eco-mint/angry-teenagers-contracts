@@ -1,7 +1,7 @@
 # README
 
 This folder contains all the contracts code for the Angry Teenagers NFTs (https://www.angryteenagers.xyz/).
-Code is developed, compiled and unit tested for the Tezos blockchain using SmartPy v0.14.0 (https://smartpy.io/)
+Code is developed, compiled and unit tested for the Tezos blockchain using SmartPy v0.15.0 (https://smartpy.io/)
 
 The Angry Teenagers project contains:
 - A FA2 contract to hold the NFT collection (./nft/nft.py see https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md)
@@ -93,7 +93,7 @@ be changed anymore:
 - GENERIC_THUMBNAIL_ARTWORK_IPFS_LINK
 - PROJECT_ORACLES_STREAM_LINK
 - WHAT3WORDS_FILE_IPFS_LINK
-- TOTAL_SUPPLY
+- MAX_SUPPLY
 - ARTIFACT_FILE_TYPE
 - ARTIFACT_FILE_SIZE
 - ARTIFACT_FILE_NAME

@@ -1,6 +1,6 @@
 {
   "name": "Angry Teenagers",
-  "version": "1.0.5",
+  "version": "1.1.1",
   "description": "Angry Teenagers: NFTs that fund an exponential cycle of reforestation.",
   "interfaces": [ "TZIP-012", "TZIP-016", "TZIP-021" ],
   "authors": [ "EcoMint LTD <www.angryteenagers.xyz>" ],
@@ -55,7 +55,9 @@
       "name": "count_tokens",
       "pure": true,
       "description": "Get how many tokens are in this FA2 contract.\n        ",
-      "implementations": [ { "michelsonStorageView": { "returnType": { "prim": "nat" }, "code": [ { "prim": "CAR" }, { "prim": "GET", "args": [ { "int": "8" } ] } ] } } ]
+      "implementations": [
+        { "michelsonStorageView": { "returnType": { "prim": "nat" }, "code": [ { "prim": "GET", "args": [ { "int": "3" } ] }, { "prim": "CAR" }, { "prim": "CAR" } ] } }
+      ]
     },
     {
       "name": "all_tokens",
@@ -67,8 +69,9 @@
             "returnType": { "prim": "list", "args": [ { "prim": "nat" } ] },
             "code": [
               { "prim": "DUP" },
+              { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CAR" },
-              { "prim": "GET", "args": [ { "int": "8" } ] },
+              { "prim": "CAR" },
               { "prim": "NIL", "args": [ { "prim": "nat" } ] },
               { "prim": "SWAP" },
               { "prim": "PUSH", "args": [ { "prim": "nat" }, { "int": "0" } ] },
@@ -119,8 +122,9 @@
               { "prim": "NIL", "args": [ { "prim": "nat" } ] },
               { "prim": "PUSH", "args": [ { "prim": "nat" }, { "int": "0" } ] },
               { "prim": "DUP", "args": [ { "int": "4" } ] },
+              { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CAR" },
-              { "prim": "GET", "args": [ { "int": "8" } ] },
+              { "prim": "CAR" },
               { "prim": "SWAP" },
               { "prim": "DUP" },
               { "prim": "DUG", "args": [ { "int": "2" } ] },
@@ -143,8 +147,9 @@
                     { "prim": "PUSH", "args": [ { "prim": "nat" }, { "int": "1" } ] },
                     { "prim": "ADD" },
                     { "prim": "DUP", "args": [ { "int": "4" } ] },
+                    { "prim": "GET", "args": [ { "int": "3" } ] },
                     { "prim": "CAR" },
-                    { "prim": "GET", "args": [ { "int": "8" } ] },
+                    { "prim": "CAR" },
                     { "prim": "SWAP" },
                     { "prim": "DUP" },
                     { "prim": "DUG", "args": [ { "int": "2" } ] },
@@ -182,8 +187,7 @@
               { "prim": "UNPAIR" },
               { "prim": "SWAP" },
               { "prim": "GET", "args": [ { "int": "3" } ] },
-              { "prim": "CAR" },
-              { "prim": "CDR" },
+              { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "SWAP" },
               { "prim": "DUP" },
               { "prim": "GET", "args": [ { "int": "4" } ] },
@@ -200,9 +204,9 @@
       ]
     },
     {
-      "name": "total_supply",
+      "name": "max_supply",
       "pure": true,
-      "description": "Get the total supply for one token_id.\n        ",
+      "description": "Get the max supply for one token_id.\n        ",
       "implementations": [
         {
           "michelsonStorageView": {
@@ -211,8 +215,9 @@
             "code": [
               { "prim": "UNPAIR" },
               { "prim": "SWAP" },
+              { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CAR" },
-              { "prim": "GET", "args": [ { "int": "8" } ] },
+              { "prim": "CAR" },
               { "prim": "COMPARE" },
               { "prim": "GT" },
               { "prim": "IF", "args": [ [], [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "FA2_INSUFFICIENT_BALANCE" } ] }, { "prim": "FAILWITH" } ] ] },
@@ -236,6 +241,7 @@
               { "prim": "SWAP" },
               { "prim": "DUP" },
               { "prim": "DUG", "args": [ { "int": "2" } ] },
+              { "prim": "CAR" },
               { "prim": "GET", "args": [ { "int": "7" } ] },
               { "prim": "SWAP" },
               { "prim": "DUP" },
@@ -244,7 +250,7 @@
               { "prim": "LT" },
               {
                 "prim": "IF",
-                "args": [ [], [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "WrongCondition: params < self.data.total_supply" } ] }, { "prim": "FAILWITH" } ] ]
+                "args": [ [], [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "WrongCondition: params < self.data.max_supply" } ] }, { "prim": "FAILWITH" } ] ]
               },
               { "prim": "SWAP" },
               { "prim": "DUP" },
@@ -254,14 +260,10 @@
               { "prim": "SWAP" },
               { "prim": "DUP" },
               { "prim": "DUG", "args": [ { "int": "2" } ] },
-              { "prim": "GET" },
-              {
-                "prim": "IF_NONE",
-                "args": [ [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "FA2_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ], [ { "prim": "DROP" } ] ]
-              },
+              { "prim": "MEM" },
+              { "prim": "IF", "args": [ [], [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "FA2_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ] ] },
               { "prim": "SWAP" },
-              { "prim": "GET", "args": [ { "int": "5" } ] },
-              { "prim": "CDR" },
+              { "prim": "GET", "args": [ { "int": "7" } ] },
               { "prim": "SWAP" },
               { "prim": "GET" },
               { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "FA2_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ], [] ] }
@@ -275,7 +277,7 @@
       "pure": true,
       "description": "Get oracle stream\n        ",
       "implementations": [
-        { "michelsonStorageView": { "returnType": { "prim": "bytes" }, "code": [ { "prim": "GET", "args": [ { "int": "3" } ] }, { "prim": "GET", "args": [ { "int": "5" } ] } ] } }
+        { "michelsonStorageView": { "returnType": { "prim": "bytes" }, "code": [ { "prim": "GET", "args": [ { "int": "3" } ] }, { "prim": "GET", "args": [ { "int": "6" } ] } ] } }
       ]
     },
     {
@@ -290,8 +292,9 @@
               { "prim": "NIL", "args": [ { "prim": "nat" } ] },
               { "prim": "PUSH", "args": [ { "prim": "nat" }, { "int": "0" } ] },
               { "prim": "DUP", "args": [ { "int": "3" } ] },
+              { "prim": "GET", "args": [ { "int": "3" } ] },
               { "prim": "CAR" },
-              { "prim": "GET", "args": [ { "int": "8" } ] },
+              { "prim": "CAR" },
               { "prim": "SWAP" },
               { "prim": "DUP" },
               { "prim": "DUG", "args": [ { "int": "2" } ] },
@@ -303,23 +306,23 @@
                   [
                     { "prim": "PUSH", "args": [ { "prim": "bytes" }, { "bytes": "66616c7365" } ] },
                     { "prim": "DUP", "args": [ { "int": "4" } ] },
-                    { "prim": "GET", "args": [ { "int": "5" } ] },
-                    { "prim": "CDR" },
+                    { "prim": "GET", "args": [ { "int": "7" } ] },
                     { "prim": "DUP", "args": [ { "int": "3" } ] },
                     { "prim": "GET" },
                     { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "FA2_TOKEN_UNDEFINED" } ] }, { "prim": "FAILWITH" } ], [] ] },
                     { "prim": "CDR" },
                     { "prim": "PUSH", "args": [ { "prim": "string" }, { "string": "revealed" } ] },
                     { "prim": "GET" },
-                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "554" } ] }, { "prim": "FAILWITH" } ], [] ] },
+                    { "prim": "IF_NONE", "args": [ [ { "prim": "PUSH", "args": [ { "prim": "int" }, { "int": "547" } ] }, { "prim": "FAILWITH" } ], [] ] },
                     { "prim": "COMPARE" },
                     { "prim": "EQ" },
                     { "prim": "IF", "args": [ [ { "prim": "DUP" }, { "prim": "DUG", "args": [ { "int": "2" } ] }, { "prim": "CONS" }, { "prim": "SWAP" } ], [] ] },
                     { "prim": "PUSH", "args": [ { "prim": "nat" }, { "int": "1" } ] },
                     { "prim": "ADD" },
                     { "prim": "DUP", "args": [ { "int": "3" } ] },
+                    { "prim": "GET", "args": [ { "int": "3" } ] },
                     { "prim": "CAR" },
-                    { "prim": "GET", "args": [ { "int": "8" } ] },
+                    { "prim": "CAR" },
                     { "prim": "SWAP" },
                     { "prim": "DUP" },
                     { "prim": "DUG", "args": [ { "int": "2" } ] },

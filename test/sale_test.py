@@ -198,7 +198,6 @@ def unit_test_initial_storage(is_default = True):
         scenario.verify(c1.data.public_sale_allowlist_config == sp.record(used=sp.bool(False), discount=sp.mutez(0),
                                                  minting_rights=sp.bool(False)))
 
-        scenario.verify(c1.data.token_index == sp.nat(0))
         scenario.verify(c1.data.token_minted_in_event == sp.nat(0))
         scenario.verify(c1.data.multisig_fund_address == admin.address)
 

@@ -68,7 +68,6 @@ class AngryTeenagersSale(sp.Contract):
                 public_allowlist_max_space=sp.TNat,
                 public_allowlist_space_taken=sp.TNat,
                 public_sale_allowlist_config=sp.TRecord(used=sp.TBool, discount=sp.TMutez, minting_rights=sp.TBool),
-                token_index=sp.TNat,
                 token_minted_in_event=sp.TNat,
                 metadata=sp.TBigMap(sp.TString, sp.TBytes)
             )
@@ -95,7 +94,6 @@ class AngryTeenagersSale(sp.Contract):
             public_allowlist_space_taken=sp.nat(0),
             public_sale_allowlist_config=sp.record(used=sp.bool(False), discount=sp.mutez(0), minting_rights=sp.bool(False)),
 
-            token_index=sp.nat(0),
             token_minted_in_event=sp.nat(0),
 
             metadata=metadata
@@ -576,8 +574,6 @@ class AngryTeenagersSale(sp.Contract):
             sp.transfer(address, sp.mutez(0), sp.contract(FA2_MINT_PARAM_TYPE,
                                           self.data.fa2, entry_point="mint").open_some())
             minted.value = minted.value + 1
-
-        self.data.token_index = self.data.token_index + amount
 
     def start_sale_init(self, max_supply, max_per_user, price):
         self.data.event_user_balance = sp.big_map(l={}, tkey=sp.TAddress, tvalue=sp.TNat)

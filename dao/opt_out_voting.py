@@ -342,7 +342,7 @@ class DaoOptOutVoting(sp.Contract):
         sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
         sp.verify(self.data.phase_2_majority_vote_contract.open_some() == sp.sender,
                   message=Error.ErrorMessage.dao_invalid_voting_strat())
-        sp.verify(~self.data.outcomes.get_opt(self.data.vote_id).is_some(), message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(~self.data.outcomes.contains(self.data.vote_id), message=Error.ErrorMessage.dao_invalid_voting_strat())
         sp.verify(params.voting_id == self.data.poll_descriptor.open_some().phase_2_vote_id, message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Record the vote outcome
@@ -426,7 +426,7 @@ class DaoOptOutVoting(sp.Contract):
 
     def phase_1_vote(self, params):
         # Asserts
-        sp.verify(~self.data.poll_descriptor.open_some().phase_1_voters.get_opt(params.address).is_some(), message=Error.ErrorMessage.dao_vote_already_received())
+        sp.verify(~self.data.poll_descriptor.open_some().phase_1_voters.contains(params.address), message=Error.ErrorMessage.dao_vote_already_received())
         sp.verify(sp.level >= self.data.poll_descriptor.open_some().phase_1_voting_start_block, message=Error.ErrorMessage.dao_vote_not_yet_open())
         sp.verify(sp.level <= self.data.poll_descriptor.open_some().phase_1_voting_end_block, message=Error.ErrorMessage.dao_vote_period_is_over())
 

@@ -507,23 +507,23 @@ class AngryTeenagersSale(sp.Contract):
 
         tokens = sp.local('tokens', sp.view("all_tokens", params, sp.unit).open_some(message=Error.ErrorMessage.invalid_parameter()))
 
+        burn_list = sp.local("burn_list", sp.list(l={}, t=sp.TNat))
         sp.for token in tokens.value:
             is_burn = sp.local('is_burn', sp.view("is_token_burned", params, token).open_some(message=Error.ErrorMessage.invalid_parameter()))
-            burn_list = sp.local("burn_list", sp.list(l={}, t=sp.TNat))
 
             sp.if ~is_burn.value:
                 owner = sp.local('owner', sp.view("get_token_owner", params, token).open_some(message=Error.ErrorMessage.invalid_parameter()))
                 self.mint_internal(amount=1, address=owner.value)
                 burn_list.value.push(token)
 
-            presale_contract_handle = sp.contract(
-                sp.TList(sp.TNat),
-                params,
-                "burn"
-            ).open_some("Interface mismatch")
+        presale_contract_handle = sp.contract(
+            sp.TList(sp.TNat),
+            params,
+            "burn"
+        ).open_some("Interface mismatch")
 
-            presale_contract_arg = burn_list.value
-            self.call(presale_contract_handle, presale_contract_arg)
+        presale_contract_arg = burn_list.value
+        self.call(presale_contract_handle, presale_contract_arg)
 
 
 ########################################################################################################################

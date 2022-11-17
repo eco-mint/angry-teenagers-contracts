@@ -107,7 +107,7 @@ class AngryTeenagers(sp.Contract):
                  generic_image_ipfs_thumbnail,
                  project_oracles_stream,
                  what3words_file_ipfs,
-                 total_supply,
+                 max_supply,
                  artifact_file_type,
                  artifact_file_size_generic,
                  artifact_file_name,
@@ -171,7 +171,7 @@ class AngryTeenagers(sp.Contract):
                 paused=sp.TBool,
                 minted_tokens=sp.TNat,
                 what3words_file_ipfs=sp.TBytes,
-                total_supply=sp.TNat,
+                max_supply=sp.TNat,
                 token_metadata=sp.TBigMap(TOKEN_ID, sp.TPair(TOKEN_ID, sp.TMap(sp.TString, sp.TBytes))),
                 extra_token_metadata=sp.TBigMap(TOKEN_ID, sp.TRecord(token_id=TOKEN_ID, token_info=sp.TMap(sp.TString, sp.TBytes))),
                 generic_image_ipfs=sp.TBytes,
@@ -204,8 +204,8 @@ class AngryTeenagers(sp.Contract):
             # What3words set file in ipfs
             what3words_file_ipfs=what3words_file_ipfs,
 
-            # Total Max supply -- !!! Must match the number of line in the what3words file in ipfs
-            total_supply=total_supply,
+            # Max supply -- !!! Must match the number of line in the what3words file in ipfs
+            max_supply=max_supply,
 
             # Token metadata
             token_metadata=sp.big_map(l={}, tkey=TOKEN_ID, tvalue=sp.TPair(TOKEN_ID, sp.TMap(sp.TString, sp.TBytes))),
@@ -229,7 +229,7 @@ class AngryTeenagers(sp.Contract):
              , self.all_tokens
              , self.get_user_tokens
              , self.is_operator
-             , self.total_supply
+             , self.max_supply
              , self.token_metadata
              , self.get_project_oracles_stream
              , self.get_all_non_revealed_token
@@ -452,7 +452,7 @@ class AngryTeenagers(sp.Contract):
         sp.set_type(params, sp.TAddress)
         sp.verify(self.is_sale_contract_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
         # We don't check for pauseness because we're the admin.
-        sp.verify(self.data.minted_tokens < self.data.total_supply, message=Error.ErrorMessage.no_land_available())
+        sp.verify(self.data.minted_tokens < self.data.max_supply, message=Error.ErrorMessage.no_land_available())
 
         self.data.ledger[self.data.minted_tokens] = params
         self.build_token_metadata(self.data.minted_tokens)
@@ -550,8 +550,8 @@ class AngryTeenagers(sp.Contract):
         sp.result(token_list.value)
 
     @sp.offchain_view(pure=True)
-    def total_supply(self, token_id):
-        """Get the total supply for one token_id.
+    def max_supply(self, token_id):
+        """Get the max supply for one token_id.
         """
         sp.set_type(token_id, sp.TNat)
         sp.if token_id < self.data.minted_tokens:
@@ -601,7 +601,7 @@ class AngryTeenagers(sp.Contract):
         """Get token metadata
         """
         sp.set_type(token_id, sp.TNat)
-        sp.verify(token_id < self.data.total_supply)
+        sp.verify(token_id < self.data.max_supply)
         self.data.ledger.get(token_id, message=Error.Fa2ErrorMessage.token_undefined())
 
         sp.result(self.data.token_metadata.get(token_id, message=Error.Fa2ErrorMessage.token_undefined()))

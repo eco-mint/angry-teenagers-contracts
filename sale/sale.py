@@ -111,18 +111,12 @@ class AngryTeenagersSale(sp.Contract):
             , "description": (
                 "Angry Teenagers Crowdsale contract"
             )
-            , "interfaces": ["TZIP-016", "TZIP-021"]
+            , "interfaces": ["TZIP-016"]
             , "authors": [
                 "EcoMint LTD <www.angryteenagers.xyz>"
             ]
             , "homepage": "https://www.angryteenagers.xyz"
             , "views": list_of_views
-            , "permissions": {
-                "operator":
-                    "owner-or-operator-transfer"
-                , "receiver": "owner-no-hook"
-                , "sender": "owner-no-hook"
-            }
         }
         self.init_metadata("metadata_base", metadata_base)
 

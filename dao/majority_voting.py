@@ -30,7 +30,6 @@ VOTE_RECORD_TYPE = sp.TRecord(
 # - voting_end_block: Tezos block when the vote ending
 # - vote_id: Id of the vote
 # - quorum: Quorum in number of votes for this vote
-# - voters: Records who voted and what
 MAJORITY_POLL_DATA = sp.TRecord(
     vote_yay=sp.TNat,
     vote_nay=sp.TNat,
@@ -40,9 +39,8 @@ MAJORITY_POLL_DATA = sp.TRecord(
     voting_end_block=sp.TNat,
     vote_id=sp.TNat,
     quorum=sp.TNat,
-    total_available_voters=sp.TNat,
-    voters=sp.TMap(sp.TAddress, VOTE_RECORD_TYPE)
-).layout(("vote_yay", ("vote_nay", ("vote_abstain", ("total_votes", ("voting_start_block", ("voting_end_block", ("vote_id", ("quorum", ("total_available_voters", "voters"))))))))))
+    total_available_voters=sp.TNat
+).layout(("vote_yay", ("vote_nay", ("vote_abstain", ("total_votes", ("voting_start_block", ("voting_end_block", ("vote_id", ("quorum", "total_available_voters")))))))))
 
 # QUORUM_CAP_TYPE
 # - lower: Lowest possible value of the quorum pertenmill
@@ -74,6 +72,9 @@ GOVERNANCE_PARAMETERS_TYPE = sp.TRecord(
 # - poll_outcome: Outcome of the poll (PASSED or FAILED)
 # - poll_data: See MAJORITY_POLL_DATA
 OUTCOMES_TYPE = sp.TBigMap(sp.TNat, sp.TRecord(poll_outcome=sp.TNat, poll_data=MAJORITY_POLL_DATA))
+
+# VOTERS_HISTORY_TYPE
+VOTERS_HISTORY_TYPE = sp.TBigMap(sp.TRecord(address=sp.TAddress, vote_id=sp.TNat), VOTE_RECORD_TYPE)
 
 ################################################################
 ################################################################
@@ -112,7 +113,8 @@ class DaoMajorityVoting(sp.Contract):
                  current_dynamic_quorum_value_pertenmill,
                  governance_parameters,
                  metadata,
-                 outcomes=sp.big_map(l={}, tkey=sp.TNat, tvalue=sp.TRecord(poll_outcome=sp.TNat, poll_data=MAJORITY_POLL_DATA))):
+                 outcomes=sp.big_map(l={}, tkey=sp.TNat, tvalue=sp.TRecord(poll_outcome=sp.TNat, poll_data=MAJORITY_POLL_DATA)),
+                 voters_history=sp.big_map(l={}, tkey=sp.TRecord(address=sp.TAddress, vote_id=sp.TNat), tvalue=VOTE_RECORD_TYPE)):
       self.init_type(
         sp.TRecord(
             governance_parameters=GOVERNANCE_PARAMETERS_TYPE,
@@ -124,6 +126,7 @@ class DaoMajorityVoting(sp.Contract):
             poll_descriptor=sp.TOption(MAJORITY_POLL_DATA),
             vote_id=sp.TNat,
             outcomes=OUTCOMES_TYPE,
+            voters_history=VOTERS_HISTORY_TYPE,
             metadata=sp.TBigMap(sp.TString, sp.TBytes)
         )
       )
@@ -138,6 +141,7 @@ class DaoMajorityVoting(sp.Contract):
         poll_descriptor=sp.none,
         vote_id=sp.nat(0),
         outcomes=outcomes,
+        voters_history=voters_history,
         metadata=metadata
       )
 
@@ -146,6 +150,7 @@ class DaoMajorityVoting(sp.Contract):
           , self.get_number_of_historical_outcomes
           , self.get_contract_state
           , self.get_current_poll_data
+          , self.get_voter_history
       ]
 
       metadata_base = {
@@ -241,9 +246,8 @@ class DaoMajorityVoting(sp.Contract):
                 voting_end_block=end_block,
                 vote_id=self.data.vote_id,
                 quorum=new_quorum.value,
-                total_available_voters=total_available_voters,
-                voters=sp.map(l={}, tkey=sp.TAddress, tvalue=VOTE_RECORD_TYPE)
-        ))
+                total_available_voters=total_available_voters
+            ))
 
         # Callback the poll leader
         self.callback_leader_start()
@@ -265,8 +269,9 @@ class DaoMajorityVoting(sp.Contract):
         sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
         sp.verify(self.data.vote_state == IN_PROGRESS, message=Error.ErrorMessage.dao_no_vote_open())
         sp.verify(self.data.poll_descriptor.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
-        sp.verify(~self.data.poll_descriptor.open_some().voters.contains(params.address), message=Error.ErrorMessage.dao_vote_already_received())
         sp.verify(self.data.poll_descriptor.open_some().vote_id == params.vote_id, message=Error.ErrorMessage.dao_invalid_vote_id())
+        voters_history_key = sp.local("voters_history_key", sp.record(address=params.address, vote_id=params.vote_id))
+        sp.verify(~self.data.voters_history.contains(voters_history_key.value), message=Error.ErrorMessage.dao_vote_already_received())
         sp.verify(sp.level >= self.data.poll_descriptor.open_some().voting_start_block, message=Error.ErrorMessage.dao_vote_not_yet_open())
         sp.verify(sp.level <= self.data.poll_descriptor.open_some().voting_end_block, message=Error.ErrorMessage.dao_vote_period_is_over())
 
@@ -285,8 +290,8 @@ class DaoMajorityVoting(sp.Contract):
                     sp.failwith(Error.ErrorMessage.dao_invalid_vote_value())
 
         new_poll.value.total_votes = new_poll.value.total_votes + params.votes
-        new_poll.value.voters[params.address] = sp.record(vote_value=params.vote_value, level=sp.level, votes=params.votes)
         self.data.poll_descriptor = sp.some(new_poll.value)
+        self.data.voters_history[voters_history_key.value] = sp.record(vote_value=params.vote_value, level=sp.level, votes=params.votes)
 
         sp.emit(params, with_type=True, tag="Vote")
 
@@ -424,3 +429,11 @@ class DaoMajorityVoting(sp.Contract):
         """Get contract state
         """
         sp.result(self.data.vote_state)
+
+    @sp.offchain_view(pure=True)
+    def get_voter_history(self, params):
+        """Retrieve voters information per vote.
+        """
+        sp.set_type(params, sp.TRecord(address=sp.TAddress, vote_id=sp.TNat))
+        sp.result(self.data.voters_history.get(sp.record(address=params.address, vote_id=params.vote_id),
+                                               message=Error.ErrorMessage.dao_no_voter_info()))

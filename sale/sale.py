@@ -473,7 +473,6 @@ class AngryTeenagersSale(sp.Contract):
         """Change the addresses where Tez are transfered. Reserve to Admin"""
         sp.set_type(params, sp.TAddress)
         sp.verify(self.is_administrator(), message=Error.ErrorMessage.unauthorized_user())
-        total = sp.local("total", sp.nat(0))
         self.data.multisig_fund_address = params
 
 ########################################################################################################################

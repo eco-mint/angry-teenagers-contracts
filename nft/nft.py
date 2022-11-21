@@ -130,7 +130,9 @@ class AngryTeenagers(sp.Contract):
                  attributes_generic,
                  rights,
                  creators,
-                 project_name
+                 project_name,
+                 max_size_of_voting_power_list,
+                 remaining_elems_in_voting_power_after_cleanup,
                  ):
         self.operator_set = Operator_set()
 
@@ -158,6 +160,9 @@ class AngryTeenagers(sp.Contract):
         self.rights = sp.utils.bytes_of_string(rights)
         self.creators = sp.utils.bytes_of_string(creators)
         self.project_name = sp.utils.bytes_of_string(project_name)
+
+        self.max_size_of_voting_power_list = max_size_of_voting_power_list
+        self.remaining_elems_in_voting_power_after_cleanup = remaining_elems_in_voting_power_after_cleanup
 
         self.init_type(
             sp.TRecord(
@@ -472,6 +477,16 @@ class AngryTeenagers(sp.Contract):
                     sp.failwith(message=Error.ErrorMessage.balance_inconsistency())
         sp.else:
             self.data.voting_power[params] = sp.cons(sp.record(level=sp.level, value=1), self.data.voting_power[params])
+
+        # Optimize storage to avoid voting_power list to become too big
+        sp.if sp.len(self.data.voting_power[params]) > self.max_size_of_voting_power_list:
+            i = sp.local("i", sp.nat(0))
+            new_voting_power_list = sp.local("new_voting_power_list", sp.list(l=[], t=sp.TRecord(level=sp.TNat, value=sp.TNat)))
+            sp.for elem in self.data.voting_power[params]:
+                sp.if i.value < self.remaining_elems_in_voting_power_after_cleanup:
+                    new_voting_power_list.value.push(elem)
+                ivalue = i.value + 1
+            self.data.voting_power[params] = new_voting_power_list.value
 
         event = sp.record(sender=sp.sender, receiver=params)
         sp.emit(event, with_type=True, tag="Mint")

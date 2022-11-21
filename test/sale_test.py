@@ -95,6 +95,9 @@ class TestHelper():
         CREATORS = '["The Angry Teenagers. https://www.angryteenagers.xyz"]'
         PROJECTNAME = "Nsomyam Ye Reforestation"
 
+        MAX_SIZE_OF_VOTING_POWER_LIST = 5000
+        REMAINING_ELEMS_IN_VOTING_POWER_AFTER_CLEANUP = 100
+
         c2  = NFT.AngryTeenagers(administrator=admin.address,
                                    royalties_bytes=sp.utils.bytes_of_string('{"decimals": 2, "shares": { "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5": 10}}'),
                                    metadata=sp.utils.metadata_of_url("https://example.com"),
@@ -126,7 +129,9 @@ class TestHelper():
                                    attributes_generic=ATTRIBUTES_GENERIC,
                                    rights=RIGHTS,
                                    creators=CREATORS,
-                                   project_name=PROJECTNAME
+                                   project_name=PROJECTNAME,
+                                   max_size_of_voting_power_list=sp.nat(MAX_SIZE_OF_VOTING_POWER_LIST),
+                                   remaining_elems_in_voting_power_after_cleanup=sp.nat(REMAINING_ELEMS_IN_VOTING_POWER_AFTER_CLEANUP)
                                  )
         scenario += c2
         c1.register_fa2(c2.address).run(valid=True, sender=admin)

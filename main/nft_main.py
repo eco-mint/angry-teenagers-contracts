@@ -41,4 +41,6 @@ sp.add_compilation_target(Config.CONTRACT_NAME,
                               attributes_generic=Config.ATTRIBUTES_GENERIC,
                               rights=Config.RIGHTS,
                               creators=Config.CREATORS,
-                              project_name=Config.PROJECTNAME))
+                              project_name=Config.PROJECTNAME,
+                              max_size_of_voting_power_list=sp.nat(Config.MAX_SIZE_OF_VOTING_POWER_LIST),
+                              remaining_elems_in_voting_power_after_cleanup=sp.nat(Config.REMAINING_ELEMS_IN_VOTING_POWER_AFTER_CLEANUP)))

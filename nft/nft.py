@@ -312,7 +312,7 @@ class AngryTeenagers(sp.Contract):
                     self.update_balance(current_from, tx.to_)
 
                     event = sp.record(from_=current_from, to_=tx.to_, token_id=tx.token_id)
-                    sp.emit(event, with_type=True, tag="Transfer")
+                    sp.emit(event, with_type=True, tag="transfer")
 
 
     @sp.entry_point(check_no_incoming_transfer=True)
@@ -421,7 +421,7 @@ class AngryTeenagers(sp.Contract):
             self.data.token_metadata[sp.fst(artwork_metadata)] = sp.pair(sp.fst(artwork_metadata), my_map.value)
 
             event = sp.fst(artwork_metadata)
-            sp.emit(event, with_type=True, tag="Update artwork")
+            sp.emit(event, with_type=True, tag="update_artwork_data")
 
 
     @sp.entry_point(check_no_incoming_transfer=True)
@@ -489,7 +489,7 @@ class AngryTeenagers(sp.Contract):
             self.data.voting_power[params] = new_voting_power_list.value
 
         event = sp.record(sender=sp.sender, receiver=params)
-        sp.emit(event, with_type=True, tag="Mint")
+        sp.emit(event, with_type=True, tag="mint")
 
 ########################################################################################################################
 # Onchain views

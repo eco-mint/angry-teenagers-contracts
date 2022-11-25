@@ -255,7 +255,7 @@ class DaoMajorityVoting(sp.Contract):
         # Change the state of the contract
         self.data.vote_state = IN_PROGRESS
 
-        sp.emit(self.data.vote_id, with_type=True, tag="Start a new vote")
+        sp.emit(self.data.vote_id, with_type=True, tag="start")
 
 ########################################################################################################################
 # vote
@@ -293,7 +293,7 @@ class DaoMajorityVoting(sp.Contract):
         self.data.poll_descriptor = sp.some(new_poll.value)
         self.data.voters_history[voters_history_key.value] = sp.record(vote_value=params.vote_value, level=sp.level, votes=params.votes)
 
-        sp.emit(params, with_type=True, tag="Vote")
+        sp.emit(params, with_type=True, tag="vote")
 
 ########################################################################################################################
 # end
@@ -335,7 +335,7 @@ class DaoMajorityVoting(sp.Contract):
         self.data.vote_id = self.data.vote_id + 1
         self.data.vote_state = NONE
 
-        sp.emit(params, with_type=True, tag="End vote")
+        sp.emit(params, with_type=True, tag="end")
 
 ########################################################################################################################
 # mutez_transfer

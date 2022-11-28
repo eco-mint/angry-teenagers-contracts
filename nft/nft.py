@@ -485,7 +485,7 @@ class AngryTeenagers(sp.Contract):
             sp.for elem in self.data.voting_power[params]:
                 sp.if i.value < self.remaining_elems_in_voting_power_after_cleanup:
                     new_voting_power_list.value.push(elem)
-                ivalue = i.value + 1
+                i.value = i.value + 1
             self.data.voting_power[params] = new_voting_power_list.value
 
         event = sp.record(sender=sp.sender, receiver=params)

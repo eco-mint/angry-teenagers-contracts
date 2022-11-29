@@ -478,15 +478,7 @@ class AngryTeenagers(sp.Contract):
         sp.else:
             self.data.voting_power[params] = sp.cons(sp.record(level=sp.level, value=1), self.data.voting_power[params])
 
-        # Optimize storage to avoid voting_power list to become too big
-        sp.if sp.len(self.data.voting_power[params]) > self.max_size_of_voting_power_list:
-            i = sp.local("i", sp.nat(0))
-            new_voting_power_list = sp.local("new_voting_power_list", sp.list(l=[], t=sp.TRecord(level=sp.TNat, value=sp.TNat)))
-            sp.for elem in self.data.voting_power[params]:
-                sp.if i.value < self.remaining_elems_in_voting_power_after_cleanup:
-                    new_voting_power_list.value.push(elem)
-                i.value = i.value + 1
-            self.data.voting_power[params] = new_voting_power_list.value
+        self.clean_voting_power(params)
 
         event = sp.record(sender=sp.sender, receiver=params)
         sp.emit(event, with_type=True, tag="mint")
@@ -654,6 +646,8 @@ class AngryTeenagers(sp.Contract):
         sp.else:
             sp.failwith(Error.ErrorMessage.balance_inconsistency())
 
+        self.clean_voting_power(sender)
+
         # Update receiver balances
         sp.if ~self.data.voting_power.contains(receiver):
             self.data.voting_power[receiver] = sp.list(l={}, t = sp.TRecord(level=sp.TNat, value=sp.TNat))
@@ -668,6 +662,8 @@ class AngryTeenagers(sp.Contract):
                     sp.failwith(message=Error.ErrorMessage.balance_inconsistency())
         sp.else:
             self.data.voting_power[receiver] = sp.cons(sp.record(level=sp.level, value=1), self.data.voting_power[receiver])
+
+        self.clean_voting_power(receiver)
 
     def build_token_metadata(self, token_id):
         # set type
@@ -759,5 +755,16 @@ class AngryTeenagers(sp.Contract):
                 FORMAT_CLOSE_SQUAREBRACKET
         return value
 
+
+    def clean_voting_power(self, address):
+        sp.if sp.len(self.data.voting_power[address]) > self.max_size_of_voting_power_list:
+            i = sp.local("i", sp.nat(0))
+            new_voting_power_list = sp.local("new_voting_power_list",
+                                             sp.list(l=[], t=sp.TRecord(level=sp.TNat, value=sp.TNat)))
+            sp.for elem in self.data.voting_power[address]:
+                sp.if i.value < self.remaining_elems_in_voting_power_after_cleanup:
+                    new_voting_power_list.value.push(elem)
+                i.value = i.value + 1
+            self.data.voting_power[address] = new_voting_power_list.value
 
 

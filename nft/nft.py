@@ -304,9 +304,11 @@ class AngryTeenagers(sp.Contract):
                 sp.verify(sender_verify, message=message)
                 # Tzip-12 allows transfer of 0 token. In this case nothing happens but the whole transaction doesn't fail.
                 sp.verify(tx.amount <= 1, Error.Fa2ErrorMessage.insufficient_balance())
+                # Be sure the token exists
+                sp.verify(self.data.ledger.contains(tx.token_id),  message=Error.Fa2ErrorMessage.token_undefined())
 
                 sp.if tx.amount == 1:
-                    sp.verify(self.data.ledger.get(tx.token_id, message=Error.Fa2ErrorMessage.token_undefined()) == current_from, Error.Fa2ErrorMessage.insufficient_balance())
+                    sp.verify(self.data.ledger[tx.token_id] == current_from, Error.Fa2ErrorMessage.insufficient_balance())
                     self.data.ledger[tx.token_id] = tx.to_
 
                     self.update_balance(current_from, tx.to_)

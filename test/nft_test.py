@@ -80,10 +80,7 @@ class TestHelper():
                         attributes_generic=ATTRIBUTES_GENERIC,
                         rights=RIGHTS,
                         creators=CREATORS,
-                        project_name=PROJECTNAME,
-                        max_size_of_voting_power_list = sp.nat(MAX_SIZE_OF_VOTING_POWER_LIST),
-                        remaining_elems_in_voting_power_after_cleanup = sp.nat(REMAINING_ELEMS_IN_VOTING_POWER_AFTER_CLEANUP)
-                            )
+                        project_name=PROJECTNAME)
         c1.set_initial_balance(sp.mutez(300000000))
         scenario += c1
         scenario.h2("Contracts")

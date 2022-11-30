@@ -41,6 +41,3 @@ ATTRIBUTES_GENERIC = '[{\"name\"}, {\"generic\"}]'
 RIGHTS = "© 2022 EcoMint. All rights reserved."
 CREATORS = '["KT1XmjJdFxUzuCJJVMyrXxS23hQrVtqSnhTH"]'
 PROJECTNAME = "Nsomyam Ye Reforestation"
-
-MAX_SIZE_OF_VOTING_POWER_LIST=5000
-REMAINING_ELEMS_IN_VOTING_POWER_AFTER_CLEANUP=100

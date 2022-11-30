@@ -19,7 +19,7 @@ OPERATOR_TYPE = sp.TRecord(owner=sp.TAddress, operator=sp.TAddress, token_id=TOK
 ARTWORKS_CONTAINER_FUNCTION_TYPE = sp.TRecord(artifact_uri=sp.TBytes, artifact_size=sp.TBytes, display_uri=sp.TBytes, display_size=sp.TBytes, thumbnail_uri=sp.TBytes, thumbnail_size=sp.TBytes, attributes=sp.TBytes)
 UPDATE_ARTWORK_METADATA_FUNCTION_TYPE = sp.TList(sp.TPair(TOKEN_ID, ARTWORKS_CONTAINER_FUNCTION_TYPE))
 
-BALANCE_RECORD_TYPE = sp.TList(sp.TRecord(level=sp.TNat, value=sp.TNat))
+BALANCE_RECORD_TYPE = sp.TRecord(level=sp.TNat, value=sp.TNat)
 
 ########################################################################################################################
 ########################################################################################################################
@@ -130,9 +130,7 @@ class AngryTeenagers(sp.Contract):
                  attributes_generic,
                  rights,
                  creators,
-                 project_name,
-                 max_size_of_voting_power_list,
-                 remaining_elems_in_voting_power_after_cleanup,
+                 project_name
                  ):
         self.operator_set = Operator_set()
 
@@ -161,14 +159,12 @@ class AngryTeenagers(sp.Contract):
         self.creators = sp.utils.bytes_of_string(creators)
         self.project_name = sp.utils.bytes_of_string(project_name)
 
-        self.max_size_of_voting_power_list = max_size_of_voting_power_list
-        self.remaining_elems_in_voting_power_after_cleanup = remaining_elems_in_voting_power_after_cleanup
-
         self.init_type(
             sp.TRecord(
                 ledger=sp.TBigMap(TOKEN_ID, sp.TAddress),
                 operators=sp.TBigMap(OPERATOR_TYPE, sp.TUnit),
-                voting_power=sp.TBigMap(sp.TAddress, BALANCE_RECORD_TYPE),
+                voting_power=sp.TBigMap(sp.TPair(sp.TAddress, sp.TNat), BALANCE_RECORD_TYPE),
+                voting_power_length=sp.TBigMap(sp.TAddress, sp.TNat),
                 administrator=sp.TAddress,
                 next_administrator=sp.TOption(sp.TAddress),
                 sale_contract_administrator=sp.TAddress,
@@ -192,7 +188,8 @@ class AngryTeenagers(sp.Contract):
             ledger=sp.big_map(tkey=TOKEN_ID, tvalue=sp.TAddress),
             operators=self.operator_set.make(),
 
-            voting_power=sp.big_map(tkey=sp.TAddress, tvalue=BALANCE_RECORD_TYPE),
+            voting_power=sp.big_map(tkey=sp.TPair(sp.TAddress, sp.TNat), tvalue=BALANCE_RECORD_TYPE),
+            voting_power_length = sp.big_map(tkey=sp.TAddress, tvalue=sp.TNat),
 
             # Administrator
             administrator=administrator,
@@ -311,7 +308,11 @@ class AngryTeenagers(sp.Contract):
                     sp.verify(self.data.ledger[tx.token_id] == current_from, Error.Fa2ErrorMessage.insufficient_balance())
                     self.data.ledger[tx.token_id] = tx.to_
 
-                    self.update_balance(current_from, tx.to_)
+                    # Update sender balance
+                    self.update_voting_power_for_sender(address=current_from)
+
+                    # Update receiver balance
+                    self.update_voting_power_for_receiver(address=tx.to_)
 
                     event = sp.record(from_=current_from, to_=tx.to_, token_id=tx.token_id)
                     sp.emit(event, with_type=True, tag="transfer")
@@ -466,22 +467,10 @@ class AngryTeenagers(sp.Contract):
 
         self.data.minted_tokens = self.data.minted_tokens + 1
 
-        sp.if ~self.data.voting_power.contains(params):
-            self.data.voting_power[params] = sp.list(l={}, t=sp.TRecord(level=sp.TNat, value=sp.TNat))
+        # Update voting power
+        self.update_voting_power_for_receiver(address=params)
 
-        with sp.match_cons(self.data.voting_power[params]) as last_balance:
-            sp.if sp.level == last_balance.head.level:
-                self.data.voting_power[params] = sp.cons(sp.record(level=sp.level, value=last_balance.head.value + 1), last_balance.tail)
-            sp.else:
-                sp.if sp.level > last_balance.head.level:
-                    self.data.voting_power[params] = sp.cons(sp.record(level=sp.level, value=last_balance.head.value + 1), self.data.voting_power[params])
-                sp.else:
-                    sp.failwith(message=Error.ErrorMessage.balance_inconsistency())
-        sp.else:
-            self.data.voting_power[params] = sp.cons(sp.record(level=sp.level, value=1), self.data.voting_power[params])
-
-        self.clean_voting_power(params)
-
+        # Send event
         event = sp.record(sender=sp.sender, receiver=params)
         sp.emit(event, with_type=True, tag="mint")
 
@@ -493,17 +482,42 @@ class AngryTeenagers(sp.Contract):
         sp.set_type(params, sp.TPair(sp.TAddress, sp.TNat))
         address, level = sp.match_pair(params)
 
-        voting_power_list = sp.local("voting_power_list", self.data.voting_power.get(address, sp.list([] , t=sp.TRecord(level=sp.TNat, value=sp.TNat))))
-
-        found = sp.local('found', sp.bool(False))
         result = sp.local('result', sp.nat(0))
-        sp.for elem in voting_power_list.value:
-            sp.if (~(found.value)) & (elem.level <= level):
-                result.value = elem.value
-                found.value = True
+
+        upper_bound = sp.local('upper_bound', self.data.voting_power_length.get(address, sp.nat(0)))
+        lower_bound = sp.local('lower_bound', sp.nat(0))
+
+        sp.if upper_bound.value != 0:
+            found = sp.local('found', sp.bool(False))
+            sp.while ~found.value:
+                sp.if (sp.is_nat(upper_bound.value - lower_bound.value)).open_some() == 1:
+                    found.value = True
+                    upper_elem = sp.local('upper_elem', self.data.voting_power.get(sp.pair(address, upper_bound.value),
+                                                                   message=Error.ErrorMessage.balance_inconsistency()))
+                    sp.if upper_elem.value.level <= level:
+                        result.value = upper_elem.value.value
+                    sp.else:
+                        sp.if self.data.voting_power.contains(sp.pair(address, lower_bound.value)):
+                            lower_elem = sp.local('lower_elem', self.data.voting_power.get(sp.pair(address, lower_bound.value),
+                                                                    message=Error.ErrorMessage.balance_inconsistency()))
+                            sp.if lower_elem.value.level <= level:
+                                result.value = lower_elem.value.value
+                sp.else:
+                    middle = sp.local('middle', (sp.is_nat(upper_bound.value - lower_bound.value).open_some() / 2) + lower_bound.value)
+                    elem = sp.local('elem', self.data.voting_power.get(sp.pair(address, middle.value),
+                                                                   message=Error.ErrorMessage.balance_inconsistency()))
+                    sp.if elem.value.level == level:
+                        found.value = True
+                        result.value = elem.value.value
+                    sp.else:
+                        sp.if elem.value.level > level:
+                            upper_bound.value = middle.value
+                        sp.else:
+                            lower_bound.value = middle.value
+                            result.value = elem.value.value
+                    sp.verify(upper_bound.value > lower_bound.value, message=Error.ErrorMessage.internal_error())
 
         sp.result(result.value)
-
 
     @sp.onchain_view()
     def get_total_voting_power(self):
@@ -630,42 +644,36 @@ class AngryTeenagers(sp.Contract):
     def is_artwork_administrator(self, sender):
         return (sender == self.data.administrator) | (sender == self.data.artwork_administrator)
 
-    def update_balance(self, sender, receiver):
-        sp.verify(sp.len(self.data.voting_power.get(sender, message=Error.ErrorMessage.balance_inconsistency())) > 0,
-                  message=Error.ErrorMessage.balance_inconsistency())
+    def update_voting_power_for_receiver(self, address):
+        length_receiver = sp.local('length_receiver', self.data.voting_power_length.get(address, sp.nat(0)))
 
-        # Update sender balances
-        with sp.match_cons(self.data.voting_power[sender]) as last_balance:
-            sp.verify(last_balance.head.value > 0, message=Error.ErrorMessage.balance_inconsistency())
-
-            sp.if sp.level == last_balance.head.level:
-                self.data.voting_power[sender] = sp.cons(sp.record(level=sp.level, value=sp.is_nat(last_balance.head.value - 1).open_some()), last_balance.tail)
-            sp.else:
-                sp.if sp.level > last_balance.head.level:
-                    self.data.voting_power[sender] = sp.cons(sp.record(level=sp.level, value=sp.is_nat(last_balance.head.value - 1).open_some()), self.data.voting_power[sender])
-                sp.else:
-                    sp.failwith(message=Error.ErrorMessage.balance_inconsistency())
+        sp.if length_receiver.value == 0:
+            self.data.voting_power_length[address] = 1
+            self.data.voting_power[sp.pair(address, 1)] = sp.record(level=sp.level, value=1)
         sp.else:
-            sp.failwith(Error.ErrorMessage.balance_inconsistency())
+            current_value_receiver = sp.local('current_value_receiver', self.data.voting_power.get(sp.pair(address, length_receiver.value),
+                                                                     message=Error.ErrorMessage.balance_inconsistency()))
+            sp.verify(current_value_receiver.value.level <= sp.level, message=Error.ErrorMessage.balance_inconsistency())
 
-        self.clean_voting_power(sender)
+            sp.if current_value_receiver.value.level != sp.level:
+                length_receiver.value = length_receiver.value + 1
+                self.data.voting_power_length[address] = length_receiver.value
 
-        # Update receiver balances
-        sp.if ~self.data.voting_power.contains(receiver):
-            self.data.voting_power[receiver] = sp.list(l={}, t = sp.TRecord(level=sp.TNat, value=sp.TNat))
+            self.data.voting_power[sp.pair(address, length_receiver.value)] = sp.record(level=sp.level, value=current_value_receiver.value.value + 1)
 
-        with sp.match_cons(self.data.voting_power[receiver]) as last_balance:
-            sp.if sp.level == last_balance.head.level:
-                self.data.voting_power[receiver] = sp.cons(sp.record(level=sp.level, value=last_balance.head.value + 1), last_balance.tail)
-            sp.else:
-                sp.if sp.level > last_balance.head.level:
-                    self.data.voting_power[receiver] = sp.cons(sp.record(level=sp.level, value=last_balance.head.value + 1), self.data.voting_power[receiver])
-                sp.else:
-                    sp.failwith(message=Error.ErrorMessage.balance_inconsistency())
-        sp.else:
-            self.data.voting_power[receiver] = sp.cons(sp.record(level=sp.level, value=1), self.data.voting_power[receiver])
+    def update_voting_power_for_sender(self, address):
+        length_for_sender = sp.local('length_for_sender', self.data.voting_power_length.get(address, message=Error.ErrorMessage.balance_inconsistency()))
+        sp.verify(length_for_sender.value > 0, message=Error.ErrorMessage.balance_inconsistency())
 
-        self.clean_voting_power(receiver)
+        current_value_for_sender = sp.local('current_value_for_sender', self.data.voting_power.get(sp.pair(address, length_for_sender.value), message=Error.ErrorMessage.balance_inconsistency()))
+        sp.verify(current_value_for_sender.value.level <= sp.level, message=Error.ErrorMessage.balance_inconsistency())
+
+        sp.if current_value_for_sender.value.level != sp.level:
+            length_for_sender.value = length_for_sender.value + 1
+            self.data.voting_power_length[address] = length_for_sender.value
+
+        sp.verify(current_value_for_sender.value.value > 0, message=Error.ErrorMessage.balance_inconsistency())
+        self.data.voting_power[sp.pair(address, length_for_sender.value)] = sp.record(level=sp.level, value=sp.is_nat(current_value_for_sender.value.value - 1).open_some())
 
     def build_token_metadata(self, token_id):
         # set type
@@ -757,16 +765,5 @@ class AngryTeenagers(sp.Contract):
                 FORMAT_CLOSE_SQUAREBRACKET
         return value
 
-
-    def clean_voting_power(self, address):
-        sp.if sp.len(self.data.voting_power[address]) > self.max_size_of_voting_power_list:
-            i = sp.local("i", sp.nat(0))
-            new_voting_power_list = sp.local("new_voting_power_list",
-                                             sp.list(l=[], t=sp.TRecord(level=sp.TNat, value=sp.TNat)))
-            sp.for elem in self.data.voting_power[address]:
-                sp.if i.value < self.remaining_elems_in_voting_power_after_cleanup:
-                    new_voting_power_list.value.push(elem)
-                i.value = i.value + 1
-            self.data.voting_power[address] = new_voting_power_list.value
 
 

@@ -309,10 +309,10 @@ class AngryTeenagers(sp.Contract):
                     self.data.ledger[tx.token_id] = tx.to_
 
                     # Update sender balance
-                    self.update_voting_power_for_sender(address=current_from)
+                    self.update_voting_power(sp.record(address=current_from, is_receive=False))
 
                     # Update receiver balance
-                    self.update_voting_power_for_receiver(address=tx.to_)
+                    self.update_voting_power(sp.record(address=tx.to_, is_receive=True))
 
                     event = sp.record(from_=current_from, to_=tx.to_, token_id=tx.token_id)
                     sp.emit(event, with_type=True, tag="transfer")
@@ -468,7 +468,7 @@ class AngryTeenagers(sp.Contract):
         self.data.minted_tokens = self.data.minted_tokens + 1
 
         # Update voting power
-        self.update_voting_power_for_receiver(address=params)
+        self.update_voting_power(sp.record(address=params, is_receive=True))
 
         # Send event
         event = sp.record(sender=sp.sender, receiver=params)
@@ -646,36 +646,31 @@ class AngryTeenagers(sp.Contract):
     def is_artwork_administrator(self, sender):
         return (sender == self.data.administrator) | (sender == self.data.artwork_administrator)
 
-    def update_voting_power_for_receiver(self, address):
-        length_receiver = sp.local('length_receiver', self.data.voting_power_length.get(address, sp.nat(0)))
+    @sp.private_lambda(with_storage="read-write", with_operations=False, wrap_call=True)
+    def update_voting_power(self, params):
+        sp.set_type(params, sp.TRecord(address=sp.TAddress, is_receive=sp.TBool))
+        length = sp.local('length', self.data.voting_power_length.get(params.address, sp.nat(0)))
 
-        sp.if length_receiver.value == 0:
-            self.data.voting_power_length[address] = 1
-            self.data.voting_power[sp.pair(address, 1)] = sp.record(level=sp.level, value=1)
+        sp.if ~params.is_receive:
+            sp.verify(length.value > sp.nat(0), message=Error.ErrorMessage.balance_inconsistency())
+
+        sp.if length.value == 0:
+            self.data.voting_power_length[params.address] = 1
+            self.data.voting_power[sp.pair(params.address, 1)] = sp.record(level=sp.level, value=1)
         sp.else:
-            current_value_receiver = sp.local('current_value_receiver', self.data.voting_power.get(sp.pair(address, length_receiver.value),
+            current_value = sp.local('current_value', self.data.voting_power.get(sp.pair(params.address, length.value),
                                                                      message=Error.ErrorMessage.balance_inconsistency()))
-            sp.verify(current_value_receiver.value.level <= sp.level, message=Error.ErrorMessage.balance_inconsistency())
+            sp.verify(current_value.value.level <= sp.level, message=Error.ErrorMessage.balance_inconsistency())
 
-            sp.if current_value_receiver.value.level != sp.level:
-                length_receiver.value = length_receiver.value + 1
-                self.data.voting_power_length[address] = length_receiver.value
+            sp.if current_value.value.level != sp.level:
+                length.value = length.value + 1
+                self.data.voting_power_length[params.address] = length.value
 
-            self.data.voting_power[sp.pair(address, length_receiver.value)] = sp.record(level=sp.level, value=current_value_receiver.value.value + 1)
+            new_value = sp.local('new_value', current_value.value.value + 1)
+            sp.if ~params.is_receive:
+                new_value.value = sp.is_nat(current_value.value.value - 1).open_some(Error.ErrorMessage.balance_inconsistency())
 
-    def update_voting_power_for_sender(self, address):
-        length_for_sender = sp.local('length_for_sender', self.data.voting_power_length.get(address, message=Error.ErrorMessage.balance_inconsistency()))
-        sp.verify(length_for_sender.value > 0, message=Error.ErrorMessage.balance_inconsistency())
-
-        current_value_for_sender = sp.local('current_value_for_sender', self.data.voting_power.get(sp.pair(address, length_for_sender.value), message=Error.ErrorMessage.balance_inconsistency()))
-        sp.verify(current_value_for_sender.value.level <= sp.level, message=Error.ErrorMessage.balance_inconsistency())
-
-        sp.if current_value_for_sender.value.level != sp.level:
-            length_for_sender.value = length_for_sender.value + 1
-            self.data.voting_power_length[address] = length_for_sender.value
-
-        sp.verify(current_value_for_sender.value.value > 0, message=Error.ErrorMessage.balance_inconsistency())
-        self.data.voting_power[sp.pair(address, length_for_sender.value)] = sp.record(level=sp.level, value=sp.is_nat(current_value_for_sender.value.value - 1).open_some())
+            self.data.voting_power[sp.pair(params.address, length.value)] = sp.record(level=sp.level, value=new_value.value)
 
     def build_token_metadata(self, token_id):
         # set type

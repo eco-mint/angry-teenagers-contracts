@@ -490,7 +490,9 @@ class AngryTeenagers(sp.Contract):
         sp.if upper_bound.value != 0:
             found = sp.local('found', sp.bool(False))
             sp.while ~found.value:
-                sp.if (sp.is_nat(upper_bound.value - lower_bound.value)).open_some() == 1:
+                interval_size = sp.local('interval_size', sp.is_nat(upper_bound.value - lower_bound.value).open_some(
+                    message=Error.ErrorMessage.internal_error()))
+                sp.if interval_size.value == 1:
                     found.value = True
                     upper_elem = sp.local('upper_elem', self.data.voting_power.get(sp.pair(address, upper_bound.value),
                                                                    message=Error.ErrorMessage.balance_inconsistency()))
@@ -503,7 +505,7 @@ class AngryTeenagers(sp.Contract):
                             sp.if lower_elem.value.level <= level:
                                 result.value = lower_elem.value.value
                 sp.else:
-                    middle = sp.local('middle', (sp.is_nat(upper_bound.value - lower_bound.value).open_some() / 2) + lower_bound.value)
+                    middle = sp.local('middle', (interval_size.value / 2) + lower_bound.value)
                     elem = sp.local('elem', self.data.voting_power.get(sp.pair(address, middle.value),
                                                                    message=Error.ErrorMessage.balance_inconsistency()))
                     sp.if elem.value.level == level:

@@ -498,12 +498,6 @@ class AngryTeenagers(sp.Contract):
                                                                    message=Error.ErrorMessage.balance_inconsistency()))
                     sp.if upper_elem.value.level <= level:
                         result.value = upper_elem.value.value
-                    sp.else:
-                        sp.if self.data.voting_power.contains(sp.pair(address, lower_bound.value)):
-                            lower_elem = sp.local('lower_elem', self.data.voting_power.get(sp.pair(address, lower_bound.value),
-                                                                    message=Error.ErrorMessage.balance_inconsistency()))
-                            sp.if lower_elem.value.level <= level:
-                                result.value = lower_elem.value.value
                 sp.else:
                     middle = sp.local('middle', (interval_size.value / 2) + lower_bound.value)
                     elem = sp.local('elem', self.data.voting_power.get(sp.pair(address, middle.value),

@@ -484,33 +484,46 @@ class AngryTeenagers(sp.Contract):
 
         result = sp.local('result', sp.nat(0))
 
-        upper_bound = sp.local('upper_bound', self.data.voting_power_length.get(address, sp.nat(0)))
-        lower_bound = sp.local('lower_bound', sp.nat(0))
+        sp.if self.data.voting_power_length.contains(address):
+            upper_bound = sp.local('upper_bound', self.data.voting_power_length.get(address, message=Error.ErrorMessage.balance_inconsistency()))
+            lower_bound = sp.local('lower_bound', sp.nat(0))
 
-        sp.if upper_bound.value != 0:
-            found = sp.local('found', sp.bool(False))
-            sp.while ~found.value:
-                interval_size = sp.local('interval_size', sp.is_nat(upper_bound.value - lower_bound.value).open_some(
-                    message=Error.ErrorMessage.internal_error()))
-                sp.if interval_size.value == 1:
-                    found.value = True
-                    upper_elem = sp.local('upper_elem', self.data.voting_power.get(sp.pair(address, upper_bound.value),
-                                                                   message=Error.ErrorMessage.balance_inconsistency()))
-                    sp.if upper_elem.value.level <= level:
-                        result.value = upper_elem.value.value
-                sp.else:
-                    middle = sp.local('middle', (interval_size.value / 2) + lower_bound.value)
-                    elem = sp.local('elem', self.data.voting_power.get(sp.pair(address, middle.value),
-                                                                   message=Error.ErrorMessage.balance_inconsistency()))
-                    sp.if elem.value.level == level:
-                        found.value = True
-                        result.value = elem.value.value
-                    sp.else:
-                        sp.if elem.value.level > level:
-                            upper_bound.value = middle.value
+            sp.if upper_bound.value == 0:
+                root_elem = sp.local('root_elem', self.data.voting_power.get(sp.pair(address, upper_bound.value),
+                                                                             message=Error.ErrorMessage.balance_inconsistency()))
+                sp.if root_elem.value.level <= level:
+                    result.value = root_elem.value.value
+
+            sp.else:
+                finished = sp.local('finished', sp.bool(False))
+                # Binary search tree
+                sp.while ~finished.value:
+                    interval = sp.local('interval', sp.is_nat(upper_bound.value - lower_bound.value).open_some(message=Error.ErrorMessage.internal_error()))
+
+                    sp.if interval.value == 1:
+                        finished.value = True
+                        upper_elem = sp.local('upper_elem', self.data.voting_power.get(sp.pair(address, upper_bound.value),
+                                                                                       message=Error.ErrorMessage.balance_inconsistency()))
+                        sp.if upper_elem.value.level <= level:
+                            result.value = upper_elem.value.value
                         sp.else:
-                            lower_bound.value = middle.value
+                            lower_elem = sp.local('lower_elem', self.data.voting_power.get(sp.pair(address, lower_bound.value),
+                                                                         message=Error.ErrorMessage.balance_inconsistency()))
+                            sp.if lower_elem.value.level <= level:
+                                result.value = lower_elem.value.value
+                    sp.else:
+                        middle = sp.local('middle', (interval.value / 2) + lower_bound.value)
+                        elem = sp.local('elem', self.data.voting_power.get(sp.pair(address, middle.value),
+                                                               message=Error.ErrorMessage.balance_inconsistency()))
+
+                        sp.if elem.value.level == level:
+                            finished.value = True
                             result.value = elem.value.value
+                        sp.else:
+                            sp.if elem.value.level > level:
+                                upper_bound.value = middle.value
+                            sp.else:
+                                lower_bound.value = middle.value
                     sp.verify(upper_bound.value > lower_bound.value, message=Error.ErrorMessage.internal_error())
 
         sp.result(result.value)
@@ -643,14 +656,15 @@ class AngryTeenagers(sp.Contract):
     @sp.private_lambda(with_storage="read-write", with_operations=False, wrap_call=True)
     def update_voting_power(self, params):
         sp.set_type(params, sp.TRecord(address=sp.TAddress, is_receive=sp.TBool))
-        length = sp.local('length', self.data.voting_power_length.get(params.address, sp.nat(0)))
 
         sp.if ~params.is_receive:
-            sp.verify(length.value > sp.nat(0), message=Error.ErrorMessage.balance_inconsistency())
+            sp.verify(self.data.voting_power_length.contains(params.address), message=Error.ErrorMessage.balance_inconsistency())
 
-        sp.if length.value == 0:
-            self.data.voting_power_length[params.address] = 1
-            self.data.voting_power[sp.pair(params.address, 1)] = sp.record(level=sp.level, value=1)
+        length = sp.local('length', self.data.voting_power_length.get(params.address, sp.nat(0)))
+
+        sp.if params.is_receive & ~self.data.voting_power_length.contains(params.address):
+            self.data.voting_power_length[params.address] = 0
+            self.data.voting_power[sp.pair(params.address, 0)] = sp.record(level=sp.level, value=1)
         sp.else:
             current_value = sp.local('current_value', self.data.voting_power.get(sp.pair(params.address, length.value),
                                                                      message=Error.ErrorMessage.balance_inconsistency()))

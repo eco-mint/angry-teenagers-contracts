@@ -22,6 +22,7 @@ class ErrorMessage:
     def sale_no_space_remaining():   return "ANGRY_TEENAGERS_NO_SPACE_REMAINING"
     def sale_no_token():             return "ANGRY_TEENAGERS_NO_TOKEN"
     def invalid_amount():            return "ANGRY_TEENAGERS_INVALID_AMOUNT"
+    def internal_error():            return "ANGRY_TEENAGERS_INTERNAL_ERROR"
     def dao_vote_in_progress():      return "ANGRY_TEENAGERS_DAO_VOTE_IN_PROGRESS"
     def dao_only_for_dao():          return "ANGRY_TEENAGERS_DAO_ONLY_FOR_DAO"
     def dao_already_registered():    return "ANGRY_TEENAGERS_DAO_ALREADY_REGISTERED"

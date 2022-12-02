@@ -164,7 +164,7 @@ class AngryTeenagers(sp.Contract):
                 ledger=sp.TBigMap(TOKEN_ID, sp.TAddress),
                 operators=sp.TBigMap(OPERATOR_TYPE, sp.TUnit),
                 voting_power=sp.TBigMap(sp.TPair(sp.TAddress, sp.TNat), BALANCE_RECORD_TYPE),
-                voting_power_length=sp.TBigMap(sp.TAddress, sp.TNat),
+                voting_power_highest_index=sp.TBigMap(sp.TAddress, sp.TNat),
                 administrator=sp.TAddress,
                 next_administrator=sp.TOption(sp.TAddress),
                 sale_contract_administrator=sp.TAddress,
@@ -189,7 +189,7 @@ class AngryTeenagers(sp.Contract):
             operators=self.operator_set.make(),
 
             voting_power=sp.big_map(tkey=sp.TPair(sp.TAddress, sp.TNat), tvalue=BALANCE_RECORD_TYPE),
-            voting_power_length = sp.big_map(tkey=sp.TAddress, tvalue=sp.TNat),
+            voting_power_highest_index = sp.big_map(tkey=sp.TAddress, tvalue=sp.TNat),
 
             # Administrator
             administrator=administrator,
@@ -484,8 +484,8 @@ class AngryTeenagers(sp.Contract):
 
         result = sp.local('result', sp.nat(0))
 
-        sp.if self.data.voting_power_length.contains(address):
-            upper_bound = sp.local('upper_bound', self.data.voting_power_length.get(address, message=Error.ErrorMessage.balance_inconsistency()))
+        sp.if self.data.voting_power_highest_index.contains(address):
+            upper_bound = sp.local('upper_bound', self.data.voting_power_highest_index.get(address, message=Error.ErrorMessage.balance_inconsistency()))
             lower_bound = sp.local('lower_bound', sp.nat(0))
 
             sp.if upper_bound.value == 0:
@@ -658,27 +658,27 @@ class AngryTeenagers(sp.Contract):
         sp.set_type(params, sp.TRecord(address=sp.TAddress, is_receive=sp.TBool))
 
         sp.if ~params.is_receive:
-            sp.verify(self.data.voting_power_length.contains(params.address), message=Error.ErrorMessage.balance_inconsistency())
+            sp.verify(self.data.voting_power_highest_index.contains(params.address), message=Error.ErrorMessage.balance_inconsistency())
 
-        length = sp.local('length', self.data.voting_power_length.get(params.address, sp.nat(0)))
+        highest_index = sp.local('highest_index', self.data.voting_power_highest_index.get(params.address, sp.nat(0)))
 
-        sp.if params.is_receive & ~self.data.voting_power_length.contains(params.address):
-            self.data.voting_power_length[params.address] = 0
+        sp.if params.is_receive & ~self.data.voting_power_highest_index.contains(params.address):
+            self.data.voting_power_highest_index[params.address] = 0
             self.data.voting_power[sp.pair(params.address, 0)] = sp.record(level=sp.level, value=1)
         sp.else:
-            current_value = sp.local('current_value', self.data.voting_power.get(sp.pair(params.address, length.value),
+            current_value = sp.local('current_value', self.data.voting_power.get(sp.pair(params.address, highest_index.value),
                                                                      message=Error.ErrorMessage.balance_inconsistency()))
             sp.verify(current_value.value.level <= sp.level, message=Error.ErrorMessage.balance_inconsistency())
 
             sp.if current_value.value.level != sp.level:
-                length.value = length.value + 1
-                self.data.voting_power_length[params.address] = length.value
+                highest_index.value = highest_index.value + 1
+                self.data.voting_power_highest_index[params.address] = highest_index.value
 
             new_value = sp.local('new_value', current_value.value.value + 1)
             sp.if ~params.is_receive:
                 new_value.value = sp.is_nat(current_value.value.value - 1).open_some(Error.ErrorMessage.balance_inconsistency())
 
-            self.data.voting_power[sp.pair(params.address, length.value)] = sp.record(level=sp.level, value=new_value.value)
+            self.data.voting_power[sp.pair(params.address, highest_index.value)] = sp.record(level=sp.level, value=new_value.value)
 
     def build_token_metadata(self, token_id):
         # set type

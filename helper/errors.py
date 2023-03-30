@@ -41,6 +41,7 @@ class ErrorMessage:
     def dao_vote_already_received(): return "ANGRY_TEENAGERS_DAO_VOTE_ALREADY_RECEIVED"
     def dao_invalid_vote_id():       return "ANGRY_TEENAGERS_DAO_INVALID_VOTE_ID"
     def dao_invalid_vote_value():    return "ANGRY_TEENAGERS_DAO_INVALID_VOTE_VALUE"
+    def dao_no_lambda_in_proposal(): return "ANGRY_TEENAGERS_DAO_NO_LAMBDA_IN_PROPOSAL"
     def dao_too_early_for_unlock():  return "ANGRY_TEENAGERS_DAO_TOO_EARLY_FOR_UNLOCK"
     def invalid_token_metadata():    return "ANGRY_TEENAGERS_INVALID_TOKEN_METADATA"
     def token_revealed():            return "ANGRY_TEENAGERS_TOKEN_REVEALED"

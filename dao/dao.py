@@ -46,6 +46,9 @@ VOTE_ONGOING=2
 # ENDING_VOTE: The contract requested to end the vote to the appropriate
 # voting strategy and wait for the answer.
 ENDING_VOTE=3
+# ENDING_VOTE: The admin requested to end the vote to the appropriate
+# voting strategy and wait for the answer. the lamda is malformed and cannot execute successfully.
+ENDING_VOTE_WITH_MALFORMED_LAMBDA=4
 
 ################################################################
 ################################################################
@@ -200,7 +203,8 @@ class AngryTeenagersDao(sp.Contract):
                 author=sp.sender,
                 voting_strategy_address=self.data.poll_manager[proposal.voting_strategy].address,
                 voting_id=sp.nat(0),
-                snapshot_block=sp.level
+                snapshot_block=sp.level,
+                lambda_error=sp.none
             )
         )
 
@@ -260,7 +264,8 @@ class AngryTeenagersDao(sp.Contract):
                 author=self.data.ongoing_poll.open_some().author,
                 voting_strategy_address=self.data.ongoing_poll.open_some().voting_strategy_address,
                 voting_id=params,
-                snapshot_block=self.data.ongoing_poll.open_some().snapshot_block
+                snapshot_block=self.data.ongoing_poll.open_some().snapshot_block,
+                lambda_error=self.data.ongoing_poll.open_some().lambda_error
             )
         )
 
@@ -317,6 +322,44 @@ class AngryTeenagersDao(sp.Contract):
         sp.emit(proposal_id, with_type=True, tag="end")
 
 ########################################################################################################################
+# end_with_malformed_lambda
+########################################################################################################################
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def end_with_malformed_lambda(self, params):
+        # Check type
+        sp.set_type(params, sp.TRecord(proposal_id=sp.TNat, lambda_error=PollType.POLL_LAMBDA_ERROR))
+        # Asserts
+        sp.verify(sp.sender == self.data.admin, message=Error.ErrorMessage.unauthorized_user())
+        sp.verify(self.data.state == VOTE_ONGOING, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
+        sp.verify(self.data.ongoing_poll.open_some().proposal_id == params.proposal_id, message=Error.ErrorMessage.dao_no_invalid_proposal())
+        # Calling this entrypoint is only possible if the proposal contains a lambda
+        sp.verify(self.data.ongoing_poll.open_some().proposal.proposal_lambda.is_some(), message=Error.ErrorMessage.dao_no_lambda_in_proposal())
+
+        # Add the error string to the proposal
+                # Update the poll data
+        self.data.ongoing_poll = sp.some(
+            sp.record(
+                proposal=self.data.ongoing_poll.open_some().proposal,
+                proposal_id=self.data.ongoing_poll.open_some().proposal_id,
+                author=self.data.ongoing_poll.open_some().author,
+                voting_strategy_address=self.data.ongoing_poll.open_some().voting_strategy_address,
+                voting_id=self.data.ongoing_poll.open_some().voting_id,
+                snapshot_block=self.data.ongoing_poll.open_some().snapshot_block,
+                lambda_error=sp.some(params.lambda_error)
+            )
+        )
+
+        # Change the state of contract
+        self.data.state = ENDING_VOTE_WITH_MALFORMED_LAMBDA
+        self.data.time_ref = sp.some(sp.level)
+
+        # Call the appropriate voting strategy
+        self.call_voting_strategy_end()
+
+        sp.emit(params.proposal_id, with_type=True, tag="end_with_malformed_lambda")
+
+########################################################################################################################
 # end_callback
 ########################################################################################################################
     @sp.entry_point(check_no_incoming_transfer=True)
@@ -325,25 +368,28 @@ class AngryTeenagersDao(sp.Contract):
         sp.set_type(params, sp.TRecord(voting_id=sp.TNat, voting_outcome=sp.TNat))
 
         # Asserts
-        sp.verify(self.data.state == ENDING_VOTE, message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify((self.data.state == ENDING_VOTE) | (self.data.state == ENDING_VOTE_WITH_MALFORMED_LAMBDA), message=Error.ErrorMessage.dao_no_vote_open())
         sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
         sp.verify(self.data.ongoing_poll.open_some().voting_strategy_address == sp.sender, message=Error.ErrorMessage.dao_invalid_voting_strat())
         sp.verify(~self.data.outcomes.contains(self.data.next_proposal_id), message=Error.ErrorMessage.dao_invalid_voting_strat())
         sp.verify(params.voting_id == self.data.ongoing_poll.open_some().voting_id, message=Error.ErrorMessage.dao_invalid_voting_strat())
 
-        # Execute the lambda if the vote is passed and the lambda exists
-        sp.if (params.voting_outcome == PollOutcome.POLL_OUTCOME_PASSED) & (self.data.ongoing_poll.open_some().proposal.proposal_lambda.is_some()):
+        # Execute the lambda if the vote is passed, the lambda exists and the lambda is well-formed
+        sp.if ((self.data.state == ENDING_VOTE) & (params.voting_outcome == PollOutcome.POLL_OUTCOME_PASSED) & (self.data.ongoing_poll.open_some().proposal.proposal_lambda.is_some())):
             operations = self.data.ongoing_poll.open_some().proposal.proposal_lambda.open_some()(sp.unit)
             sp.set_type(operations, sp.TList(sp.TOperation))
             sp.add_operations(operations)
 
+        # Record the result of the vote
+        sp.if (self.data.state == ENDING_VOTE_WITH_MALFORMED_LAMBDA):
+            # Force the vote to be not passed
+            self.data.outcomes[self.data.next_proposal_id] = sp.record(outcome=PollOutcome.POLL_OUTCOME_FAILED, poll_data=self.data.ongoing_poll.open_some())
+        sp.else:
+            self.data.outcomes[self.data.next_proposal_id] = sp.record(outcome=params.voting_outcome, poll_data=self.data.ongoing_poll.open_some())
+
         # Change the state of contract
         self.data.state = NONE
-
         self.data.time_ref = sp.none
-
-        # Record the result of the vote
-        self.data.outcomes[self.data.next_proposal_id] = sp.record(outcome=params.voting_outcome, poll_data=self.data.ongoing_poll.open_some())
 
         # Close the vote
         self.data.ongoing_poll = sp.none

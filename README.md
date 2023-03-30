@@ -1,7 +1,7 @@
 # README
 
 This folder contains all the contracts code for the Angry Teenagers NFTs (https://www.angryteenagers.xyz/).
-Code is developed, compiled and unit tested for the Tezos blockchain using SmartPy v0.15.0 (https://smartpy.io/)
+Code is developed, compiled and unit tested for the Tezos blockchain using SmartPy v0.17.1 (https://smartpy.io/)
 
 The Angry Teenagers project contains:
 - A FA2 contract to hold the NFT collection (./nft/nft.py see https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md)
@@ -22,11 +22,11 @@ To build the metadata, ech contract shall be compiled:
 
 In the root folder of the repository:
 ```
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/nft.py ../nft_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./nft/sale.py ../sale_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/dao.py ../dao_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/majority.py ../majority_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./dao/opt_out.py ../opt_out_compilation
+% SMARTPY_INSTALLATION_FOLDER/smartpy compile ./nft/nft.py ../nft_compilation
+% SMARTPY_INSTALLATION_FOLDER/smartpy compile ./nft/sale.py ../sale_compilation
+% SMARTPY_INSTALLATION_FOLDER/smartpy compile ./dao/dao.py ../dao_compilation
+% SMARTPY_INSTALLATION_FOLDER/smartpy compile ./dao/majority.py ../majority_compilation
+% SMARTPY_INSTALLATION_FOLDER/smartpy compile ./dao/opt_out.py ../opt_out_compilation
 ```
 Contract metadata are then located in the compilation folder.
 For instance for the NFT contract: ../nft_compilation/step_000_cont_0_metadata.metadata_base.json
@@ -47,11 +47,11 @@ Current version of the contracts metadata are stored in the metadata folder.
 
 In the root folder of the repository:
 ```
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/nft_main.py ../nft_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/sale_main.py ../sale_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/dao_main.py ../dao_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/majority_main.py ../majority_compilation
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh compile ./main/opt_out_main.py ../opt_out_compilation
+% SMARTPY_INSTALLATION_FOLDER/smartpy compile ./main/nft_main.py ../nft_compilation
+% SMARTPY_INSTALLATION_FOLDER/smartpy compile ./main/sale_main.py ../sale_compilation
+% SMARTPY_INSTALLATION_FOLDER/smartpy compile ./main/dao_main.py ../dao_compilation
+% SMARTPY_INSTALLATION_FOLDER/smartpy compile ./main/majority_main.py ../majority_compilation
+% SMARTPY_INSTALLATION_FOLDER/smartpy compile ./main/opt_out_main.py ../opt_out_compilation
 ```
 Compilation produces two main files per contract (each of them with 3 different format depending on how you deployed:
 json format, tez format or py format):
@@ -64,11 +64,11 @@ Both these files are needed to deploy the contract on the blockchain network.
 Each contracts contains its own testing.
 To run the test please do:
 ```
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/nft_test.py ../nft_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/sale_test.py ../sale_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/dao_test.py ../dao_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/majority_test.py ../majority_test
-% SMARTPY_INSTALLATION_FOLDER/SmartPy.sh test ./test/opt_out_test.py ../opt_out_test
+% SMARTPY_INSTALLATION_FOLDER/smartpy test ./test/nft_test.py ../nft_test
+% SMARTPY_INSTALLATION_FOLDER/smartpy test ./test/sale_test.py ../sale_test
+% SMARTPY_INSTALLATION_FOLDER/smartpy test ./test/dao_test.py ../dao_test
+% SMARTPY_INSTALLATION_FOLDER/smartpy test ./test/majority_test.py ../majority_test
+% SMARTPY_INSTALLATION_FOLDER/smartpy test ./test/opt_out_test.py ../opt_out_test
 ```
 Optionally, you can use the "--purge" option to clean the folder before running the tests and/or the 
 "--htlm" to generate htlm logs.

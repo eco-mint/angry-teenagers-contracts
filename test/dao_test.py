@@ -67,16 +67,14 @@ class SimulatedFA2(sp.Contract):
                 total_voting_power=sp.TNat,
                 get_voting_power_called_with_address=sp.TOption(sp.TAddress),
                 get_voting_power_snapshot_block=sp.TNat,
-                address_voting_power=sp.TNat
-            )
+                address_voting_power=sp.TNat            )
         )
 
         self.init(
             total_voting_power=sp.nat(1000),
             get_voting_power_called_with_address=sp.none,
             get_voting_power_snapshot_block=sp.nat(1000),
-            address_voting_power=sp.nat(100)
-        )
+            address_voting_power=sp.nat(100)        )
         self.scenario = scenario
 
     @sp.onchain_view()
@@ -626,6 +624,7 @@ def unit_test_end_callback(is_default = True):
         scenario.p("7. Let's close the vote now")
         scenario.verify(simulated_voting_strategy_one.data.end_called_times == 0)
         c1.end(0).run(valid=True, sender=alice.address)
+        scenario.verify(c1.data.state == DAO.ENDING_VOTE)
 
         scenario.p("8. end_callback can only be called by the voting contract")
         c1.end_callback(end_callback_valid).run(valid=False, sender=alice.address)
@@ -694,6 +693,7 @@ def unit_test_end_callback(is_default = True):
         scenario.verify(c1.data.outcomes[0].poll_data.voting_strategy_address == simulated_voting_strategy_one.address)
         scenario.verify(c1.data.outcomes[0].poll_data.voting_id == 3)
         scenario.verify(c1.data.outcomes[0].poll_data.snapshot_block == 1213)
+        scenario.verify(c1.data.outcomes[0].poll_data.lambda_error == sp.none)
         scenario.verify(c1.data.outcomes[1].outcome == DAO.PollOutcome.POLL_OUTCOME_FAILED)
         scenario.verify(c1.data.outcomes[1].poll_data.proposal.title == sp.string("Test2"))
         scenario.verify(c1.data.outcomes[1].poll_data.proposal.description_link == sp.string("link2"))
@@ -705,6 +705,137 @@ def unit_test_end_callback(is_default = True):
         scenario.verify(c1.data.outcomes[1].poll_data.voting_strategy_address == simulated_voting_strategy_two.address)
         scenario.verify(c1.data.outcomes[1].poll_data.voting_id == 3)
         scenario.verify(c1.data.outcomes[1].poll_data.snapshot_block == 2312)
+        scenario.verify(c1.data.outcomes[1].poll_data.lambda_error == sp.none)
+
+def unit_test_end_callback_with_malformed_lambda_no_lambda(is_default = True):
+    @sp.add_test(name="unit_test_end_callback_with_malformed_lambda_no_lambda", is_default=is_default)
+    def test():
+        scenario = TestHelper.create_scenario("unit_test_end_callback_with_malformed_lambda_no_lambda")
+        admin, alice, bob, john = TestHelper.create_account(scenario)
+        c1, simulated_voting_strategy_one, simulated_voting_strategy_two, simulated_fa2 = TestHelper.create_contracts(scenario, admin)
+
+        voting_id = 3
+        snapshot_block = 1213
+        propose_callback_params_valid = voting_id
+
+        end_callback_valid = sp.record(voting_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+        end_callback_invalid = sp.record(voting_id=0, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+
+        scenario.h2("Test the end_callback entrypoint.")
+
+        scenario.p("1. Register the FA2 contract")
+        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin, level=snapshot_block)
+
+        scenario.p("2. end_callback can only be called when the contract is in the right state")
+        c1.end_callback(end_callback_valid).run(valid=False, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("3. Inject a valid proposal")
+        proposal_1 = sp.record(title="Test1",
+                               description_link="link1",
+                               description_hash="hash1",
+                               proposal_lambda=sp.none,
+                               voting_strategy=0
+                               )
+        c1.propose(proposal_1).run(valid=True, sender=admin.address)
+
+        scenario.p("4. end_callback can only be called when the contract is in the right state")
+        c1.end_callback(end_callback_valid).run(valid=False, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("5. Call propose_callback can be called")
+        c1.propose_callback(propose_callback_params_valid).run(valid=True, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("6. end_callback can only be called when the contract is in the right state")
+        c1.end_callback(end_callback_valid).run(valid=False, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("7. Let's close the vote now")
+        scenario.verify(simulated_voting_strategy_one.data.end_called_times == 0)
+        lambda_error = sp.record(description_link=sp.string("my_error"), hash_description=sp.string("my_error_hash"))
+        c1.end_with_malformed_lambda(sp.record(proposal_id=0, lambda_error=lambda_error)).run(valid=False, sender=alice.address)
+
+def unit_test_end_callback_with_malformed_lambda(is_default = True):
+    @sp.add_test(name="unit_test_end_callback_with_malformed_lambda", is_default=is_default)
+    def test():
+        scenario = TestHelper.create_scenario("unit_test_end_callback_with_malformed_lambda")
+        admin, alice, bob, john = TestHelper.create_account(scenario)
+        c1, simulated_voting_strategy_one, simulated_voting_strategy_two, simulated_fa2 = TestHelper.create_contracts(scenario, admin)
+
+        voting_id = 3
+        snapshot_block = 1213
+        propose_callback_params_valid = voting_id
+
+        end_callback_valid = sp.record(voting_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+        end_callback_invalid = sp.record(voting_id=0, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+
+        scenario.h2("Test the end_callback entrypoint.")
+
+        scenario.p("1. Register the FA2 contract")
+        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin, level=snapshot_block)
+
+        scenario.p("2. end_callback can only be called when the contract is in the right state")
+        c1.end_callback(end_callback_valid).run(valid=False, sender=simulated_voting_strategy_one.address)
+        
+        def lambda_test(params):
+            sp.set_type(params, sp.TUnit)
+            sp.result(sp.list(l={}, t=sp.TOperation))
+
+        my_lambda = sp.build_lambda(lambda_test)
+
+        scenario.p("3. Inject a valid proposal")
+        proposal_1 = sp.record(title="Test1",
+                               description_link="link1",
+                               description_hash="hash1",
+                               proposal_lambda=sp.some(my_lambda),
+                               voting_strategy=0
+                               )
+        c1.propose(proposal_1).run(valid=True, sender=admin.address)
+
+        scenario.p("4. end_callback can only be called when the contract is in the right state")
+        c1.end_callback(end_callback_valid).run(valid=False, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("5. Call propose_callback can be called")
+        c1.propose_callback(propose_callback_params_valid).run(valid=True, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("6. end_callback can only be called when the contract is in the right state")
+        c1.end_callback(end_callback_valid).run(valid=False, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("7. Only admin can close the vote")
+        scenario.verify(simulated_voting_strategy_one.data.end_called_times == 0)
+        lambda_error = sp.record(description_link=sp.string("my_error"), hash_description=sp.string("my_error_hash"))
+        c1.end_with_malformed_lambda(sp.record(proposal_id=0, lambda_error=lambda_error)).run(valid=False, sender=alice.address)
+        c1.end_with_malformed_lambda(sp.record(proposal_id=0, lambda_error=lambda_error)).run(valid=False, sender=bob.address)
+        c1.end_with_malformed_lambda(sp.record(proposal_id=0, lambda_error=lambda_error)).run(valid=False, sender=john.address)
+
+        scenario.p("8. Let's close the vote now")
+        c1.end_with_malformed_lambda(sp.record(proposal_id=0, lambda_error=lambda_error)).run(valid=True, sender=admin.address)
+        scenario.verify(c1.data.state == DAO.ENDING_VOTE_WITH_MALFORMED_LAMBDA)
+
+        scenario.p("9. end_callback can only be called by the voting contract")
+        c1.end_callback(end_callback_valid).run(valid=False, sender=alice.address)
+
+        scenario.p("10. end_callback can only be called with the correct voting_id")
+        c1.end_callback(end_callback_invalid).run(valid=False, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("11. Call successfully the end_callback")
+        scenario.verify(~c1.data.outcomes.contains(0))
+        c1.end_callback(end_callback_valid).run(valid=True, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("11. Check the storage of the contract is as expected")
+        scenario.verify(c1.data.state == DAO.NONE)
+        scenario.verify(c1.data.next_proposal_id == 1)
+        scenario.verify(~c1.data.ongoing_poll.is_some())
+        scenario.verify(c1.data.outcomes.contains(0))
+        scenario.verify(c1.data.outcomes[0].outcome == DAO.PollOutcome.POLL_OUTCOME_FAILED)
+        scenario.verify(c1.data.outcomes[0].poll_data.proposal.title == sp.string("Test1"))
+        scenario.verify(c1.data.outcomes[0].poll_data.proposal.description_link == sp.string("link1"))
+        scenario.verify(c1.data.outcomes[0].poll_data.proposal.description_hash == sp.string("hash1"))
+        scenario.verify(c1.data.outcomes[0].poll_data.proposal.proposal_lambda.is_some())
+        scenario.verify(c1.data.outcomes[0].poll_data.proposal.voting_strategy == 0)
+        scenario.verify(c1.data.outcomes[0].poll_data.proposal_id == 0)
+        scenario.verify(c1.data.outcomes[0].poll_data.author == admin.address)
+        scenario.verify(c1.data.outcomes[0].poll_data.voting_strategy_address == simulated_voting_strategy_one.address)
+        scenario.verify(c1.data.outcomes[0].poll_data.voting_id == 3)
+        scenario.verify(c1.data.outcomes[0].poll_data.snapshot_block == 1213)
+        scenario.verify(c1.data.outcomes[0].poll_data.lambda_error.open_some() == lambda_error)
 
 def unit_test_offchain_views(is_default=True):
     @sp.add_test(name="unit_test_offchain_views", is_default=is_default)
@@ -952,6 +1083,8 @@ unit_test_propose_callback()
 unit_test_vote()
 unit_test_end()
 unit_test_end_callback()
+unit_test_end_callback_with_malformed_lambda()
+unit_test_end_callback_with_malformed_lambda_no_lambda()
 unit_test_offchain_views()
 unit_test_unlock_contract_start()
 unit_test_unlock_contract_end()

@@ -3,6 +3,7 @@ import smartpy as sp
 Error = sp.io.import_script_from_url("file:./helper/errors.py")
 VoteValue = sp.io.import_script_from_url("file:dao/helper/dao_vote_value.py")
 PollOutcome = sp.io.import_script_from_url("file:dao/helper/dao_poll_outcome.py")
+InterfaceType = sp.io.import_script_from_url("file:dao/helper/dao_interface_type.py")
 
 ################################################################
 ################################################################
@@ -263,7 +264,7 @@ class DaoMajorityVoting(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def vote(self, params):
         # Check type
-        sp.set_type(params, sp.TRecord(votes=sp.TNat, address=sp.TAddress, vote_value=sp.TNat, vote_id=sp.TNat))
+        sp.set_type(params, InterfaceType.VOTING_STRATEGY_VOTE_TYPE)
 
         # Asserts
         sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
@@ -386,18 +387,16 @@ class DaoMajorityVoting(sp.Contract):
 
     def callback_leader_end(self, result):
         leaderContractHandle = sp.contract(
-            sp.TRecord(
-                voting_id=sp.TNat,
-                voting_outcome=sp.TNat
-            ),
+            InterfaceType.END_CALLBACK_TYPE,
             self.data.poll_leader.open_some(),
             "end_callback"
         ).open_some("Interface mismatch")
 
         leaderContractArg = sp.record(
-            voting_id=self.data.poll_descriptor.open_some().vote_id,
+            vote_id=self.data.poll_descriptor.open_some().vote_id,
             voting_outcome=result
         )
+        sp.set_type(leaderContractArg, InterfaceType.END_CALLBACK_TYPE)
         self.call(leaderContractHandle, leaderContractArg)
 
 ########################################################################################################################

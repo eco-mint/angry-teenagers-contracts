@@ -95,9 +95,9 @@ class SimulatedLeaderPoll(sp.Contract):
 
     @sp.entry_point()
     def end_callback(self, params):
-        sp.set_type(params, sp.TRecord(voting_id=sp.TNat, voting_outcome=sp.TNat))
+        sp.set_type(params, DAO.InterfaceType.END_CALLBACK_TYPE)
         self.data.end_callback_called_times = self.data.end_callback_called_times + 1
-        self.data.end_callback_voting_id = params.voting_id
+        self.data.end_callback_voting_id = params.vote_id
         self.data.end_callback_voting_outcome = params.voting_outcome
 
 

@@ -81,9 +81,9 @@ class SimulatedLeaderPoll(sp.Contract):
 
     @sp.entry_point()
     def end_callback(self, params):
-        sp.set_type(params, sp.TRecord(voting_id=sp.TNat, voting_outcome=sp.TNat))
+        sp.set_type(params, DAO.InterfaceType.END_CALLBACK_TYPE)
         self.data.end_callback_called_times = self.data.end_callback_called_times + 1
-        self.data.end_callback_voting_id = params.voting_id
+        self.data.end_callback_voting_id = params.vote_id
         self.data.end_callback_voting_outcome = params.voting_outcome
 
 
@@ -125,18 +125,18 @@ class SimulatedPhase2Voting(sp.Contract):
 
     @sp.entry_point()
     def vote(self, params):
-        sp.set_type(params, sp.TRecord(votes=sp.TNat, address=sp.TAddress, vote_value=sp.TNat, voting_id=sp.TNat))
+        sp.set_type(params, DAO.InterfaceType.VOTING_STRATEGY_VOTE_TYPE)
         self.data.vote_called_times = self.data.vote_called_times + 1
         self.data.last_votes = params.votes
         self.data.last_address = sp.some(params.address)
         self.data.last_vote_value = params.vote_value
-        self.data.last_vote_id = params.voting_id
+        self.data.last_vote_id = params.vote_id
 
     @sp.entry_point()
     def end(self, params):
-        sp.set_type(params, sp.TRecord(voting_id=sp.TNat))
+        sp.set_type(params, sp.TNat)
         self.data.end_called_times = self.data.end_called_times + 1
-        self.data.end_vote_id = params.voting_id
+        self.data.end_vote_id = params
 
 
 # Unit tests -------------------------------------------------------------------------------------------------------
@@ -925,7 +925,7 @@ def unit_test_end_phase2_end_ok(is_default = True):
         scenario.verify(c1.data.vote_state == DAO.PHASE_2_MAJORITY)
 
         scenario.p("5. end_callback cann only be called in state ENDING_PHASE_2.")
-        params_end_callback = sp.record(voting_id=sp.nat(1), voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+        params_end_callback = sp.record(vote_id=sp.nat(1), voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
         c1.end_callback(params_end_callback).run(valid=False, sender=simulated_phase2_voting_contract.address)
 
         scenario.p("6. Simulate end of phase with successful outcome")
@@ -940,7 +940,7 @@ def unit_test_end_phase2_end_ok(is_default = True):
         c1.end_callback(params_end_callback).run(valid=False, sender=admin.address)
 
         scenario.p("9. end_callback can only be called with valid id.")
-        params_end_callback_invalid_id = sp.record(voting_id=sp.nat(0), voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+        params_end_callback_invalid_id = sp.record(vote_id=sp.nat(0), voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
         c1.end_callback(params_end_callback_invalid_id).run(valid=False, sender=admin.address)
 
         scenario.p("10. In return the majority contract will call back this contract to give the result. Let's simulate this.")
@@ -1031,7 +1031,7 @@ def unit_test_end_phase2_end_nok(is_default = True):
         scenario.verify(c1.data.vote_state == DAO.PHASE_2_MAJORITY)
 
         scenario.p("5. end_callback cann only be called in state ENDING_PHASE_2.")
-        params_end_callback = sp.record(voting_id=sp.nat(1), voting_outcome=DAO.PollOutcome.POLL_OUTCOME_FAILED)
+        params_end_callback = sp.record(vote_id=sp.nat(1), voting_outcome=DAO.PollOutcome.POLL_OUTCOME_FAILED)
         c1.end_callback(params_end_callback).run(valid=False, sender=simulated_phase2_voting_contract.address)
 
         scenario.p("6. Simulate end of phase with successful outcome")
@@ -1143,7 +1143,7 @@ def unit_test_offchain_views(is_default = True):
         scenario.verify(c1.get_contract_state() == DAO.ENDING_PHASE_2)
 
         scenario.p("13. In return the majority contract will call back this contract to give the result. Let's simulate this.")
-        params_end_callback = sp.record(voting_id=sp.nat(1), voting_outcome=DAO.PollOutcome.POLL_OUTCOME_FAILED)
+        params_end_callback = sp.record(vote_id=sp.nat(1), voting_outcome=DAO.PollOutcome.POLL_OUTCOME_FAILED)
         c1.end_callback(params_end_callback).run(valid=True, sender=simulated_phase2_voting_contract.address)
 
         scenario.p("14. Check get_number_of_historical_outcomes and get_historical_outcome_data function")

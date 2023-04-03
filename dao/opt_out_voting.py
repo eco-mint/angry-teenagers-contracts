@@ -3,6 +3,7 @@ import smartpy as sp
 Error = sp.io.import_script_from_url("file:./helper/errors.py")
 VoteValue = sp.io.import_script_from_url("file:dao/helper/dao_vote_value.py")
 PollOutcome = sp.io.import_script_from_url("file:dao/helper/dao_poll_outcome.py")
+InterfaceType = sp.io.import_script_from_url("file:dao/helper/dao_interface_type.py")
 
 ################################################################
 ################################################################
@@ -268,7 +269,7 @@ class DaoOptOutVoting(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def vote(self, params):
         # Check type
-        sp.set_type(params, sp.TRecord(votes=sp.TNat, address=sp.TAddress, vote_value=sp.TNat, vote_id=sp.TNat))
+        sp.set_type(params, InterfaceType.VOTING_STRATEGY_VOTE_TYPE)
 
         # Asserts
         sp.verify(sp.sender == self.data.poll_leader.open_some(), message=Error.ErrorMessage.unauthorized_user())
@@ -338,7 +339,7 @@ class DaoOptOutVoting(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def end_callback(self, params):
         # Check type
-        sp.set_type(params, sp.TRecord(voting_id=sp.TNat, voting_outcome=sp.TNat))
+        sp.set_type(params, InterfaceType.END_CALLBACK_TYPE)
 
         # Asserts
         sp.verify(self.data.vote_state == ENDING_PHASE_2, message=Error.ErrorMessage.dao_no_vote_open())
@@ -346,7 +347,7 @@ class DaoOptOutVoting(sp.Contract):
         sp.verify(self.data.phase_2_majority_vote_contract.open_some() == sp.sender,
                   message=Error.ErrorMessage.dao_invalid_voting_strat())
         sp.verify(~self.data.outcomes.contains(self.data.vote_id), message=Error.ErrorMessage.dao_invalid_voting_strat())
-        sp.verify(params.voting_id == self.data.poll_descriptor.open_some().phase_2_vote_id, message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(params.vote_id == self.data.poll_descriptor.open_some().phase_2_vote_id, message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Record the vote outcome
         self.data.outcomes[self.data.poll_descriptor.open_some().vote_id] = sp.record(
@@ -392,30 +393,29 @@ class DaoOptOutVoting(sp.Contract):
 
     def callback_leader_end(self, result):
         leaderContractHandle = sp.contract(
-            sp.TRecord(
-                voting_id=sp.TNat,
-                voting_outcome=sp.TNat
-            ),
+            InterfaceType.END_CALLBACK_TYPE,
             self.data.poll_leader.open_some(),
             "end_callback"
         ).open_some("Interface mismatch")
 
         leaderContractArg = sp.record(
-            voting_id=self.data.poll_descriptor.open_some().vote_id,
+            vote_id=self.data.poll_descriptor.open_some().vote_id,
             voting_outcome=result
         )
+        sp.set_type(leaderContractArg, InterfaceType.END_CALLBACK_TYPE)
         self.call(leaderContractHandle, leaderContractArg)
 
     def call_voting_strategy_vote(self, votes, address, vote_value):
         voteContractHandle = sp.contract(
-            sp.TRecord(votes=sp.TNat, address=sp.TAddress, vote_value=sp.TNat, voting_id=sp.TNat),
+            InterfaceType.VOTING_STRATEGY_VOTE_TYPE,
             self.data.phase_2_majority_vote_contract.open_some(),
             "vote"
         ).open_some("Interface mismatch")
 
         voteContractArg = sp.record(
-                votes=votes, address=address, vote_value=vote_value, voting_id=self.data.poll_descriptor.open_some().phase_2_vote_id
+                votes=votes, address=address, vote_value=vote_value, vote_id=self.data.poll_descriptor.open_some().phase_2_vote_id
             )
+        sp.set_type(voteContractArg, InterfaceType.VOTING_STRATEGY_VOTE_TYPE)
         self.call(voteContractHandle, voteContractArg)
 
     def call_voting_strategy_start(self, total_available_voters):
@@ -485,14 +485,12 @@ class DaoOptOutVoting(sp.Contract):
 
     def call_voting_strategy_end(self):
         voteContractHandle = sp.contract(
-            sp.TRecord(voting_id=sp.TNat),
+            sp.TNat,
             self.data.phase_2_majority_vote_contract.open_some(),
             "end"
         ).open_some("Interface mismatch")
 
-        voteContractArg = sp.record(
-                voting_id=self.data.poll_descriptor.open_some().phase_2_vote_id
-            )
+        voteContractArg = self.data.poll_descriptor.open_some().phase_2_vote_id
         self.call(voteContractHandle, voteContractArg)
 
     def close_vote(self, result):

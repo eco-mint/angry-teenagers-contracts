@@ -138,11 +138,11 @@ class SimulatedVotingStrategy(sp.Contract):
 
     @sp.entry_point
     def vote(self, params):
-        sp.set_type(params, sp.TRecord(votes=sp.TNat, address=sp.TAddress, vote_value=sp.TNat, voting_id=sp.TNat))
+        sp.set_type(params, DAO.InterfaceType.VOTING_STRATEGY_VOTE_TYPE)
         self.data.vote_called_times = self.data.vote_called_times + 1
         self.data.vote_last_address = sp.some(params.address)
         self.data.vote_last_value = params.vote_value
-        self.data.vote_last_id = params.voting_id
+        self.data.vote_last_id = params.vote_id
         self.data.vote_numbers = params.votes
 
 
@@ -592,8 +592,8 @@ def unit_test_end_callback(is_default = True):
         snapshot_block = 1213
         propose_callback_params_valid = voting_id
 
-        end_callback_valid = sp.record(voting_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
-        end_callback_invalid = sp.record(voting_id=0, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+        end_callback_valid = sp.record(vote_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+        end_callback_invalid = sp.record(vote_id=0, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
 
         scenario.h2("Test the end_callback entrypoint.")
 
@@ -674,7 +674,7 @@ def unit_test_end_callback(is_default = True):
         scenario.p("16. Call successfully the  end_callback")
         scenario.verify(c1.data.outcomes.contains(0))
         scenario.verify(~c1.data.outcomes.contains(1))
-        end_callback_valid_2 = sp.record(voting_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_FAILED)
+        end_callback_valid_2 = sp.record(vote_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_FAILED)
         c1.end_callback(end_callback_valid_2).run(valid=True, sender=simulated_voting_strategy_two.address)
 
         scenario.p("17. Check the storage of the contract is as expected")
@@ -718,8 +718,8 @@ def unit_test_end_callback_with_malformed_lambda_no_lambda(is_default = True):
         snapshot_block = 1213
         propose_callback_params_valid = voting_id
 
-        end_callback_valid = sp.record(voting_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
-        end_callback_invalid = sp.record(voting_id=0, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+        end_callback_valid = sp.record(vote_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+        end_callback_invalid = sp.record(vote_id=0, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
 
         scenario.h2("Test the end_callback entrypoint.")
 
@@ -763,8 +763,8 @@ def unit_test_end_callback_with_malformed_lambda(is_default = True):
         snapshot_block = 1213
         propose_callback_params_valid = voting_id
 
-        end_callback_valid = sp.record(voting_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
-        end_callback_invalid = sp.record(voting_id=0, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+        end_callback_valid = sp.record(vote_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+        end_callback_invalid = sp.record(vote_id=0, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
 
         scenario.h2("Test the end_callback entrypoint.")
 
@@ -849,7 +849,7 @@ def unit_test_offchain_views(is_default=True):
         snapshot_block = 1213
         propose_callback_params_valid = voting_id
 
-        end_callback_valid = sp.record(voting_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
+        end_callback_valid = sp.record(vote_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_PASSED)
 
         scenario.h2("Test the end_callback entrypoint.")
 
@@ -927,7 +927,7 @@ def unit_test_offchain_views(is_default=True):
 
         scenario.p("10. Call successfully the  end_callback")
         scenario.verify(c1.is_poll_in_progress() == True)
-        end_callback_valid_2 = sp.record(voting_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_FAILED)
+        end_callback_valid_2 = sp.record(vote_id=voting_id, voting_outcome=DAO.PollOutcome.POLL_OUTCOME_FAILED)
         c1.end_callback(end_callback_valid_2).run(valid=True, sender=simulated_voting_strategy_two.address)
         scenario.verify(c1.is_poll_in_progress() == False)
 
@@ -1064,7 +1064,7 @@ def unit_test_unlock_contract_end(is_default = True):
         c1.unlock_contract().run(valid=False, sender=admin.address, level=sp.level + 10)
 
         scenario.p("8. Call end_callback")
-        c1.end_callback(sp.record(voting_id=3, voting_outcome=0)).run(valid=True, sender=simulated_voting_strategy_one.address)
+        c1.end_callback(sp.record(vote_id=3, voting_outcome=0)).run(valid=True, sender=simulated_voting_strategy_one.address)
         scenario.verify(c1.data.state == DAO.NONE)
         scenario.verify(~c1.data.time_ref.is_some())
 

@@ -5,6 +5,7 @@ Proposal = sp.io.import_script_from_url("file:dao/helper/dao_proposal.py")
 VoteValue = sp.io.import_script_from_url("file:dao/helper/dao_vote_value.py")
 PollOutcome = sp.io.import_script_from_url("file:dao/helper/dao_poll_outcome.py")
 PollType = sp.io.import_script_from_url("file:dao/helper/dao_poll_type.py")
+InterfaceType = sp.io.import_script_from_url("file:dao/helper/dao_interface_type.py")
 
 ################################################################
 ################################################################
@@ -365,14 +366,14 @@ class AngryTeenagersDao(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def end_callback(self, params):
         # Check type
-        sp.set_type(params, sp.TRecord(voting_id=sp.TNat, voting_outcome=sp.TNat))
+        sp.set_type(params, InterfaceType.END_CALLBACK_TYPE)
 
         # Asserts
         sp.verify((self.data.state == ENDING_VOTE) | (self.data.state == ENDING_VOTE_WITH_MALFORMED_LAMBDA), message=Error.ErrorMessage.dao_no_vote_open())
         sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
         sp.verify(self.data.ongoing_poll.open_some().voting_strategy_address == sp.sender, message=Error.ErrorMessage.dao_invalid_voting_strat())
         sp.verify(~self.data.outcomes.contains(self.data.next_proposal_id), message=Error.ErrorMessage.dao_invalid_voting_strat())
-        sp.verify(params.voting_id == self.data.ongoing_poll.open_some().voting_id, message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(params.vote_id == self.data.ongoing_poll.open_some().voting_id, message=Error.ErrorMessage.dao_invalid_voting_strat())
 
         # Execute the lambda if the vote is passed, the lambda exists and the lambda is well-formed
         sp.if ((self.data.state == ENDING_VOTE) & (params.voting_outcome == PollOutcome.POLL_OUTCOME_PASSED) & (self.data.ongoing_poll.open_some().proposal.proposal_lambda.is_some())):
@@ -429,14 +430,15 @@ class AngryTeenagersDao(sp.Contract):
 
     def call_voting_strategy_vote(self, votes, address, vote_value):
         voteContractHandle = sp.contract(
-            sp.TRecord(votes=sp.TNat, address=sp.TAddress, vote_value=sp.TNat, voting_id=sp.TNat),
+            InterfaceType.VOTING_STRATEGY_VOTE_TYPE,
             self.data.ongoing_poll.open_some().voting_strategy_address,
             "vote"
         ).open_some("Interface mismatch")
 
         voteContractArg = sp.record(
-                votes=votes, address=address, vote_value=vote_value, voting_id=self.data.ongoing_poll.open_some().voting_id
+                votes=votes, address=address, vote_value=vote_value, vote_id=self.data.ongoing_poll.open_some().voting_id
             )
+        sp.set_type(voteContractArg, InterfaceType.VOTING_STRATEGY_VOTE_TYPE)
         self.call(voteContractHandle, voteContractArg)
 
     def call_voting_strategy_end(self):

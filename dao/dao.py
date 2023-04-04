@@ -396,6 +396,28 @@ class AngryTeenagersDao(sp.Contract):
         self.data.ongoing_poll = sp.none
         self.data.next_proposal_id = self.data.next_proposal_id + 1
 
+
+########################################################################################################################
+# next_voting_phase_callback
+########################################################################################################################
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def next_voting_phase_callback(self, vote_id):
+        # Check type
+        sp.set_type(vote_id, sp.TNat)
+
+        # Asserts
+        sp.verify((self.data.state == ENDING_VOTE) | (self.data.state == ENDING_VOTE_WITH_MALFORMED_LAMBDA), message=Error.ErrorMessage.dao_no_vote_open())
+        sp.verify(self.data.ongoing_poll.is_some(), message=Error.ErrorMessage.dao_no_poll_descriptor())
+        sp.verify(self.data.ongoing_poll.open_some().voting_strategy_address == sp.sender, message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(~self.data.outcomes.contains(self.data.next_proposal_id), message=Error.ErrorMessage.dao_invalid_voting_strat())
+        sp.verify(vote_id == self.data.ongoing_poll.open_some().voting_id, message=Error.ErrorMessage.dao_invalid_voting_strat())
+
+        # This function is called when the voting strategy has several phases
+        # For example, the voting strategy opt out has two phases
+        # Change the state of contract
+        self.data.state = VOTE_ONGOING
+        self.data.time_ref = sp.none
+
 ########################################################################################################################
 # mutez_transfer
 ########################################################################################################################

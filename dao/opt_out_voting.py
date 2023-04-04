@@ -405,6 +405,16 @@ class DaoOptOutVoting(sp.Contract):
         sp.set_type(leaderContractArg, InterfaceType.END_CALLBACK_TYPE)
         self.call(leaderContractHandle, leaderContractArg)
 
+    def callback_leader_next_voting_phase(self):
+        leaderContractHandle = sp.contract(
+            sp.TNat,
+            self.data.poll_leader.open_some(),
+            "next_voting_phase_callback"
+        ).open_some("Interface mismatch")
+
+        leaderContractArg = self.data.poll_descriptor.open_some().vote_id
+        self.call(leaderContractHandle, leaderContractArg)
+
     def call_voting_strategy_vote(self, votes, address, vote_value):
         voteContractHandle = sp.contract(
             InterfaceType.VOTING_STRATEGY_VOTE_TYPE,
@@ -467,6 +477,8 @@ class DaoOptOutVoting(sp.Contract):
 
             # Call voting strategy to start the poll
             self.call_voting_strategy_start(self.data.poll_descriptor.open_some().total_voters)
+            # Call back the leader to start the phase 2
+            self.callback_leader_next_voting_phase()
         sp.else:
             self.data.outcomes[self.data.poll_descriptor.open_some().vote_id] = sp.record(
                 poll_outcome=PollOutcome.POLL_OUTCOME_PASSED,

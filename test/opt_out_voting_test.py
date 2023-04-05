@@ -69,7 +69,9 @@ class SimulatedLeaderPoll(sp.Contract):
             propose_callback_id = sp.nat(100),
             end_callback_called_times = sp.nat(0),
             end_callback_voting_id = sp.nat(100),
-            end_callback_voting_outcome = sp.nat(100)
+            end_callback_voting_outcome = sp.nat(100),
+            next_voting_phase_callback_times = sp.nat(0),
+            next_voting_phase_callback_voting_id = sp.nat(100) 
         )
         self.scenario = scenario
 
@@ -86,6 +88,11 @@ class SimulatedLeaderPoll(sp.Contract):
         self.data.end_callback_voting_id = params.vote_id
         self.data.end_callback_voting_outcome = params.voting_outcome
 
+    @sp.entry_point()
+    def next_voting_phase_callback(self, voting_id):
+        sp.set_type(voting_id, sp.TNat)
+        self.data.next_voting_phase_callback_times = self.data.next_voting_phase_callback_times + 1
+        self.data.next_voting_phase_callback_voting_id = voting_id
 
 class SimulatedPhase2Voting(sp.Contract):
     def __init__(self, scenario):
@@ -473,6 +480,7 @@ def unit_test_end_phase1_ok_1(is_default = True):
         scenario.verify(~c1.data.poll_descriptor.is_some())
 
         scenario.p("8. Check the expected callback has been called")
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_called_times == 1)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 1)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_voting_id == 0)
@@ -522,6 +530,7 @@ def unit_test_end_phase1_ok_2(is_default = True):
         scenario.verify(~c1.data.poll_descriptor.is_some())
 
         scenario.p("9. Check the expected callback has been called")
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_called_times == 1)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 1)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_voting_id == 0)
@@ -571,6 +580,7 @@ def unit_test_end_phase1_ok_3(is_default = True):
         scenario.verify(~c1.data.poll_descriptor.is_some())
 
         scenario.p("9. Check the expected callback has been called")
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_called_times == 1)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 1)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_voting_id == 0)
@@ -620,6 +630,7 @@ def unit_test_end_phase1_ok_4(is_default = True):
         scenario.verify(~c1.data.poll_descriptor.is_some())
 
         scenario.p("9. Check the expected callback has been called")
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_called_times == 1)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 1)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_voting_id == 0)
@@ -666,7 +677,9 @@ def unit_test_end_phase1_nok_1(is_default = True):
         c1.end(0).run(valid=True, sender=simulated_poll_leader_contract.address, level=end_block + 1)
 
         scenario.p("5. Check the expected callback has been called")
-        scenario.p("The end callback is not called as we transition to phase 2")
+        scenario.p("The end callback is not called as we transition to phase 2 but next_voting_phase_callback is")
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_times == 1)
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_voting_id == 0)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_called_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 1)
         scenario.verify(simulated_phase2_voting_contract.data.start_called_times == 1)
@@ -714,7 +727,9 @@ def unit_test_end_phase1_nok_2(is_default = True):
         c1.end(0).run(valid=True, sender=simulated_poll_leader_contract.address, level=end_block + 1)
 
         scenario.p("5. Check the expected callback has been called")
-        scenario.p("The end callback is not called as we transition to phase 2")
+        scenario.p("The end callback is not called as we transition to phase 2 but next_voting_phase_callback is")
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_times == 1)
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_voting_id == 0)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_called_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 1)
         scenario.verify(simulated_phase2_voting_contract.data.start_called_times == 1)
@@ -762,7 +777,9 @@ def unit_test_end_phase1_nok_3(is_default = True):
         c1.end(0).run(valid=True, sender=simulated_poll_leader_contract.address, level=end_block + 1)
 
         scenario.p("5. Check the expected callback has been called")
-        scenario.p("The end callback is not called as we transition to phase 2")
+        scenario.p("The end callback is not called as we transition to phase 2 § but next_voting_phase_callback is")
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_times == 1)
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_voting_id == 0)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_called_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 1)
         scenario.verify(simulated_phase2_voting_contract.data.start_called_times == 1)
@@ -810,7 +827,9 @@ def unit_test_end_phase1_nok_4(is_default = True):
         c1.end(0).run(valid=True, sender=simulated_poll_leader_contract.address, level=end_block + 1)
 
         scenario.p("5. Check the expected callback has been called")
-        scenario.p("The end callback is not called as we transition to phase 2")
+        scenario.p("The end callback is not called as we transition to phase 2 but next_voting_phase_callback is")
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_times == 1)
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_voting_id == 0)
         scenario.verify(simulated_poll_leader_contract.data.end_callback_called_times == 0)
         scenario.verify(simulated_poll_leader_contract.data.propose_callback_called_times == 1)
         scenario.verify(simulated_phase2_voting_contract.data.start_called_times == 1)
@@ -892,6 +911,8 @@ def unit_test_end_phase2_vote(is_default = True):
         c1.vote(alice_vote_param_valid_yay).run(valid=True, sender=simulated_poll_leader_contract.address)
 
         scenario.p("12. Verify callback calls")
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_times == 1)
+        scenario.verify(simulated_poll_leader_contract.data.next_voting_phase_callback_voting_id == 0)
         scenario.verify(simulated_phase2_voting_contract.data.vote_called_times == 1)
         scenario.verify(simulated_phase2_voting_contract.data.last_votes == 200)
         scenario.verify(simulated_phase2_voting_contract.data.last_address.open_some() == alice.address)

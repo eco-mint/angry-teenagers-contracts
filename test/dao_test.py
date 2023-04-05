@@ -581,6 +581,77 @@ def unit_test_end(is_default = True):
         scenario.verify(simulated_voting_strategy_one.data.end_called_times == 1)
         scenario.verify(simulated_voting_strategy_one.data.end_vote_id == 3)
 
+def unit_test_next_voting_phase_callback(is_default = True):
+    @sp.add_test(name="unit_test_next_voting_phase_callback", is_default=is_default)
+    def test():
+        scenario = TestHelper.create_scenario("unit_test_next_voting_phase_callback_validcallback")
+        admin, alice, bob, john = TestHelper.create_account(scenario)
+        c1, simulated_voting_strategy_one, simulated_voting_strategy_two, simulated_fa2 = TestHelper.create_contracts(scenario, admin)
+
+        voting_id = 3
+        snapshot_block = 1213
+        propose_callback_params_valid = voting_id
+
+        next_voting_phase_callback_valid = voting_id
+        next_voting_phase_callback_invalid = 0
+
+        scenario.h2("Test the end_callback entrypoint.")
+
+        scenario.p("1. Register the FA2 contract")
+        c1.register_angry_teenager_fa2(simulated_fa2.address).run(valid=True, sender=admin, level=snapshot_block)
+
+        scenario.p("2. next_voting_phase_callback can only be called when the contract is in the right state")
+        c1.next_voting_phase_callback(next_voting_phase_callback_valid).run(valid=False, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("3. Inject a valid proposal")
+        proposal_1 = sp.record(title="Test1",
+                               description_link="link1",
+                               description_hash="hash1",
+                               proposal_lambda=sp.none,
+                               voting_strategy=0
+                               )
+        c1.propose(proposal_1).run(valid=True, sender=admin.address)
+
+        scenario.p("4. next_voting_phase_callback can only be called when the contract is in the right state")
+        c1.next_voting_phase_callback(next_voting_phase_callback_valid).run(valid=False, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("5. Call propose_callback can be called")
+        c1.propose_callback(propose_callback_params_valid).run(valid=True, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("6. next_voting_phase_callback can only be called when the contract is in the right state")
+        c1.next_voting_phase_callback(next_voting_phase_callback_valid).run(valid=False, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("7. Let's close the vote now")
+        scenario.verify(simulated_voting_strategy_one.data.end_called_times == 0)
+        c1.end(0).run(valid=True, sender=alice.address)
+        scenario.verify(c1.data.state == DAO.ENDING_VOTE)
+
+        scenario.p("8. next_voting_phase_callback can only be called by the voting contract")
+        c1.next_voting_phase_callback(next_voting_phase_callback_valid).run(valid=False, sender=alice.address)
+
+        scenario.p("9. next_voting_phase_callback can only be called with the correct voting_id")
+        c1.next_voting_phase_callback(next_voting_phase_callback_invalid).run(valid=False, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("10. Call successfully the  end_callback")
+        scenario.verify(~c1.data.outcomes.contains(0))
+        c1.next_voting_phase_callback(next_voting_phase_callback_valid).run(valid=True, sender=simulated_voting_strategy_one.address)
+
+        scenario.p("11. Check the storage of the contract is as expected")
+        scenario.verify(c1.data.state == DAO.VOTE_ONGOING)
+        scenario.verify(~c1.data.outcomes.contains(0))
+        scenario.verify(c1.data.next_proposal_id == 0)
+        scenario.verify(c1.data.ongoing_poll.is_some())
+        scenario.verify(c1.data.ongoing_poll.open_some().proposal.title == sp.string("Test1"))
+        scenario.verify(c1.data.ongoing_poll.open_some().proposal.description_link == sp.string("link1"))
+        scenario.verify(c1.data.ongoing_poll.open_some().proposal.description_hash == sp.string("hash1"))
+        scenario.verify(~c1.data.ongoing_poll.open_some().proposal.proposal_lambda.is_some())
+        scenario.verify(c1.data.ongoing_poll.open_some().proposal.voting_strategy == 0)
+        scenario.verify(c1.data.ongoing_poll.open_some().proposal_id == 0)
+        scenario.verify(c1.data.ongoing_poll.open_some().author == admin.address)
+        scenario.verify(c1.data.ongoing_poll.open_some().voting_strategy_address == simulated_voting_strategy_one.address)
+        scenario.verify(c1.data.ongoing_poll.open_some().voting_id == 3)
+        scenario.verify(c1.data.ongoing_poll.open_some().snapshot_block == 1213)
+
 def unit_test_end_callback(is_default = True):
     @sp.add_test(name="unit_test_end_callback", is_default=is_default)
     def test():
@@ -1082,6 +1153,7 @@ unit_test_propose()
 unit_test_propose_callback()
 unit_test_vote()
 unit_test_end()
+unit_test_next_voting_phase_callback()
 unit_test_end_callback()
 unit_test_end_callback_with_malformed_lambda()
 unit_test_end_callback_with_malformed_lambda_no_lambda()

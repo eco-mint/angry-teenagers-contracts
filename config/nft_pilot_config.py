@@ -8,16 +8,16 @@ CONTRACT_METADATA_IPFS_LINK ="ipfs://QmYemdPdJqfxzDBtBpnvAM6deqrw61VU3oFfNyCs7uJ
 ADMINISTRATOR_ADDRESS = "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"
 
 # TODO: This is not a valid generic image and displayUri is missing
-GENERIC_ARTWORK_IPFS_LINK = "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"
-GENERIC_DISPLAY_ARTWORK_IPFS_LINK = "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"
-GENERIC_THUMBNAIL_ARTWORK_IPFS_LINK = "ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBDH"
+GENERIC_ARTWORK_IPFS_LINK = "ipfs://QmTqTDHw9b3Tf94DfukCXm4qWQTVGnL2JEnZKLyDJgkhiz"
+GENERIC_DISPLAY_ARTWORK_IPFS_LINK = "ipfs://QmNgFkST8nUfRktL9B47haBdvqBQSc1mDbcBGuEFAnhBGx"
+GENERIC_THUMBNAIL_ARTWORK_IPFS_LINK = "ipfs://QmakZvpFp7UFzcPWsyZ3jPJPPykJWzxp1TR3T5TX4aBsmV"
 
 # TODO: A valid project oracles is needed as it cannot be changed later on
 PROJECT_ORACLES_STREAM_LINK = "ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"
 
 # TODO
 WHAT3WORDS_FILE_IPFS_LINK = "ipfs://QmWdJ3BTyEcQLZ4dVDaF6tf3FYnoqoXpMk5HAYs95E8dX6"
-MAX_SUPPLY=150
+MAX_SUPPLY=60
 
 # TODO: These values will have to adjusted to our artwork
 ARTIFACT_FILE_TYPE = '"image/png"'

@@ -54,7 +54,6 @@ class TestHelper():
                         generic_image_ipfs=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"),
                         generic_image_ipfs_display=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD2"),
                         generic_image_ipfs_thumbnail=sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"),
-                        project_oracles_stream=sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"),
                         what3words_file_ipfs=sp.utils.bytes_of_string(
                             "ipfs://QmWk3kZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD1"),
                         max_supply=128,
@@ -184,11 +183,11 @@ def unit_fa2_test_initial_storage(is_default = True):
         scenario.verify(c1.data.generic_image_ipfs_thumbnail == sp.utils.bytes_of_string("ipfs://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYBD3"))
         scenario.verify(c1.data.metadata[""] == sp.utils.bytes_of_string("https://example.com"))
 
-        scenario.verify(c1.data.project_oracles_stream == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"))
-
         scenario.verify(c1.data.royalties == sp.utils.bytes_of_string('{"decimals": 3, "shares": { "' + "tz1b7np4aXmF8mVXvoa9Pz68ZRRUzK9qHUf5" + '": 10}}'))
 
         scenario.verify(~c1.data.token_metadata.contains(0))
+
+        scenario.verify(c1.data.project_oracles_number_of_deposits == sp.nat(0))
 
 ########################################################################################################################
 # unit_fa2_test_mint
@@ -1171,7 +1170,6 @@ def unit_fa2_test_token_metadata_storage(is_default=True):
         scenario.verify_equal(info[NFT.ISBOOLEANAMOUNT_METADATA], sp.utils.bytes_of_string(NFT.ISBOOLEANAMOUNT))
         scenario.verify_equal(info[NFT.SHOULDPREFERSYMBOL_METADATA], sp.utils.bytes_of_string(NFT.SHOULDPREFERSYMBOL))
         scenario.verify_equal(info[NFT.CREATORS_METADATA], c1.creators)
-        scenario.verify_equal(info[NFT.PROJECTORACLEURI_METADATA], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"))
         scenario.verify_equal(info[NFT.PROJECTNAME_METADATA], c1.project_name)
 
 
@@ -1299,7 +1297,6 @@ def unit_fa2_test_token_metadata_offchain(is_default=True):
         scenario.verify_equal(metadata[NFT.ISBOOLEANAMOUNT_METADATA], sp.utils.bytes_of_string(NFT.ISBOOLEANAMOUNT))
         scenario.verify_equal(metadata[NFT.SHOULDPREFERSYMBOL_METADATA], sp.utils.bytes_of_string(NFT.SHOULDPREFERSYMBOL))
         scenario.verify_equal(metadata[NFT.CREATORS_METADATA], c1.creators)
-        scenario.verify_equal(metadata[NFT.PROJECTORACLEURI_METADATA], sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"))
         scenario.verify_equal(metadata[NFT.PROJECTNAME_METADATA], c1.project_name)
 
 ########################################################################################################################
@@ -1312,11 +1309,32 @@ def unit_fa2_test_get_project_oracles_stream(is_default=True):
         admin, alice, bob, john = TestHelper.create_account(scenario)
         c1 = TestHelper.create_contracts(scenario, admin, john)
 
-        scenario.h2("Test the token_metadata get_project_oracles_stream view entrypoint.")
-        scenario.p("This view is used to retrieve the oracles stream of the contract. These offchain views functions are less sensitive as they can be replaced even after the contract has been deployed (the code is stored in an ipfs file).")
+        scenario.h2("Add deposit and check this is ok.")
+        scenario.p("1. Create a deposit")
+        deposit_1 = sp.utils.bytes_of_string("deposit_1")
+        c1.add_new_oracles_deposit(deposit_1).run(valid=False, sender=alice)
+        c1.add_new_oracles_deposit(deposit_1).run(valid=False, sender=bob)
+        c1.add_new_oracles_deposit(deposit_1).run(valid=True, sender=admin)
 
-        scenario.p("1. Check the storage contains the expected ceramic stream")
-        scenario.verify(c1.get_project_oracles_stream() == sp.utils.bytes_of_string("ceramic://QmWkrkZj562duMGVwwaUtPo7iH1zPtLYKB2u9M7EfUYAAA"))
+        scenario.p("2. Check the storage contains the expected deposit")
+        scenario.verify(c1.data.project_oracles_number_of_deposits == 1)
+        scenario.verify(c1.data.project_oracles_deposits[0] == deposit_1)
+        scenario.verify(c1.get_project_oracles_number_of_deposits() == 1)
+        scenario.verify(c1.get_project_oracles_deposit(0) == deposit_1)
+
+        scenario.p("3. Create a second deposit")
+        deposit_2 = sp.utils.bytes_of_string("deposit_2")
+        c1.add_new_oracles_deposit(deposit_2).run(valid=False, sender=alice)
+        c1.add_new_oracles_deposit(deposit_2).run(valid=False, sender=bob)
+        c1.add_new_oracles_deposit(deposit_2).run(valid=True, sender=admin)
+
+        scenario.p("4. Check the storage contains the expected deposit")
+        scenario.verify(c1.data.project_oracles_number_of_deposits == 2)
+        scenario.verify(c1.data.project_oracles_deposits[0] == deposit_1)
+        scenario.verify(c1.data.project_oracles_deposits[1] == deposit_2)
+        scenario.verify(c1.get_project_oracles_number_of_deposits() == 2)
+        scenario.verify(c1.get_project_oracles_deposit(0) == deposit_1)
+        scenario.verify(c1.get_project_oracles_deposit(1) == deposit_2)
 
 ########################################################################################################################
 # unit_fa2_test_get_voting_power

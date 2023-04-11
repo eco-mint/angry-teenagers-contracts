@@ -2,7 +2,7 @@ import smartpy as sp
 
 CONTRACT_NAME = "AngryTeenagersPilot"
 ROYALTIES_BYTES ='{"decimals": 2, "shares": { "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q": 10}}'
-CONTRACT_METADATA_IPFS_LINK ="ipfs://QmYfBXr4dw9yQmsKBC6iyPkh97xFCG7wB1jCZtrFPx329d"
+CONTRACT_METADATA_IPFS_LINK ="ipfs://Qmb7AJGGj9sFNEGyYKVeZZvD9AqWFujcrjo1HjE3YasVEE"
 
 ADMINISTRATOR_ADDRESS = "tz1QqobMeCYY1WjeaPUcphhyq2Q5C3BfTE2q"
 

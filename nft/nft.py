@@ -47,7 +47,6 @@ WHAT3WORDSFILE_METADATA = "what3wordsFile"
 WHAT3WORDID_METADATA = "what3wordsId"
 REVEALED_METADATA = "revealed"
 ROYALTIES_METADATA = "royalties"
-PROJECTORACLEURI_METADATA = "projectOraclesUri"
 
 
 DECIMALS = "0"
@@ -105,7 +104,6 @@ class AngryTeenagers(sp.Contract):
                  generic_image_ipfs,
                  generic_image_ipfs_display,
                  generic_image_ipfs_thumbnail,
-                 project_oracles_stream,
                  what3words_file_ipfs,
                  max_supply,
                  artifact_file_type,
@@ -178,7 +176,8 @@ class AngryTeenagers(sp.Contract):
                 generic_image_ipfs=sp.TBytes,
                 generic_image_ipfs_display=sp.TBytes,
                 generic_image_ipfs_thumbnail=sp.TBytes,
-                project_oracles_stream=sp.TBytes,
+                project_oracles_deposits=sp.TBigMap(sp.TNat, sp.TBytes),
+                project_oracles_number_of_deposits=sp.TNat,
                 royalties=sp.TBytes,
                 metadata= sp.TBigMap(sp.TString, sp.TBytes)
             )
@@ -217,7 +216,8 @@ class AngryTeenagers(sp.Contract):
             generic_image_ipfs_display=generic_image_ipfs_display,
             generic_image_ipfs_thumbnail=generic_image_ipfs_thumbnail,
 
-            project_oracles_stream=project_oracles_stream,
+            project_oracles_deposits=sp.big_map(l={}, tkey=sp.TNat, tvalue=sp.TBytes),
+            project_oracles_number_of_deposits=sp.nat(0),
 
             royalties=royalties_bytes,
 
@@ -233,14 +233,15 @@ class AngryTeenagers(sp.Contract):
              , self.is_operator
              , self.max_supply
              , self.token_metadata
-             , self.get_project_oracles_stream
+             , self.get_project_oracles_deposit
+             , self.get_project_oracles_number_of_deposits
              , self.get_all_non_revealed_token
         ]
 
         metadata_base = {
              "name": "Angry Teenagers"
             ,
-             "version": "1.1.1"
+             "version": "1.3.0"
              , "description": (
                      "Angry Teenagers: NFTs that fund an exponential cycle of reforestation."
         )
@@ -396,6 +397,13 @@ class AngryTeenagers(sp.Contract):
     def set_artwork_administrator(self, params):
         sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
         self.data.artwork_administrator = params
+
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def add_new_oracles_deposit(self, params):
+        sp.set_type(params, sp.TBytes)
+        sp.verify(self.is_administrator(sp.sender), message=Error.ErrorMessage.not_admin())
+        self.data.project_oracles_deposits[self.data.project_oracles_number_of_deposits] = params
+        self.data.project_oracles_number_of_deposits = self.data.project_oracles_number_of_deposits + 1
 
     @sp.entry_point(check_no_incoming_transfer=True)
     def update_artwork_data(self, params):
@@ -621,12 +629,17 @@ class AngryTeenagers(sp.Contract):
         sp.else:
             sp.result(sp.nat(0))
 
+    @sp.offchain_view(pure=True)
+    def get_project_oracles_deposit(self, params):
+        """Get oracle deposit using the deposit index"""
+        sp.set_type(params, sp.TNat)
+        sp.verify(params < self.data.project_oracles_number_of_deposits)
+        sp.result(self.data.project_oracles_deposits[params])
 
     @sp.offchain_view(pure=True)
-    def get_project_oracles_stream(self):
-        """Get oracle stream
-        """
-        sp.result(self.data.project_oracles_stream)
+    def get_project_oracles_number_of_deposits(self):
+        """Get number of oracle deposits"""
+        sp.result(self.data.project_oracles_number_of_deposits)
 
     @sp.offchain_view(pure=True)
     def token_metadata(self, token_id):
@@ -739,7 +752,6 @@ class AngryTeenagers(sp.Contract):
             WHAT3WORDID_METADATA: token_id_string.value,
             REVEALED_METADATA: sp.utils.bytes_of_string(REVEALED),
             ROYALTIES_METADATA: self.data.royalties,
-            PROJECTORACLEURI_METADATA: self.data.project_oracles_stream
         })
 
         self.data.token_metadata[token_id] = sp.pair(token_id, meta_map)

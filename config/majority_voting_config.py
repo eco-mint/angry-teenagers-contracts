@@ -6,7 +6,7 @@ CONTRACT_METADATA_IPFS_LINK = "ipfs://QmQqaH85s3qBYyMEJLVmLUtv9hgd7cgrheG6mv2Mv1
 MAIN_MAJ_CONTRACT_NAME = "AngryTeenagers Majority voting"
 MAIN_MAJ_DYNAMIC_INIT_VALUE_PERTENMILL = 3000
 MAIN_MAJ_GOVERNANCE_PARAMETERS = sp.record(vote_delay_blocks = sp.nat(1),
-                                           vote_length_blocks = sp.nat(14400),
+                                           vote_length_blocks = sp.nat(28800),
                                            supermajority_pertenmill = sp.nat(8000),
                                            fixed_quorum_pertenmill = sp.nat(2500),
                                            fixed_quorum = sp.bool(False),
@@ -17,7 +17,7 @@ MAIN_MAJ_GOVERNANCE_PARAMETERS = sp.record(vote_delay_blocks = sp.nat(1),
 OPTOUT_MAJ_CONTRACT_NAME = "AngryTeenagers Opt Out Majority voting"
 OPTOUT_MAJ_DYNAMIC_INIT_VALUE_PERTENMILL = 3000
 OPTOUT_MAJ_GOVERNANCE_PARAMETERS = sp.record(vote_delay_blocks = sp.nat(1),
-                                               vote_length_blocks = sp.nat(14400),
+                                               vote_length_blocks = sp.nat(28800),
                                                supermajority_pertenmill = sp.nat(5000),
                                                fixed_quorum_pertenmill = sp.nat(2500),
                                                fixed_quorum = sp.bool(True),

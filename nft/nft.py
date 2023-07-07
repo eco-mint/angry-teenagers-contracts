@@ -447,7 +447,7 @@ class AngryTeenagers(sp.Contract):
         self.data.royalties = params
 
     @sp.entry_point(check_no_incoming_transfer=True)
-    def set_royalties_field_on_minted_tokens(self, params):
+    def set_royalties_minted_tokens(self, params):
         # Verify type
         sp.set_type(params, sp.TList(TOKEN_ID))
 
